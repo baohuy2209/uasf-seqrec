@@ -1,0 +1,49 @@
+{
+  "dataset": "Beauty_2014",
+  "users": 22363,
+  "original_items": 12101,
+  "catalog_train_base_items": 11998,
+  "interactions": 198502,
+  "unique_user_item_pairs": 198502,
+  "sparsity": 0.9992664772935825,
+  "sparsity_definition": "1 - unique_user_item_pairs / (users * original_items)",
+  "mean_sequence_length": 8.876358270357287,
+  "min_sequence_length": 5,
+  "max_sequence_length": 204,
+  "train_base_events": 131413,
+  "train_base_pairs": 109050,
+  "train_meta_contexts": 22240,
+  "validation_contexts": 22363,
+  "test_contexts": 22363,
+  "oov_counts": {
+    "train_meta": 123,
+    "val": 178,
+    "test": 479
+  },
+  "metadata_status": "missing_file",
+  "metadata_coverage_original_items": {
+    "category": null,
+    "brand": null,
+    "title": null
+  },
+  "metadata_coverage_train_base_catalog": {
+    "category": null,
+    "brand": null,
+    "title": null
+  },
+  "category_vocab_train_base": null,
+  "brand_vocab_train_base": null,
+  "title_encoder": null,
+  "title_encoder_status": "not_encoded_by_this_collection",
+  "expected_reference_stats": {
+    "users": 22363,
+    "items": 12101,
+    "interactions": 198502,
+    "catalog_train_base_items": 11998
+  },
+  "reference_users_items_match": true,
+  "reviews_file": "/mnt/d/Github/data-handle-pipeline/data/raw/amazon_reviews/2014/Beauty/Beauty_5.json",
+  "reviews_sha256": "59e964b66012f9853208cfbd56941392cc4e2b7801a2ffe3e6399c42bef711f2",
+  "metadata_file": null,
+  "metadata_sha256": null
+}

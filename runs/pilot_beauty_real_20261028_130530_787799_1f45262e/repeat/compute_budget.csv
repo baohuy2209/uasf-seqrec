@@ -1,0 +1,8 @@
+block,planned_training_runs,estimated_gpu_hours,status,source
+early_fusion,72,,pending_matching_gpu_measurement,"memo_20_10_section_4_3; proposed counts, not completed experiments"
+late_fusion_id,9,1.0039282017900042,estimate_from_this_id_pilot_only,"memo_20_10_section_4_3; proposed counts, not completed experiments"
+late_fusion_residual,63,,pending_matching_gpu_measurement,"memo_20_10_section_4_3; proposed counts, not completed experiments"
+train_time_controls,108,,pending_matching_gpu_measurement,"memo_20_10_section_4_3; proposed counts, not completed experiments"
+uasf_and_7_baselines,120,,pending_matching_gpu_measurement,"memo_20_10_section_4_3; proposed counts, not completed experiments"
+ablations,75,,pending_matching_gpu_measurement,"memo_20_10_section_4_3; proposed counts, not completed experiments"
+inference_only_controls,0,,pending_matching_gpu_measurement,"memo_20_10_section_4_3; proposed counts, not completed experiments"

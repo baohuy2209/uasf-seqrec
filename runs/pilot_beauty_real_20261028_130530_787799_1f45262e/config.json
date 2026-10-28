@@ -1,0 +1,146 @@
+{
+  "experiment_name": "pilot_beauty_real",
+  "is_real_data": true,
+  "seed": 42,
+  "num_items": 11998,
+  "num_users": 22363,
+  "max_seq_len": 50,
+  "epochs": 100,
+  "batch_size": 256,
+  "learning_rate": 0.001,
+  "loss_type": "full_catalog_cross_entropy",
+  "device": "cuda",
+  "mask_seen_items": true,
+  "mask_seen_policy": "train_base",
+  "tie_policy": "deterministic_catalog_index_ascending",
+  "sanity_checks": {
+    "Check 1: Dataset Statistics": {
+      "status": "PENDING",
+      "evidence": "Users: 22363, Catalog Items: 11998, Train Pairs: 109050, Val Targets: 22363, Test Targets: 22363 | Metadata: ABSENT on disk (0.0% coverage; Category, Brand, Title stages BLOCKED) (Raw unique items: 12101) (Expected stats: {'users': 22363, 'items': 12101, 'interactions': 198502, 'catalog_train_base_items': 11998}; review-stat match: True; metadata_ready=False)",
+      "validation_method": "Comparison with supervisor memo (26/10/2026)"
+    },
+    "Check 2: Baseline Ordering": {
+      "status": "PASS",
+      "evidence": "Random NDCG@10: 0.0005 | Popularity NDCG@10: 0.0048 | SASRec ID NDCG@10: 0.0380",
+      "validation_method": "Strict metric ordering: Random < Popularity < SASRec",
+      "measurements": {
+        "random_ndcg_10": 0.0005161405054647213,
+        "popularity_ndcg_10": 0.0048138970352754685,
+        "sasrec_ndcg_10": 0.037973943396749664
+      }
+    },
+    "Check 3: Benchmark Plausibility": {
+      "status": "PENDING",
+      "evidence": "Observed NDCG@10=0.037974. A matched reference implementation/config/commit is required; no hardcoded literature interval certifies reproduction.",
+      "validation_method": "Independent matched-protocol reference comparison pending"
+    },
+    "Check 4: Leakage Detection": {
+      "status": "REVIEW",
+      "evidence": "SASRec NDCG@10=0.037974; shuffled=0.001636; Random=0.000516; Popularity=0.004814; permutation seed=42. Shuffling preserves target popularity and does not alone certify absence of leakage.",
+      "validation_method": "Seeded cross-user target permutation; scientific acceptance requires a predeclared null criterion",
+      "measurements": {
+        "original_ndcg_10": 0.037973943396749664,
+        "shuffled_ndcg_10": 0.001636012383057477,
+        "seed": 42
+      }
+    },
+    "Check 5: Reproducibility": {
+      "status": "PASS",
+      "evidence": "Compared complete histories, best epoch, validation/test metrics and keyed per-user ranks under seed=42, atol=1e-06, rtol=0.",
+      "validation_method": "Full independent repeated training; both runs persisted",
+      "measurements": {
+        "epochs_run1": 31,
+        "epochs_run2": 31,
+        "best_epoch_run1": 21,
+        "best_epoch_run2": 21,
+        "test_ndcg_10_abs_diff": 0.0,
+        "validation_ndcg_10_abs_diff": 0.0,
+        "absolute_tolerance": 1e-06
+      }
+    }
+  },
+  "model": {
+    "max_seq_len": 50,
+    "embedding_dim": 64,
+    "num_blocks": 2,
+    "num_heads": 2,
+    "dropout_rate": 0.2,
+    "act": "gelu"
+  },
+  "dataset": {
+    "dataset_name": "Beauty_2014",
+    "raw_data_dir": "data/raw/amazon_reviews/2014",
+    "category_subdir": "Beauty",
+    "reviews_file": "Beauty_5.json",
+    "ratings_file": "ratings_Beauty.csv",
+    "metadata_file": null,
+    "processed_dir": "data/taimma/processed/beauty_2014",
+    "splits_dir": "data/taimma/splits/beauty_2014",
+    "min_interactions": 5,
+    "max_seq_len": 50,
+    "attributes": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "expected_stats": {
+      "users": 22363,
+      "items": 12101,
+      "interactions": 198502,
+      "catalog_train_base_items": 11998
+    }
+  },
+  "dataset_dir": "/mnt/d/Github/data-handle-pipeline/data/raw/amazon_reviews/2014",
+  "patience": 10,
+  "eval_batch_size": 256,
+  "weight_decay": 0.0,
+  "repro_tolerance": 1e-06,
+  "k_list": [
+    10,
+    20
+  ],
+  "rank_format": "csv",
+  "processed_manifest": "/mnt/d/Github/data-handle-pipeline/data/taimma/processed/beauty_2014/pilot_beauty_real_20261028_130530_787799_1f45262e/manifest.json",
+  "data_provenance": {
+    "dataset_name": "Beauty_2014",
+    "raw_reviews_file": "/mnt/d/Github/data-handle-pipeline/data/raw/amazon_reviews/2014/Beauty/Beauty_5.json",
+    "raw_reviews_sha256": "59e964b66012f9853208cfbd56941392cc4e2b7801a2ffe3e6399c42bef711f2",
+    "raw_reviews_size_bytes": 140791942,
+    "created_at": "2026-10-28T13:05:52.161362",
+    "stats": {
+      "num_users": 22363,
+      "num_items": 11998,
+      "train_base_samples": 109050,
+      "train_meta_samples": 22240,
+      "val_samples": 22363,
+      "test_samples": 22363,
+      "oov_counts": {
+        "train_meta": 123,
+        "val": 178,
+        "test": 479
+      }
+    },
+    "split_sha256": {
+      "train_base_samples.jsonl": "954a09c49a39b0a8a815e8de1abc483c37a106cbfa79e4595b6b6de404a0fd00",
+      "train_meta_samples.jsonl": "8dd921ec79a6d6924776b2b21646a5f6017c078d128f3354ca56b18fd1fdadaa",
+      "val_samples.jsonl": "dbb9addea9346d32d119fd1db499fa8183d96accfe1bc51f0117e83e1149f7d8",
+      "test_samples.jsonl": "04fc2c63b105d0c7e630ba2311a129be2af86d99130c67efcd2856fa9f09d6f9",
+      "train_base_events.json": "728300ba5a43b45f60dc00de78ca3dd29590fbe49bb9cc8d31c0a88ba286116d",
+      "item2idx.json": "f5e4da39d2179732ba33de027363dd2b58d1f1bc91452b18f066fc52e1fb6350",
+      "user2idx.json": "19d0b39c69cd3a62da67fdd5ae7bedd64f433c100b28678a08aca4cc652df32e",
+      "stats.json": "555fd993d88b2f741f265d3eb7deff992b50e89e3d06def5bee4f589fbf20a58"
+    },
+    "config": {
+      "max_seq_len": 50,
+      "min_seq_len": 5,
+      "batch_size": 256,
+      "lr": 0.001,
+      "seed": 42
+    }
+  },
+  "auxiliary_status": "BLOCKED_MISSING_METADATA",
+  "mechanism": "id_only",
+  "sources": [],
+  "control": "none",
+  "missing_rate": 0.0
+}

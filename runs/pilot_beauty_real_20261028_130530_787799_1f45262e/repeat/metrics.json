@@ -1,0 +1,20 @@
+{
+  "run_id": "pilot_beauty_real_20261028_130530_787799_1f45262e_repeat",
+  "best_epoch": 21,
+  "total_epochs": 31,
+  "train_time_sec": 401.57,
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.049251,
+    "Recall@10": 0.091401,
+    "NDCG@20": 0.057136,
+    "Recall@20": 0.122524
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.037974,
+    "Recall@10": 0.071457,
+    "NDCG@20": 0.045497,
+    "Recall@20": 0.101328
+  }
+}

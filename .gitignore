@@ -7,11 +7,11 @@ __pycache__/
 
 # Datasets and generated experiment outputs
 data/
-runs/
 results/
 .tmp/
-tests
 # Editable-install and package build metadata
 *.egg-info/
 build/
 dist/
+docs/
+tests

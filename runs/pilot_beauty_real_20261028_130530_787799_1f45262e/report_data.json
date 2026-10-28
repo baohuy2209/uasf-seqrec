@@ -1,0 +1,299 @@
+{
+  "schema_version": 2,
+  "data_mode": "real",
+  "scientific_status": "PENDING",
+  "dataset": {
+    "dataset": "Beauty_2014",
+    "users": 22363,
+    "original_items": 12101,
+    "catalog_train_base_items": 11998,
+    "interactions": 198502,
+    "unique_user_item_pairs": 198502,
+    "sparsity": 0.9992664772935825,
+    "sparsity_definition": "1 - unique_user_item_pairs / (users * original_items)",
+    "mean_sequence_length": 8.876358270357287,
+    "min_sequence_length": 5,
+    "max_sequence_length": 204,
+    "train_base_events": 131413,
+    "train_base_pairs": 109050,
+    "train_meta_contexts": 22240,
+    "validation_contexts": 22363,
+    "test_contexts": 22363,
+    "oov_counts": {
+      "train_meta": 123,
+      "val": 178,
+      "test": 479
+    },
+    "metadata_status": "missing_file",
+    "metadata_coverage_original_items": {
+      "category": null,
+      "brand": null,
+      "title": null
+    },
+    "metadata_coverage_train_base_catalog": {
+      "category": null,
+      "brand": null,
+      "title": null
+    },
+    "category_vocab_train_base": null,
+    "brand_vocab_train_base": null,
+    "title_encoder": null,
+    "title_encoder_status": "not_encoded_by_this_collection",
+    "expected_reference_stats": {
+      "users": 22363,
+      "items": 12101,
+      "interactions": 198502,
+      "catalog_train_base_items": 11998
+    },
+    "reference_users_items_match": true,
+    "reviews_file": "/mnt/d/Github/data-handle-pipeline/data/raw/amazon_reviews/2014/Beauty/Beauty_5.json",
+    "reviews_sha256": "59e964b66012f9853208cfbd56941392cc4e2b7801a2ffe3e6399c42bef711f2",
+    "metadata_file": null,
+    "metadata_sha256": null
+  },
+  "baseline_metrics": {
+    "Random": {
+      "test": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.000516,
+        "Recall@10": 0.001028,
+        "NDCG@20": 0.000652,
+        "Recall@20": 0.001565
+      },
+      "validation": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.00032,
+        "Recall@10": 0.000715,
+        "NDCG@20": 0.000497,
+        "Recall@20": 0.001431
+      }
+    },
+    "Popularity": {
+      "test": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.004814,
+        "Recall@10": 0.01024,
+        "NDCG@20": 0.006286,
+        "Recall@20": 0.016053
+      },
+      "validation": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.006909,
+        "Recall@10": 0.013862,
+        "NDCG@20": 0.009115,
+        "Recall@20": 0.022537
+      }
+    },
+    "SASRec_ID": {
+      "test": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.037974,
+        "Recall@10": 0.071457,
+        "NDCG@20": 0.045497,
+        "Recall@20": 0.101328
+      },
+      "validation": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.049251,
+        "Recall@10": 0.091401,
+        "NDCG@20": 0.057136,
+        "Recall@20": 0.122524
+      }
+    },
+    "SASRec_shuffled": {
+      "test": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.001636,
+        "Recall@10": 0.003533,
+        "NDCG@20": 0.002462,
+        "Recall@20": 0.006842
+      }
+    }
+  },
+  "sanity_checks": {
+    "Check 1: Dataset Statistics": {
+      "status": "PENDING",
+      "evidence": "Users: 22363, Catalog Items: 11998, Train Pairs: 109050, Val Targets: 22363, Test Targets: 22363 | Metadata: ABSENT on disk (0.0% coverage; Category, Brand, Title stages BLOCKED) (Raw unique items: 12101) (Expected stats: {'users': 22363, 'items': 12101, 'interactions': 198502, 'catalog_train_base_items': 11998}; review-stat match: True; metadata_ready=False)",
+      "validation_method": "Comparison with supervisor memo (26/10/2026)"
+    },
+    "Check 2: Baseline Ordering": {
+      "status": "PASS",
+      "evidence": "Random NDCG@10: 0.0005 | Popularity NDCG@10: 0.0048 | SASRec ID NDCG@10: 0.0380",
+      "validation_method": "Strict metric ordering: Random < Popularity < SASRec",
+      "measurements": {
+        "random_ndcg_10": 0.0005161405054647213,
+        "popularity_ndcg_10": 0.0048138970352754685,
+        "sasrec_ndcg_10": 0.037973943396749664
+      }
+    },
+    "Check 3: Benchmark Plausibility": {
+      "status": "PENDING",
+      "evidence": "Observed NDCG@10=0.037974. A matched reference implementation/config/commit is required; no hardcoded literature interval certifies reproduction.",
+      "validation_method": "Independent matched-protocol reference comparison pending"
+    },
+    "Check 4: Leakage Detection": {
+      "status": "REVIEW",
+      "evidence": "SASRec NDCG@10=0.037974; shuffled=0.001636; Random=0.000516; Popularity=0.004814; permutation seed=42. Shuffling preserves target popularity and does not alone certify absence of leakage.",
+      "validation_method": "Seeded cross-user target permutation; scientific acceptance requires a predeclared null criterion",
+      "measurements": {
+        "original_ndcg_10": 0.037973943396749664,
+        "shuffled_ndcg_10": 0.001636012383057477,
+        "seed": 42
+      }
+    },
+    "Check 5: Reproducibility": {
+      "status": "PASS",
+      "evidence": "Compared complete histories, best epoch, validation/test metrics and keyed per-user ranks under seed=42, atol=1e-06, rtol=0.",
+      "validation_method": "Full independent repeated training; both runs persisted",
+      "measurements": {
+        "epochs_run1": 31,
+        "epochs_run2": 31,
+        "best_epoch_run1": 21,
+        "best_epoch_run2": 21,
+        "test_ndcg_10_abs_diff": 0.0,
+        "validation_ndcg_10_abs_diff": 0.0,
+        "absolute_tolerance": 1e-06
+      }
+    }
+  },
+  "costs": {
+    "train_wall_sec": 406.0989717670018,
+    "wall_to_reporting_sec": 933.3112099350001,
+    "wall_measurement_scope": "through evaluation, before report serialization; run_state.json records complete execution wall time",
+    "mean_epoch_train_sec": 10.442000861968184,
+    "mean_epoch_wall_sec": 13.099965019774366,
+    "epoch_wall_definition": "training + validation + checkpoint/epoch bookkeeping",
+    "total_epochs": 31,
+    "best_epoch": 21,
+    "stop_reason": "early_stopping",
+    "training_resources": {
+      "device": "cuda",
+      "cpu_name": "x86_64",
+      "host_ram_bytes": 16772214784,
+      "process_rss_bytes": 1343270912,
+      "process_peak_rss_bytes": 1358045184,
+      "ram_measurement_scope": "process_lifetime_peak",
+      "ram_status": "measured",
+      "gpu_name": "NVIDIA GeForce RTX 2050",
+      "gpu_total_bytes": 4294443008,
+      "gpu_peak_allocated_bytes": 189692928,
+      "gpu_peak_reserved_bytes": 243269632,
+      "gpu_status": "measured",
+      "cuda_version": "12.4",
+      "gpu_measurement_scope": "PyTorch allocator since last peak reset; excludes other processes and non-PyTorch allocations",
+      "psutil_version": "7.2.2"
+    },
+    "observed_runtime": {
+      "device": "cuda",
+      "cpu_name": "x86_64",
+      "host_ram_bytes": 16772214784,
+      "process_rss_bytes": 1405841408,
+      "process_peak_rss_bytes": 1407193088,
+      "ram_measurement_scope": "process_lifetime_peak",
+      "ram_status": "measured",
+      "gpu_name": "NVIDIA GeForce RTX 2050",
+      "gpu_total_bytes": 4294443008,
+      "gpu_peak_allocated_bytes": 205395456,
+      "gpu_peak_reserved_bytes": 268435456,
+      "gpu_status": "measured",
+      "cuda_version": "12.4",
+      "gpu_measurement_scope": "PyTorch allocator since last peak reset; excludes other processes and non-PyTorch allocations",
+      "psutil_version": "7.2.2"
+    }
+  },
+  "compute_budget": [
+    {
+      "block": "early_fusion",
+      "planned_training_runs": 72,
+      "estimated_gpu_hours": null,
+      "status": "pending_matching_gpu_measurement",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    },
+    {
+      "block": "late_fusion_id",
+      "planned_training_runs": 9,
+      "estimated_gpu_hours": 1.0152474294175045,
+      "status": "estimate_from_this_id_pilot_only",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    },
+    {
+      "block": "late_fusion_residual",
+      "planned_training_runs": 63,
+      "estimated_gpu_hours": null,
+      "status": "pending_matching_gpu_measurement",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    },
+    {
+      "block": "train_time_controls",
+      "planned_training_runs": 108,
+      "estimated_gpu_hours": null,
+      "status": "pending_matching_gpu_measurement",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    },
+    {
+      "block": "uasf_and_7_baselines",
+      "planned_training_runs": 120,
+      "estimated_gpu_hours": null,
+      "status": "pending_matching_gpu_measurement",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    },
+    {
+      "block": "ablations",
+      "planned_training_runs": 75,
+      "estimated_gpu_hours": null,
+      "status": "pending_matching_gpu_measurement",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    },
+    {
+      "block": "inference_only_controls",
+      "planned_training_runs": 0,
+      "estimated_gpu_hours": null,
+      "status": "pending_matching_gpu_measurement",
+      "source": "memo_20_10_section_4_3; proposed counts, not completed experiments"
+    }
+  ],
+  "protocol": {
+    "loss_type": "full_catalog_cross_entropy",
+    "mask_seen_policy": "train_base",
+    "tie_policy": "deterministic_catalog_index_ascending",
+    "k_list": [
+      10,
+      20
+    ],
+    "seed": 42
+  },
+  "limitations": [
+    "CPU runtime is not a GPU-hour measurement",
+    "ID pilot time does not measure fusion/UASF/ablation costs",
+    "Missing metadata coverage is null, not measured zero",
+    "Analysis target-popularity groups must not become gate inputs"
+  ],
+  "rank_format": "csv",
+  "missing_metadata": true,
+  "open_issues": [
+    {
+      "check": "Check 1: Dataset Statistics",
+      "status": "PENDING",
+      "evidence": "Users: 22363, Catalog Items: 11998, Train Pairs: 109050, Val Targets: 22363, Test Targets: 22363 | Metadata: ABSENT on disk (0.0% coverage; Category, Brand, Title stages BLOCKED) (Raw unique items: 12101) (Expected stats: {'users': 22363, 'items': 12101, 'interactions': 198502, 'catalog_train_base_items': 11998}; review-stat match: True; metadata_ready=False)",
+      "validation_method": "Comparison with supervisor memo (26/10/2026)"
+    },
+    {
+      "check": "Check 3: Benchmark Plausibility",
+      "status": "PENDING",
+      "evidence": "Observed NDCG@10=0.037974. A matched reference implementation/config/commit is required; no hardcoded literature interval certifies reproduction.",
+      "validation_method": "Independent matched-protocol reference comparison pending"
+    },
+    {
+      "check": "Check 4: Leakage Detection",
+      "status": "REVIEW",
+      "evidence": "SASRec NDCG@10=0.037974; shuffled=0.001636; Random=0.000516; Popularity=0.004814; permutation seed=42. Shuffling preserves target popularity and does not alone certify absence of leakage.",
+      "validation_method": "Seeded cross-user target permutation; scientific acceptance requires a predeclared null criterion",
+      "measurements": {
+        "original_ndcg_10": 0.037973943396749664,
+        "shuffled_ndcg_10": 0.001636012383057477,
+        "seed": 42
+      }
+    }
+  ],
+  "report_field_status": "Structured inputs saved; null marks missing or unmeasured evidence, not a measured zero"
+}

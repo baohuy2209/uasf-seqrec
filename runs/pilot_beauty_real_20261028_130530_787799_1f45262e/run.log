@@ -1,0 +1,61 @@
+
+======================================================================
+TAIMMA - Amazon Beauty 2014 -> SASRec ID-only Pilot Pipeline
+======================================================================
+
+[Real Data Mode] Loading actual Amazon Beauty 2014 dataset from:
+  - Canonical 5-core reviews: '/mnt/d/Github/data-handle-pipeline/data/raw/amazon_reviews/2014/Beauty/Beauty_5.json'
+  - Raw ratings dump:         '/mnt/d/Github/data-handle-pipeline/data/raw/amazon_reviews/2014/Beauty/ratings_Beauty.csv'
+[METADATA NOTICE] Product metadata file is absent in 'data/raw/amazon_reviews/2014'.
+  Category, Brand, and Title auxiliary stages are marked as BLOCKED per research protocol.
+  Proceeding with real-data SASRec ID-only pilot.
+Splitting sequences according to Train-base protocol (n >= 5)...
+  Vocabulary size: 11998 items (Train-base catalog)
+  Train-base pairs: 109050
+  Validation targets: 22363
+  Test targets: 22363
+  OOV Targets: {'train_meta': 123, 'val': 178, 'test': 479}
+  Processed dataset artifacts persisted to:
+    '/mnt/d/Github/data-handle-pipeline/data/taimma/processed/beauty_2014/pilot_beauty_real_20261028_130530_787799_1f45262e'
+
+Initializing SASRec ID-only PyTorch model...
+
+Training SASRec model (max_epochs=100, device=cuda)...
+Epoch 001 | Train Loss: 8.6011 | Val NDCG@10: 0.0199 | Val Recall@10: 0.0402 | Time: 11.36s
+Epoch 002 | Train Loss: 7.7480 | Val NDCG@10: 0.0353 | Val Recall@10: 0.0664 | Time: 10.18s
+Epoch 003 | Train Loss: 7.1570 | Val NDCG@10: 0.0434 | Val Recall@10: 0.0823 | Time: 10.21s
+Epoch 005 | Train Loss: 6.4138 | Val NDCG@10: 0.0448 | Val Recall@10: 0.0899 | Time: 10.13s
+Epoch 006 | Train Loss: 6.2213 | Val NDCG@10: 0.0464 | Val Recall@10: 0.0923 | Time: 9.80s
+Epoch 007 | Train Loss: 6.0873 | Val NDCG@10: 0.0467 | Val Recall@10: 0.0944 | Time: 10.16s
+Epoch 008 | Train Loss: 5.9807 | Val NDCG@10: 0.0470 | Val Recall@10: 0.0943 | Time: 10.24s
+Epoch 009 | Train Loss: 5.8975 | Val NDCG@10: 0.0484 | Val Recall@10: 0.0966 | Time: 9.79s
+Epoch 010 | Train Loss: 5.8323 | Val NDCG@10: 0.0476 | Val Recall@10: 0.0943 | Time: 10.35s
+Epoch 013 | Train Loss: 5.6663 | Val NDCG@10: 0.0492 | Val Recall@10: 0.0947 | Time: 10.35s
+Epoch 015 | Train Loss: 5.5739 | Val NDCG@10: 0.0481 | Val Recall@10: 0.0926 | Time: 10.53s
+Epoch 020 | Train Loss: 5.3984 | Val NDCG@10: 0.0480 | Val Recall@10: 0.0894 | Time: 10.22s
+Epoch 021 | Train Loss: 5.3753 | Val NDCG@10: 0.0493 | Val Recall@10: 0.0914 | Time: 10.36s
+Epoch 025 | Train Loss: 5.2609 | Val NDCG@10: 0.0488 | Val Recall@10: 0.0897 | Time: 10.71s
+Epoch 030 | Train Loss: 5.1525 | Val NDCG@10: 0.0492 | Val Recall@10: 0.0878 | Time: 10.52s
+Early stopping triggered at epoch 31. Best epoch: 21
+
+Final Validation Results: {'num_evaluated_users': 22363, 'NDCG@10': 0.049251, 'Recall@10': 0.091401, 'NDCG@20': 0.057136, 'Recall@20': 0.122524}
+Final Test Results:       {'num_evaluated_users': 22363, 'NDCG@10': 0.037974, 'Recall@10': 0.071457, 'NDCG@20': 0.045497, 'Recall@20': 0.101328}
+
+[Check 5 Verification] Executing complete repeat run with fixed seed 42...
+
+Running the 5 Mandatory Sanity Checks...
+  [PENDING] Check 1: Dataset Statistics
+      Evidence: Users: 22363, Catalog Items: 11998, Train Pairs: 109050, Val Targets: 22363, Test Targets: 22363 | Metadata: ABSENT on disk (0.0% coverage; Category, Brand, Title stages BLOCKED) (Raw unique items: 12101) (Expected stats: {'users': 22363, 'items': 12101, 'interactions': 198502, 'catalog_train_base_items': 11998}; review-stat match: True; metadata_ready=False)
+  [PASS] Check 2: Baseline Ordering
+      Evidence: Random NDCG@10: 0.0005 | Popularity NDCG@10: 0.0048 | SASRec ID NDCG@10: 0.0380
+  [PENDING] Check 3: Benchmark Plausibility
+      Evidence: Observed NDCG@10=0.037974. A matched reference implementation/config/commit is required; no hardcoded literature interval certifies reproduction.
+  [REVIEW] Check 4: Leakage Detection
+      Evidence: SASRec NDCG@10=0.037974; shuffled=0.001636; Random=0.000516; Popularity=0.004814; permutation seed=42. Shuffling preserves target popularity and does not alone certify absence of leakage.
+  [PASS] Check 5: Reproducibility
+      Evidence: Compared complete histories, best epoch, validation/test metrics and keyed per-user ranks under seed=42, atol=1e-06, rtol=0.
+
+Artifacts successfully written to: /mnt/d/Github/data-handle-pipeline/notebooks/taimma/runs/pilot_beauty_real_20261028_130530_787799_1f45262e
+Run registered in: /mnt/d/Github/data-handle-pipeline/notebooks/taimma/results/results.csv
+
+Pilot pipeline execution completed!
