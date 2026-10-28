@@ -1,0 +1,17 @@
+# Local Python environments and caches
+.venv/
+.venv-wsl/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Datasets and generated experiment outputs
+data/
+runs/
+results/
+.tmp/
+tests
+# Editable-install and package build metadata
+*.egg-info/
+build/
+dist/

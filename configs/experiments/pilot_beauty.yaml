@@ -1,0 +1,24 @@
+# Experiment Configuration: Beauty SASRec ID-only Pilot
+experiment_name: "pilot_beauty_sasrec_id"
+dataset_config: "configs/datasets/beauty_2014.yaml"
+model_config: "configs/models/sasrec_id.yaml"
+
+# Training parameters
+seed: 42
+batch_size: 256
+learning_rate: 0.001
+weight_decay: 0.0
+max_epochs: 100
+patience: 10
+device: "cpu"  # "cuda" if GPU is available, else "cpu"
+
+# Evaluation parameters
+eval_batch_size: 256
+k_list: [10, 20]
+primary_metric: "NDCG@10"
+mask_seen_items: true  # Mask historical items in candidate catalog
+ranking_protocol: "full_catalog"
+
+# Artifact and logging paths
+runs_dir: "runs"
+results_csv: "results/results.csv"

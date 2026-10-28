@@ -1,0 +1,26 @@
+# Dataset Configuration: Amazon Sports and Outdoors 2014
+dataset_name: "Sports_and_Outdoors_2014"
+raw_data_dir: "data/raw"
+category_subdir: "Sports and Outdoors"
+
+# Canonical raw data files on disk
+reviews_file: "Sports_and_Outdoors_5.json"
+ratings_file: "ratings_Sports_and_Outdoors.csv"
+metadata_file: null
+
+# Processed paths
+processed_dir: "data/processed/sports_and_outdoors_2014"
+splits_dir: "data/splits/sports_and_outdoors_2014"
+
+# Preprocessing parameters
+min_interactions: 5
+max_seq_len: 50
+attributes:
+  - "category"
+  - "brand"
+  - "title"
+
+# Supervisor memo 26/10/2026 section 5.2, original 5-core cohort.
+expected_stats:
+  users: 35598
+  items: 18357

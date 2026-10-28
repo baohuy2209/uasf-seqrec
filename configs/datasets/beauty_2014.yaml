@@ -1,0 +1,28 @@
+# Dataset Configuration: Amazon Beauty 2014
+dataset_name: "Beauty_2014"
+raw_data_dir: "data/raw"
+category_subdir: "Beauty"
+
+# Canonical raw data files on disk
+reviews_file: "Beauty_5.json"            # 5-core interaction sequences (JSON Lines, 198,502 records)
+ratings_file: "ratings_Beauty.csv"        # Full unpruned ratings dump (CSV, 2,023,070 records)
+metadata_file: null                      # No metadata provided for 2014 Beauty
+
+# Processed paths
+processed_dir: "data/processed/beauty_2014"
+splits_dir: "data/splits/beauty_2014"
+
+# Preprocessing parameters
+min_interactions: 5
+max_seq_len: 50
+attributes:
+  - "category"
+  - "brand"
+  - "title"
+
+# Benchmark verification references (Supervisor memo 26/10/2026)
+expected_stats:
+  users: 22363
+  items: 12101
+  interactions: 198502
+  catalog_train_base_items: 11998

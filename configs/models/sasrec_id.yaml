@@ -1,0 +1,11 @@
+# Model Configuration: SASRec ID-Only
+model_name: "SASRec_ID"
+embedding_dim: 64
+max_seq_len: 50
+num_blocks: 2
+num_heads: 2
+dropout_rate: 0.2
+hidden_act: "gelu"
+layer_norm_eps: 1e-12
+initializer_range: 0.02
+loss_type: "full_catalog_ce"  # Strict full-catalog Cross-Entropy

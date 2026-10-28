@@ -1,0 +1,14 @@
+# Python 3.12. Runtime subset of the original data-handle-pipeline environments.
+# Install the CPU or CUDA torch build FIRST using the README instructions.
+# This range accepts both observed builds: 2.13.0+cpu and 2.6.0+cu124.
+torch>=2.6.0,<2.14
+
+# Direct dependencies pinned to versions verified in the source environments.
+numpy==2.5.1
+pandas==3.0.5
+scipy==1.18.0
+scikit-learn==1.9.0
+PyYAML==6.0.3
+psutil==7.2.2
+
+# Optional, install separately when needed: pyarrow (Parquet).

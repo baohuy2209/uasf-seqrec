@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uasf-seqrec"
+version = "0.1.0"
+description = "User-Adaptive Side-Information Fusion for Sequential Recommendation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "torch",
+    "scipy",
+    "scikit-learn",
+    "PyYAML",
+    "psutil",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+parquet = [
+    "pyarrow",
+]
+dev = [
+    "pytest",
+    "pyarrow",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["taimma*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
