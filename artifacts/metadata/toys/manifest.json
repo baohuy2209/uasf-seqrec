@@ -1,0 +1,39 @@
+{
+  "dataset": "Toys and Games",
+  "reviews_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\reviews_Toys_and_Games_5.json.gz",
+  "reviews_sha256": "f9f0cc56ad6b5de15a1b0dd1c07fcfc9e7367efc73481f5d94d8065f91149286",
+  "metadata_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\meta_Toys_and_Games.json.gz",
+  "metadata_sha256": "beffb81f3632050b28d8b0acb1ee27f0ddc2142e9a6abba293357a5312f5e876",
+  "num_catalog_items": 11766,
+  "num_total_cohort_items": 11924,
+  "num_oov_items": 158,
+  "title_embedding": {
+    "path": "title_embeddings.npy",
+    "shape": [
+      11766,
+      384
+    ],
+    "encoder": "all-MiniLM-L6-v2",
+    "dim": 384,
+    "mode": "sentence-transformers"
+  },
+  "coverage_train_base": {
+    "scope": "train_base_catalog",
+    "total_items": 11766,
+    "category": {
+      "available": 11422,
+      "missing": 344,
+      "coverage_pct": 97.08
+    },
+    "brand": {
+      "available": 10040,
+      "missing": 1726,
+      "coverage_pct": 85.33
+    },
+    "title": {
+      "available": 11710,
+      "missing": 56,
+      "coverage_pct": 99.52
+    }
+  }
+}

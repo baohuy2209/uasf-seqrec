@@ -1,0 +1,39 @@
+{
+  "dataset": "Beauty",
+  "reviews_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\reviews_Beauty_5.json.gz",
+  "reviews_sha256": "e5925ec99023f1dc9c7d3dff7ef34cfeacd40d1b981b5525e1e4ba9c8abc18fe",
+  "metadata_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\meta_Beauty.json.gz",
+  "metadata_sha256": "c7977dc0e0ead14ac7df8c1c6de74da00e4bebfad87a0f0c5763d4c5bc9b53a0",
+  "num_catalog_items": 11998,
+  "num_total_cohort_items": 12101,
+  "num_oov_items": 103,
+  "title_embedding": {
+    "path": "title_embeddings.npy",
+    "shape": [
+      11998,
+      384
+    ],
+    "encoder": "all-MiniLM-L6-v2",
+    "dim": 384,
+    "mode": "sentence-transformers"
+  },
+  "coverage_train_base": {
+    "scope": "train_base_catalog",
+    "total_items": 11998,
+    "category": {
+      "available": 11998,
+      "missing": 0,
+      "coverage_pct": 100.0
+    },
+    "brand": {
+      "available": 9905,
+      "missing": 2093,
+      "coverage_pct": 82.56
+    },
+    "title": {
+      "available": 11991,
+      "missing": 7,
+      "coverage_pct": 99.94
+    }
+  }
+}

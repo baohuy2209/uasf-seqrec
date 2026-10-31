@@ -1,0 +1,39 @@
+{
+  "dataset": "Sports and Outdoors",
+  "reviews_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\reviews_Sports_and_Outdoors_5.json.gz",
+  "reviews_sha256": "8130a2206c3062db1b4b9d4353efc303b0ebd13f48372559fee26c47a1d7fe51",
+  "metadata_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\meta_Sports_and_Outdoors.json.gz",
+  "metadata_sha256": "677108a0fe0f47cce08885a348879a5a89dd69e75fbc5d66410ae436750df086",
+  "num_catalog_items": 18132,
+  "num_total_cohort_items": 18357,
+  "num_oov_items": 225,
+  "title_embedding": {
+    "path": "title_embeddings.npy",
+    "shape": [
+      18132,
+      384
+    ],
+    "encoder": "all-MiniLM-L6-v2",
+    "dim": 384,
+    "mode": "sentence-transformers"
+  },
+  "coverage_train_base": {
+    "scope": "train_base_catalog",
+    "total_items": 18132,
+    "category": {
+      "available": 17889,
+      "missing": 243,
+      "coverage_pct": 98.66
+    },
+    "brand": {
+      "available": 12151,
+      "missing": 5981,
+      "coverage_pct": 67.01
+    },
+    "title": {
+      "available": 18042,
+      "missing": 90,
+      "coverage_pct": 99.5
+    }
+  }
+}

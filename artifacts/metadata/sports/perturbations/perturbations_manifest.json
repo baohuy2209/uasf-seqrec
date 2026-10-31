@@ -1,0 +1,864 @@
+{
+  "dataset": "sports",
+  "masks": {
+    "num_masks_generated": 81,
+    "ratios": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "sources": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "manifest": [
+      {
+        "file": "mask_category_ratio_0.00_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 17889
+      },
+      {
+        "file": "mask_brand_ratio_0.00_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 12151
+      },
+      {
+        "file": "mask_title_ratio_0.00_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 18042
+      },
+      {
+        "file": "mask_category_ratio_0.00_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 17889
+      },
+      {
+        "file": "mask_brand_ratio_0.00_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 12151
+      },
+      {
+        "file": "mask_title_ratio_0.00_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 18042
+      },
+      {
+        "file": "mask_category_ratio_0.00_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 17889
+      },
+      {
+        "file": "mask_brand_ratio_0.00_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 12151
+      },
+      {
+        "file": "mask_title_ratio_0.00_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 18042
+      },
+      {
+        "file": "mask_category_ratio_0.10_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 16100
+      },
+      {
+        "file": "mask_brand_ratio_0.10_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 10936
+      },
+      {
+        "file": "mask_title_ratio_0.10_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 16238
+      },
+      {
+        "file": "mask_category_ratio_0.10_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 16100
+      },
+      {
+        "file": "mask_brand_ratio_0.10_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 10936
+      },
+      {
+        "file": "mask_title_ratio_0.10_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 16238
+      },
+      {
+        "file": "mask_category_ratio_0.10_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 16100
+      },
+      {
+        "file": "mask_brand_ratio_0.10_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 10936
+      },
+      {
+        "file": "mask_title_ratio_0.10_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 16238
+      },
+      {
+        "file": "mask_category_ratio_0.20_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 14311
+      },
+      {
+        "file": "mask_brand_ratio_0.20_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 9721
+      },
+      {
+        "file": "mask_title_ratio_0.20_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 14434
+      },
+      {
+        "file": "mask_category_ratio_0.20_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 14311
+      },
+      {
+        "file": "mask_brand_ratio_0.20_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 9721
+      },
+      {
+        "file": "mask_title_ratio_0.20_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 14434
+      },
+      {
+        "file": "mask_category_ratio_0.20_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 14311
+      },
+      {
+        "file": "mask_brand_ratio_0.20_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 9721
+      },
+      {
+        "file": "mask_title_ratio_0.20_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 14434
+      },
+      {
+        "file": "mask_category_ratio_0.30_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 12522
+      },
+      {
+        "file": "mask_brand_ratio_0.30_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 8506
+      },
+      {
+        "file": "mask_title_ratio_0.30_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 12629
+      },
+      {
+        "file": "mask_category_ratio_0.30_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 12522
+      },
+      {
+        "file": "mask_brand_ratio_0.30_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 8506
+      },
+      {
+        "file": "mask_title_ratio_0.30_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 12629
+      },
+      {
+        "file": "mask_category_ratio_0.30_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 12522
+      },
+      {
+        "file": "mask_brand_ratio_0.30_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 8506
+      },
+      {
+        "file": "mask_title_ratio_0.30_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 12629
+      },
+      {
+        "file": "mask_category_ratio_0.40_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 10733
+      },
+      {
+        "file": "mask_brand_ratio_0.40_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 7291
+      },
+      {
+        "file": "mask_title_ratio_0.40_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 10825
+      },
+      {
+        "file": "mask_category_ratio_0.40_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 10733
+      },
+      {
+        "file": "mask_brand_ratio_0.40_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 7291
+      },
+      {
+        "file": "mask_title_ratio_0.40_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 10825
+      },
+      {
+        "file": "mask_category_ratio_0.40_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 10733
+      },
+      {
+        "file": "mask_brand_ratio_0.40_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 7291
+      },
+      {
+        "file": "mask_title_ratio_0.40_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 10825
+      },
+      {
+        "file": "mask_category_ratio_0.50_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 8945
+      },
+      {
+        "file": "mask_brand_ratio_0.50_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 6075
+      },
+      {
+        "file": "mask_title_ratio_0.50_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 9021
+      },
+      {
+        "file": "mask_category_ratio_0.50_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 8945
+      },
+      {
+        "file": "mask_brand_ratio_0.50_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 6075
+      },
+      {
+        "file": "mask_title_ratio_0.50_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 9021
+      },
+      {
+        "file": "mask_category_ratio_0.50_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 8945
+      },
+      {
+        "file": "mask_brand_ratio_0.50_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 6075
+      },
+      {
+        "file": "mask_title_ratio_0.50_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 9021
+      },
+      {
+        "file": "mask_category_ratio_0.60_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 7156
+      },
+      {
+        "file": "mask_brand_ratio_0.60_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 4860
+      },
+      {
+        "file": "mask_title_ratio_0.60_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 7217
+      },
+      {
+        "file": "mask_category_ratio_0.60_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 7156
+      },
+      {
+        "file": "mask_brand_ratio_0.60_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 4860
+      },
+      {
+        "file": "mask_title_ratio_0.60_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 7217
+      },
+      {
+        "file": "mask_category_ratio_0.60_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 7156
+      },
+      {
+        "file": "mask_brand_ratio_0.60_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 4860
+      },
+      {
+        "file": "mask_title_ratio_0.60_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 7217
+      },
+      {
+        "file": "mask_category_ratio_0.70_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 5367
+      },
+      {
+        "file": "mask_brand_ratio_0.70_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 3645
+      },
+      {
+        "file": "mask_title_ratio_0.70_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 5413
+      },
+      {
+        "file": "mask_category_ratio_0.70_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 5367
+      },
+      {
+        "file": "mask_brand_ratio_0.70_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 3645
+      },
+      {
+        "file": "mask_title_ratio_0.70_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 5413
+      },
+      {
+        "file": "mask_category_ratio_0.70_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 5367
+      },
+      {
+        "file": "mask_brand_ratio_0.70_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 3645
+      },
+      {
+        "file": "mask_title_ratio_0.70_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 5413
+      },
+      {
+        "file": "mask_category_ratio_0.80_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 42,
+        "originally_available": 17889,
+        "simulated_available": 3578
+      },
+      {
+        "file": "mask_brand_ratio_0.80_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 42,
+        "originally_available": 12151,
+        "simulated_available": 2430
+      },
+      {
+        "file": "mask_title_ratio_0.80_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 42,
+        "originally_available": 18042,
+        "simulated_available": 3608
+      },
+      {
+        "file": "mask_category_ratio_0.80_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 43,
+        "originally_available": 17889,
+        "simulated_available": 3578
+      },
+      {
+        "file": "mask_brand_ratio_0.80_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 43,
+        "originally_available": 12151,
+        "simulated_available": 2430
+      },
+      {
+        "file": "mask_title_ratio_0.80_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 43,
+        "originally_available": 18042,
+        "simulated_available": 3608
+      },
+      {
+        "file": "mask_category_ratio_0.80_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 44,
+        "originally_available": 17889,
+        "simulated_available": 3578
+      },
+      {
+        "file": "mask_brand_ratio_0.80_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 44,
+        "originally_available": 12151,
+        "simulated_available": 2430
+      },
+      {
+        "file": "mask_title_ratio_0.80_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 44,
+        "originally_available": 18042,
+        "simulated_available": 3608
+      }
+    ]
+  },
+  "permutations": {
+    "num_permutations_generated": 9,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "sources": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "policy": "fixed_missingness_structure",
+    "manifest": [
+      {
+        "file": "perm_category_seed_42.csv",
+        "source": "category",
+        "seed": 42,
+        "total_items": 18132,
+        "permuted_available_items": 17889,
+        "fixed_missing_items": 243,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_brand_seed_42.csv",
+        "source": "brand",
+        "seed": 42,
+        "total_items": 18132,
+        "permuted_available_items": 12151,
+        "fixed_missing_items": 5981,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_title_seed_42.csv",
+        "source": "title",
+        "seed": 42,
+        "total_items": 18132,
+        "permuted_available_items": 18042,
+        "fixed_missing_items": 90,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_category_seed_43.csv",
+        "source": "category",
+        "seed": 43,
+        "total_items": 18132,
+        "permuted_available_items": 17889,
+        "fixed_missing_items": 243,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_brand_seed_43.csv",
+        "source": "brand",
+        "seed": 43,
+        "total_items": 18132,
+        "permuted_available_items": 12151,
+        "fixed_missing_items": 5981,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_title_seed_43.csv",
+        "source": "title",
+        "seed": 43,
+        "total_items": 18132,
+        "permuted_available_items": 18042,
+        "fixed_missing_items": 90,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_category_seed_44.csv",
+        "source": "category",
+        "seed": 44,
+        "total_items": 18132,
+        "permuted_available_items": 17889,
+        "fixed_missing_items": 243,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_brand_seed_44.csv",
+        "source": "brand",
+        "seed": 44,
+        "total_items": 18132,
+        "permuted_available_items": 12151,
+        "fixed_missing_items": 5981,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_title_seed_44.csv",
+        "source": "title",
+        "seed": 44,
+        "total_items": 18132,
+        "permuted_available_items": 18042,
+        "fixed_missing_items": 90,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      }
+    ]
+  }
+}

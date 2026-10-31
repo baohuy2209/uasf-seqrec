@@ -1,0 +1,864 @@
+{
+  "dataset": "beauty",
+  "masks": {
+    "num_masks_generated": 81,
+    "ratios": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "sources": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "manifest": [
+      {
+        "file": "mask_category_ratio_0.00_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 11998
+      },
+      {
+        "file": "mask_brand_ratio_0.00_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 9905
+      },
+      {
+        "file": "mask_title_ratio_0.00_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 11991
+      },
+      {
+        "file": "mask_category_ratio_0.00_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 11998
+      },
+      {
+        "file": "mask_brand_ratio_0.00_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 9905
+      },
+      {
+        "file": "mask_title_ratio_0.00_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 11991
+      },
+      {
+        "file": "mask_category_ratio_0.00_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 11998
+      },
+      {
+        "file": "mask_brand_ratio_0.00_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 9905
+      },
+      {
+        "file": "mask_title_ratio_0.00_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.0,
+        "actual_dropped_ratio": 0.0,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 11991
+      },
+      {
+        "file": "mask_category_ratio_0.10_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 10798
+      },
+      {
+        "file": "mask_brand_ratio_0.10_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.0999,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 8915
+      },
+      {
+        "file": "mask_title_ratio_0.10_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 10792
+      },
+      {
+        "file": "mask_category_ratio_0.10_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 10798
+      },
+      {
+        "file": "mask_brand_ratio_0.10_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.0999,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 8915
+      },
+      {
+        "file": "mask_title_ratio_0.10_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 10792
+      },
+      {
+        "file": "mask_category_ratio_0.10_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 10798
+      },
+      {
+        "file": "mask_brand_ratio_0.10_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.0999,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 8915
+      },
+      {
+        "file": "mask_title_ratio_0.10_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.1,
+        "actual_dropped_ratio": 0.1,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 10792
+      },
+      {
+        "file": "mask_category_ratio_0.20_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 9598
+      },
+      {
+        "file": "mask_brand_ratio_0.20_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 7924
+      },
+      {
+        "file": "mask_title_ratio_0.20_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 9593
+      },
+      {
+        "file": "mask_category_ratio_0.20_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 9598
+      },
+      {
+        "file": "mask_brand_ratio_0.20_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 7924
+      },
+      {
+        "file": "mask_title_ratio_0.20_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 9593
+      },
+      {
+        "file": "mask_category_ratio_0.20_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 9598
+      },
+      {
+        "file": "mask_brand_ratio_0.20_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 7924
+      },
+      {
+        "file": "mask_title_ratio_0.20_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.2,
+        "actual_dropped_ratio": 0.2,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 9593
+      },
+      {
+        "file": "mask_category_ratio_0.30_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 8399
+      },
+      {
+        "file": "mask_brand_ratio_0.30_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3001,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 6933
+      },
+      {
+        "file": "mask_title_ratio_0.30_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 8394
+      },
+      {
+        "file": "mask_category_ratio_0.30_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 8399
+      },
+      {
+        "file": "mask_brand_ratio_0.30_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3001,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 6933
+      },
+      {
+        "file": "mask_title_ratio_0.30_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 8394
+      },
+      {
+        "file": "mask_category_ratio_0.30_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 8399
+      },
+      {
+        "file": "mask_brand_ratio_0.30_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3001,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 6933
+      },
+      {
+        "file": "mask_title_ratio_0.30_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.3,
+        "actual_dropped_ratio": 0.3,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 8394
+      },
+      {
+        "file": "mask_category_ratio_0.40_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 7199
+      },
+      {
+        "file": "mask_brand_ratio_0.40_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 5943
+      },
+      {
+        "file": "mask_title_ratio_0.40_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 7195
+      },
+      {
+        "file": "mask_category_ratio_0.40_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 7199
+      },
+      {
+        "file": "mask_brand_ratio_0.40_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 5943
+      },
+      {
+        "file": "mask_title_ratio_0.40_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 7195
+      },
+      {
+        "file": "mask_category_ratio_0.40_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 7199
+      },
+      {
+        "file": "mask_brand_ratio_0.40_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 5943
+      },
+      {
+        "file": "mask_title_ratio_0.40_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.4,
+        "actual_dropped_ratio": 0.4,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 7195
+      },
+      {
+        "file": "mask_category_ratio_0.50_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 5999
+      },
+      {
+        "file": "mask_brand_ratio_0.50_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.4999,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 4953
+      },
+      {
+        "file": "mask_title_ratio_0.50_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 5995
+      },
+      {
+        "file": "mask_category_ratio_0.50_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 5999
+      },
+      {
+        "file": "mask_brand_ratio_0.50_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.4999,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 4953
+      },
+      {
+        "file": "mask_title_ratio_0.50_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 5995
+      },
+      {
+        "file": "mask_category_ratio_0.50_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 5999
+      },
+      {
+        "file": "mask_brand_ratio_0.50_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.4999,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 4953
+      },
+      {
+        "file": "mask_title_ratio_0.50_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.5,
+        "actual_dropped_ratio": 0.5,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 5995
+      },
+      {
+        "file": "mask_category_ratio_0.60_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 4799
+      },
+      {
+        "file": "mask_brand_ratio_0.60_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 3962
+      },
+      {
+        "file": "mask_title_ratio_0.60_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 4796
+      },
+      {
+        "file": "mask_category_ratio_0.60_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 4799
+      },
+      {
+        "file": "mask_brand_ratio_0.60_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 3962
+      },
+      {
+        "file": "mask_title_ratio_0.60_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 4796
+      },
+      {
+        "file": "mask_category_ratio_0.60_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 4799
+      },
+      {
+        "file": "mask_brand_ratio_0.60_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 3962
+      },
+      {
+        "file": "mask_title_ratio_0.60_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.6,
+        "actual_dropped_ratio": 0.6,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 4796
+      },
+      {
+        "file": "mask_category_ratio_0.70_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 3599
+      },
+      {
+        "file": "mask_brand_ratio_0.70_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7001,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 2971
+      },
+      {
+        "file": "mask_title_ratio_0.70_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 3597
+      },
+      {
+        "file": "mask_category_ratio_0.70_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 3599
+      },
+      {
+        "file": "mask_brand_ratio_0.70_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7001,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 2971
+      },
+      {
+        "file": "mask_title_ratio_0.70_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 3597
+      },
+      {
+        "file": "mask_category_ratio_0.70_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 3599
+      },
+      {
+        "file": "mask_brand_ratio_0.70_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7001,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 2971
+      },
+      {
+        "file": "mask_title_ratio_0.70_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.7,
+        "actual_dropped_ratio": 0.7,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 3597
+      },
+      {
+        "file": "mask_category_ratio_0.80_seed_42.csv",
+        "source": "category",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 42,
+        "originally_available": 11998,
+        "simulated_available": 2400
+      },
+      {
+        "file": "mask_brand_ratio_0.80_seed_42.csv",
+        "source": "brand",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 42,
+        "originally_available": 9905,
+        "simulated_available": 1981
+      },
+      {
+        "file": "mask_title_ratio_0.80_seed_42.csv",
+        "source": "title",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 42,
+        "originally_available": 11991,
+        "simulated_available": 2398
+      },
+      {
+        "file": "mask_category_ratio_0.80_seed_43.csv",
+        "source": "category",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 43,
+        "originally_available": 11998,
+        "simulated_available": 2400
+      },
+      {
+        "file": "mask_brand_ratio_0.80_seed_43.csv",
+        "source": "brand",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 43,
+        "originally_available": 9905,
+        "simulated_available": 1981
+      },
+      {
+        "file": "mask_title_ratio_0.80_seed_43.csv",
+        "source": "title",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 43,
+        "originally_available": 11991,
+        "simulated_available": 2398
+      },
+      {
+        "file": "mask_category_ratio_0.80_seed_44.csv",
+        "source": "category",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 44,
+        "originally_available": 11998,
+        "simulated_available": 2400
+      },
+      {
+        "file": "mask_brand_ratio_0.80_seed_44.csv",
+        "source": "brand",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 44,
+        "originally_available": 9905,
+        "simulated_available": 1981
+      },
+      {
+        "file": "mask_title_ratio_0.80_seed_44.csv",
+        "source": "title",
+        "target_ratio": 0.8,
+        "actual_dropped_ratio": 0.8,
+        "seed": 44,
+        "originally_available": 11991,
+        "simulated_available": 2398
+      }
+    ]
+  },
+  "permutations": {
+    "num_permutations_generated": 9,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "sources": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "policy": "fixed_missingness_structure",
+    "manifest": [
+      {
+        "file": "perm_category_seed_42.csv",
+        "source": "category",
+        "seed": 42,
+        "total_items": 11998,
+        "permuted_available_items": 11998,
+        "fixed_missing_items": 0,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_brand_seed_42.csv",
+        "source": "brand",
+        "seed": 42,
+        "total_items": 11998,
+        "permuted_available_items": 9905,
+        "fixed_missing_items": 2093,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_title_seed_42.csv",
+        "source": "title",
+        "seed": 42,
+        "total_items": 11998,
+        "permuted_available_items": 11991,
+        "fixed_missing_items": 7,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_category_seed_43.csv",
+        "source": "category",
+        "seed": 43,
+        "total_items": 11998,
+        "permuted_available_items": 11998,
+        "fixed_missing_items": 0,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_brand_seed_43.csv",
+        "source": "brand",
+        "seed": 43,
+        "total_items": 11998,
+        "permuted_available_items": 9905,
+        "fixed_missing_items": 2093,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_title_seed_43.csv",
+        "source": "title",
+        "seed": 43,
+        "total_items": 11998,
+        "permuted_available_items": 11991,
+        "fixed_missing_items": 7,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_category_seed_44.csv",
+        "source": "category",
+        "seed": 44,
+        "total_items": 11998,
+        "permuted_available_items": 11998,
+        "fixed_missing_items": 0,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_brand_seed_44.csv",
+        "source": "brand",
+        "seed": 44,
+        "total_items": 11998,
+        "permuted_available_items": 9905,
+        "fixed_missing_items": 2093,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      },
+      {
+        "file": "perm_title_seed_44.csv",
+        "source": "title",
+        "seed": 44,
+        "total_items": 11998,
+        "permuted_available_items": 11991,
+        "fixed_missing_items": 7,
+        "is_bijective": true,
+        "policy": "fixed_missingness_structure"
+      }
+    ]
+  }
+}

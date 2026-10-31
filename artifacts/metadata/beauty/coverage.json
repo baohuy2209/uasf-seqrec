@@ -1,0 +1,42 @@
+{
+  "dataset": "Beauty",
+  "train_base_catalog": {
+    "scope": "train_base_catalog",
+    "total_items": 11998,
+    "category": {
+      "available": 11998,
+      "missing": 0,
+      "coverage_pct": 100.0
+    },
+    "brand": {
+      "available": 9905,
+      "missing": 2093,
+      "coverage_pct": 82.56
+    },
+    "title": {
+      "available": 11991,
+      "missing": 7,
+      "coverage_pct": 99.94
+    }
+  },
+  "all_unique_items_cohort": {
+    "scope": "all_unique_items_cohort",
+    "total_items": 12101,
+    "category": {
+      "available": 12101,
+      "missing": 0,
+      "coverage_pct": 100.0
+    },
+    "brand": {
+      "available": 9983,
+      "missing": 2118,
+      "coverage_pct": 82.5
+    },
+    "title": {
+      "available": 12094,
+      "missing": 7,
+      "coverage_pct": 99.94
+    }
+  },
+  "oov_items_count": 103
+}

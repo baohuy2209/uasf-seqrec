@@ -1,0 +1,42 @@
+{
+  "dataset": "Sports and Outdoors",
+  "train_base_catalog": {
+    "scope": "train_base_catalog",
+    "total_items": 18132,
+    "category": {
+      "available": 17889,
+      "missing": 243,
+      "coverage_pct": 98.66
+    },
+    "brand": {
+      "available": 12151,
+      "missing": 5981,
+      "coverage_pct": 67.01
+    },
+    "title": {
+      "available": 18042,
+      "missing": 90,
+      "coverage_pct": 99.5
+    }
+  },
+  "all_unique_items_cohort": {
+    "scope": "all_unique_items_cohort",
+    "total_items": 18357,
+    "category": {
+      "available": 18112,
+      "missing": 245,
+      "coverage_pct": 98.67
+    },
+    "brand": {
+      "available": 12259,
+      "missing": 6098,
+      "coverage_pct": 66.78
+    },
+    "title": {
+      "available": 18267,
+      "missing": 90,
+      "coverage_pct": 99.51
+    }
+  },
+  "oov_items_count": 225
+}
