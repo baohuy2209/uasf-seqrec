@@ -55,6 +55,7 @@ class IndependentEvaluator:
         num_items: int,
         k_list: List[int] = [10, 20],
         mask_seen_items: bool = True,
+        mask_policy: Optional[str] = None,
     ):
         if num_items < 1:
             raise ValueError("num_items must be positive")
@@ -62,7 +63,10 @@ class IndependentEvaluator:
             raise ValueError("Supported cutoffs are 10 and 20")
         self.num_items = num_items
         self.k_list = sorted(k_list)
-        self.mask_seen_items = mask_seen_items
+        self.mask_policy = mask_policy or ('train_base_exclude_target' if mask_seen_items else 'none')
+        if self.mask_policy not in ('none','train_base_exclude_target','input_history_exclude_target','input_history_strict'):
+            raise ValueError('Unknown masking policy')
+        self.mask_seen_items = self.mask_policy != 'none'
 
     @staticmethod
     def _compute_ndcg(rank: int, k: int) -> float:
@@ -80,6 +84,7 @@ class IndependentEvaluator:
         targets: List[int],
         user_indices: List[int],
         seen_items_per_user: Optional[Dict[int, Set[int]]] = None,
+        histories: Optional[List[List[int]]] = None,
     ) -> EvaluationResult:
         """
         Evaluate full ranking from score matrix (B, num_items) where items are 1..num_items.
@@ -98,6 +103,8 @@ class IndependentEvaluator:
         if scores_np.ndim != 2:
             raise ValueError("scores must be a two-dimensional catalog matrix")
         B, N = scores_np.shape
+        if self.mask_policy.startswith('input_history') and (histories is None or len(histories) != B):
+            raise ValueError('Input-history masking requires one aligned history per score row')
         if N != self.num_items:
             raise ValueError(f"Expected {self.num_items} catalog columns, got {N}")
         if len(user_indices) != B:
@@ -132,17 +139,17 @@ class IndependentEvaluator:
             user_scores = scores_np[b]
 
             # Seen-item masking: set score to -inf for items already in user history
-            if self.mask_seen_items and seen_items_per_user and u_idx in seen_items_per_user:
-                seen = seen_items_per_user[u_idx]
+            if self.mask_seen_items:
+                seen = set(histories[b]) if self.mask_policy.startswith('input_history') else (seen_items_per_user or {}).get(u_idx,set())
                 for s_item in seen:
                     # In 0-based column indexing: item i is at column i - 1
                     col = s_item - 1
-                    if 0 <= col < N and s_item != tgt:
+                    if 0 <= col < N and (s_item != tgt or self.mask_policy == "input_history_strict"):
                         user_scores[col] = -np.inf
 
             # Column of ground truth target
             tgt_col = tgt - 1
-            if tgt_col < 0 or tgt_col >= N:
+            if tgt_col < 0 or tgt_col >= N or not np.isfinite(user_scores[tgt_col]):
                 # OOV target, assigned worst rank (always a miss across all k <= N)
                 rank = N + 1
             else:
@@ -155,7 +162,7 @@ class IndependentEvaluator:
                 tied_before = np.sum((user_scores == tgt_score) & (col_indices < tgt_col))
                 rank = int(greater_count + tied_before + 1)
 
-            valid_target = 0 <= tgt_col < N
+            valid_target = 0 <= tgt_col < N and np.isfinite(user_scores[tgt_col])
             ndcg_10 = self._compute_ndcg(rank, 10) if valid_target else 0.0
             recall_10 = self._compute_recall(rank, 10) if valid_target else 0.0
             ndcg_20 = self._compute_ndcg(rank, 20) if valid_target else 0.0

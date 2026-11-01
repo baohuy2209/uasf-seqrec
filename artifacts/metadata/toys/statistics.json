@@ -1,0 +1,43 @@
+{
+  "dataset": "Toys_and_Games_2014",
+  "users": 19412,
+  "original_items": 11924,
+  "catalog_train_base_items": 11766,
+  "interactions": 167597,
+  "unique_user_item_pairs": 167597,
+  "sparsity": 0.9992759409428199,
+  "sparsity_definition": "1 - unique_user_item_pairs / (users * original_items)",
+  "mean_sequence_length": 8.633680197815783,
+  "min_sequence_length": 5,
+  "max_sequence_length": 550,
+  "train_base_events": 109361,
+  "train_base_pairs": 89949,
+  "train_meta_contexts": 19228,
+  "validation_contexts": 19412,
+  "test_contexts": 19412,
+  "oov_counts": {
+    "train_meta": 184,
+    "val": 295,
+    "test": 723
+  },
+  "metadata_status": "available",
+  "metadata_coverage_original_items": {
+    "category": 0.9710667561221067,
+    "brand": 0.8531533042603153,
+    "title": 0.9950519959745052
+  },
+  "metadata_coverage_train_base_catalog": {
+    "category": 0.970763216046235,
+    "brand": 0.8533061363250043,
+    "title": 0.9952405235424103
+  },
+  "category_vocab_train_base": 443,
+  "brand_vocab_train_base": 1285,
+  "title_encoder": "all-MiniLM-L6-v2",
+  "title_encoder_status": "encoded",
+  "expected_reference_stats": {
+    "users": 19412,
+    "items": 11924
+  },
+  "reference_users_items_match": true
+}

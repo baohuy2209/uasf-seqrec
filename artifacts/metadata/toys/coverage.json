@@ -1,7 +1,6 @@
 {
   "dataset": "Toys and Games",
   "train_base_catalog": {
-    "scope": "train_base_catalog",
     "total_items": 11766,
     "category": {
       "available": 11422,
@@ -20,7 +19,6 @@
     }
   },
   "all_unique_items_cohort": {
-    "scope": "all_unique_items_cohort",
     "total_items": 11924,
     "category": {
       "available": 11579,

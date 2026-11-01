@@ -1,492 +1,229 @@
-"""
-validate.py - Comprehensive acceptance criteria verification for metadata artifacts.
-
-Verifications performed:
-1. Item Mapping & Row Alignment (item_map.csv vs metadata.csv vs availability_mask.csv):
-   - model_item_id is strictly 1..N continuous.
-   - All train-base items in item_map.csv match metadata.csv model_item_id and raw_item_id exactly.
-   - OOV items have model_item_id == 0 and in_train_base == False.
-2. Title Embeddings Integrity (title_embeddings.npy):
-   - Dimension, dtype (float32), finite values (no NaN or Inf).
-   - Missing titles (has_title == False) strictly map to zero vectors.
-   - Available titles (has_title == True) have non-zero norm.
-3. Coverage Consistency & Ground-Truth Cross-Check (coverage.json vs metadata.csv):
-   - Available + Missing == Total.
-   - Coverage percentage formula: CoveragePct == round(Available / Total * 100, 2).
-   - Ground-truth counts in coverage.json match exact boolean sums in metadata.csv.
-   - Full cohort coverage consistency against item_map.csv.
-4. Manifest Deep Integrity & Provenance (manifest.json):
-   - num_catalog_items, num_total_cohort_items, num_oov_items match metadata and item_map.
-   - title_embedding shape, dimension, and relative path match actual array.
-   - Raw data files exist and have valid SHA-256 signatures; optional re-computation via --verify-raw-hash.
-5. G05 Acceptance Test (Mask Dominance in MultimodalSequenceDataset):
-   - Evaluates both Dense (2D) and Categorical (1D) modalities.
-   - Uses synthetic non-zero attribute tensors with positive and negative controls.
-   - Mathematically proves that availability_mask == 0 completely zeroes features without false passes.
-"""
-
+"""Strict artifact, perturbation, loader and optional raw-source verification."""
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
-# Enable UTF-8 console output if available
-if hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
-if hasattr(sys.stderr, "reconfigure"):
-    try:
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
-
 import numpy as np
-import pandas as pd
 import torch
+import yaml
 
-# Ensure src is on sys.path
 SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
-
 from taimma.paths import resolve_project_path
-from taimma.data.split import SequenceSample, compute_file_sha256
+from taimma.data.ingestion import Amazon2014Ingestor
+from taimma.data.split import SequenceSample, SequenceSplitter, compute_file_sha256
 from taimma.training.multimodal_trainer import MultimodalSequenceDataset
+from .contracts import SOURCES, categories, check_availability, coverage, flags, read_json, read_table, require
+from .loader import load_catalog
 
 
-def is_valid_sha256(hash_str: Optional[str]) -> bool:
-    """Validate 64-character hexadecimal SHA256 string."""
-    if not hash_str or not isinstance(hash_str, str):
-        return False
-    return bool(re.fullmatch(r"^[a-fA-F0-9]{64}$", hash_str.strip()))
+def is_valid_sha256(value):
+    return isinstance(value, str) and re.fullmatch(r"[a-fA-F0-9]{64}", value) is not None
 
 
-def validate_dataset_artifacts(
-    dataset_dir: Path,
-    verify_raw_hash: bool = False,
-) -> Dict[str, Any]:
-    """
-    Validate all metadata artifacts for a given dataset directory.
-    Raises AssertionError or FileNotFoundError if any check fails.
-    """
-    dataset_name = dataset_dir.name
-    print(f"\n=======================================================")
-    print(f"Validating Metadata Artifacts: {dataset_name}")
-    print(f"Directory: {dataset_dir}")
-    print(f"=======================================================")
-
-    item_map_path = dataset_dir / "item_map.csv"
-    meta_path = dataset_dir / "metadata.csv"
-    mask_path = dataset_dir / "availability_mask.csv"
-    embed_path = dataset_dir / "title_embeddings.npy"
-    coverage_path = dataset_dir / "coverage.json"
-    manifest_path = dataset_dir / "manifest.json"
-
-    # 0. Check Existence of All Required Artifacts
-    required_files = [
-        (item_map_path, "item_map.csv"),
-        (meta_path, "metadata.csv"),
-        (mask_path, "availability_mask.csv"),
-        (embed_path, "title_embeddings.npy"),
-        (coverage_path, "coverage.json"),
-        (manifest_path, "manifest.json"),
-    ]
-    for p, name in required_files:
-        if not p.exists():
-            raise FileNotFoundError(f"Missing required artifact: {p}")
-
-    df_map = pd.read_csv(item_map_path)
-    df_meta = pd.read_csv(meta_path)
-    df_mask = pd.read_csv(mask_path)
-    embeddings = np.load(embed_path)
-
-    with open(coverage_path, "r", encoding="utf-8") as f:
-        cov_data = json.load(f)
-
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        manifest = json.load(f)
-
-    n_train_base = len(df_meta)
-    assert n_train_base >= 2, f"Catalog must contain at least 2 items for verification, found {n_train_base}"
-
-    # -------------------------------------------------------------
-    # 1. Item Mapping & Row Alignment (Addresses Issue 1)
-    # -------------------------------------------------------------
-    print(f"1. Checking Item Mapping, Row Alignment & 1..N Ordering: {n_train_base} items")
-
-    # model_item_id in metadata must be strictly 1..N continuous
-    expected_ids = np.arange(1, n_train_base + 1)
-    meta_model_ids = df_meta["model_item_id"].to_numpy()
-    assert (meta_model_ids == expected_ids).all(), (
-        f"metadata.csv model_item_id must be strictly 1..{n_train_base} continuous"
-    )
-
-    # availability_mask.csv row alignment
-    assert len(df_mask) == n_train_base, (
-        f"Row count mismatch between mask ({len(df_mask)}) and metadata ({n_train_base})"
-    )
-    assert (df_mask["model_item_id"].to_numpy() == expected_ids).all(), (
-        "availability_mask.csv model_item_id order must match metadata exactly"
-    )
-
-    # item_map.csv validation against metadata.csv
-    df_train_map = df_map[df_map["in_train_base"].astype(bool)].sort_values("model_item_id")
-    assert len(df_train_map) == n_train_base, (
-        f"item_map.csv in_train_base item count ({len(df_train_map)}) does not match metadata ({n_train_base})"
-    )
-    assert (df_train_map["model_item_id"].to_numpy() == expected_ids).all(), (
-        "item_map.csv train-base model_item_id must match 1..N continuous"
-    )
-    assert (df_train_map["raw_item_id"].astype(str).to_numpy() == df_meta["raw_item_id"].astype(str).to_numpy()).all(), (
-        "CRITICAL: Raw item ID mapping mismatch between item_map.csv and metadata.csv!"
-    )
-    assert df_train_map["raw_item_id"].nunique() == n_train_base, (
-        "raw_item_id contains duplicate values in train-base catalog!"
-    )
-
-    # Validate OOV rows in item_map.csv
-    df_oov_map = df_map[~df_map["in_train_base"].astype(bool)]
-    if len(df_oov_map) > 0:
-        assert (df_oov_map["model_item_id"].to_numpy() == 0).all(), (
-            "All OOV items in item_map.csv must have model_item_id == 0"
-        )
-        assert df_oov_map["raw_item_id"].notna().all(), (
-            "OOV items in item_map.csv must have non-null raw_item_id"
-        )
-
-    print(f"  -> [PASS] item_map.csv, metadata.csv, and availability_mask.csv are 100% aligned ({n_train_base} train-base, {len(df_oov_map)} OOV).")
-
-    # -------------------------------------------------------------
-    # 2. Title Embeddings Integrity & Zero Placeholders (Addresses Issue 2 & 3)
-    # -------------------------------------------------------------
-    embed_shape = embeddings.shape
-    dim = embed_shape[1]
-    print(f"2. Checking Title Embeddings Integrity: shape={embed_shape}, dtype={embeddings.dtype}")
-    assert embed_shape[0] == n_train_base, (
-        f"Embedding rows ({embed_shape[0]}) do not match catalog items ({n_train_base})"
-    )
-    assert embeddings.dtype == np.float32, (
-        f"Embedding dtype must be float32, got {embeddings.dtype}"
-    )
-    assert np.isfinite(embeddings).all(), "Title embeddings contain NaN or Inf values!"
-
-    # Check zero placeholders for missing titles
-    has_title_flags = df_mask["has_title"].astype(bool).to_numpy()
-    missing_title_indices = np.where(~has_title_flags)[0]
-    available_title_indices = np.where(has_title_flags)[0]
-
-    if len(missing_title_indices) > 0:
-        missing_vecs = embeddings[missing_title_indices]
-        assert np.allclose(missing_vecs, 0.0), (
-            "Items with has_title=False MUST have strictly zero embedding vectors!"
-        )
-
-    if len(available_title_indices) > 0:
-        avail_norms = np.linalg.norm(embeddings[available_title_indices], axis=1)
-        assert (avail_norms > 1e-5).all(), (
-            "Items with has_title=True must have non-zero embedding vectors!"
-        )
-
-    print(f"  -> [PASS] Embeddings finite: {len(available_title_indices)} non-zero vectors, {len(missing_title_indices)} zero placeholders verified.")
-
-    # -------------------------------------------------------------
-    # 3. Coverage Arithmetic, Percentage & Ground Truth (Addresses Issue 4)
-    # -------------------------------------------------------------
-    print("3. Checking Coverage Arithmetic, Formulas, and Ground-Truth Cross-Check")
-    assert "train_base_catalog" in cov_data, "coverage.json missing 'train_base_catalog' section"
-    tb_cov = cov_data["train_base_catalog"]
-    assert tb_cov["total_items"] == n_train_base, (
-        f"coverage.json train_base total_items ({tb_cov['total_items']}) != metadata items ({n_train_base})"
-    )
-
-    for attr in ["category", "brand", "title"]:
-        assert attr in tb_cov, f"Attribute '{attr}' missing in train_base_catalog coverage"
-        c_info = tb_cov[attr]
-        avail = c_info["available"]
-        miss = c_info["missing"]
-        cov_pct = c_info["coverage_pct"]
-
-        # A) Arithmetic: Available + Missing == Total
-        assert avail + miss == n_train_base, (
-            f"Coverage sum mismatch for '{attr}': {avail} + {miss} != {n_train_base}"
-        )
-
-        # B) Percentage Formula Verification: CoveragePct == round(Available / Total * 100, 2)
-        expected_pct = round(avail / max(1, n_train_base) * 100.0, 2)
-        assert np.isclose(expected_pct, cov_pct, atol=1e-2), (
-            f"Coverage percentage formula mismatch for '{attr}': expected {expected_pct}%, got {cov_pct}%"
-        )
-
-        # C) Ground-Truth cross-check with metadata.csv boolean flags
-        gt_avail = int(df_meta[f"has_{attr}"].astype(bool).sum())
-        gt_miss = n_train_base - gt_avail
-        assert avail == gt_avail, (
-            f"Ground truth mismatch for '{attr}': coverage.json available ({avail}) != metadata.csv true count ({gt_avail})"
-        )
-        assert miss == gt_miss, (
-            f"Ground truth mismatch for '{attr}': coverage.json missing ({miss}) != metadata.csv false count ({gt_miss})"
-        )
-
-    # Validate all_unique_items_cohort in coverage.json
-    if "all_unique_items_cohort" in cov_data:
-        cohort_cov = cov_data["all_unique_items_cohort"]
-        total_cohort = cohort_cov["total_items"]
-        assert total_cohort == len(df_map), (
-            f"Cohort total items ({total_cohort}) != item_map.csv total items ({len(df_map)})"
-        )
-        for attr in ["category", "brand", "title"]:
-            c_info = cohort_cov[attr]
-            assert c_info["available"] + c_info["missing"] == total_cohort
-            exp_cohort_pct = round(c_info["available"] / max(1, total_cohort) * 100.0, 2)
-            assert np.isclose(exp_cohort_pct, c_info["coverage_pct"], atol=1e-2)
-
-    assert cov_data.get("oov_items_count", 0) == len(df_oov_map), (
-        f"OOV count mismatch in coverage.json: {cov_data.get('oov_items_count')} != {len(df_oov_map)}"
-    )
-    print("  -> [PASS] Coverage counts, mathematical percentages, and ground-truth metadata cross-checks verified.")
-
-    # -------------------------------------------------------------
-    # 4. Manifest Deep Integrity & Provenance (Addresses Issue 5)
-    # -------------------------------------------------------------
-    print("4. Checking Manifest Deep Integrity & Data Provenance")
-    assert manifest["dataset"].strip().lower().startswith(dataset_name.lower()) or dataset_name.lower() in manifest["dataset"].lower(), (
-        f"Manifest dataset name '{manifest.get('dataset')}' does not match directory '{dataset_name}'"
-    )
-    assert manifest["num_catalog_items"] == n_train_base, (
-        f"Manifest num_catalog_items ({manifest['num_catalog_items']}) != metadata items ({n_train_base})"
-    )
-    assert manifest["num_total_cohort_items"] == len(df_map), (
-        f"Manifest num_total_cohort_items ({manifest['num_total_cohort_items']}) != item_map items ({len(df_map)})"
-    )
-    assert manifest["num_oov_items"] == len(df_oov_map), (
-        f"Manifest num_oov_items ({manifest['num_oov_items']}) != actual OOV items ({len(df_oov_map)})"
-    )
-
-    # Embedding metadata in manifest
-    manifest_embed = manifest["title_embedding"]
-    assert manifest_embed["shape"] == list(embed_shape), (
-        f"Manifest title_embedding shape {manifest_embed['shape']} != actual {list(embed_shape)}"
-    )
-    assert manifest_embed["dim"] == dim, (
-        f"Manifest title_embedding dim ({manifest_embed['dim']}) != actual {dim}"
-    )
-    assert manifest_embed["path"] == embed_path.name, (
-        f"Manifest embedding path '{manifest_embed['path']}' != '{embed_path.name}'"
-    )
-
-    # Raw files provenance check
-    reviews_file = Path(manifest["reviews_file"])
-    assert reviews_file.exists(), f"Raw reviews file in manifest does not exist: {reviews_file}"
-    assert is_valid_sha256(manifest["reviews_sha256"]), (
-        f"reviews_sha256 in manifest is not a valid 64-hex hash: {manifest.get('reviews_sha256')}"
-    )
-
-    if manifest.get("metadata_file"):
-        meta_file = Path(manifest["metadata_file"])
-        assert meta_file.exists(), f"Raw metadata file in manifest does not exist: {meta_file}"
-        assert is_valid_sha256(manifest["metadata_sha256"]), (
-            f"metadata_sha256 in manifest is not a valid 64-hex hash: {manifest.get('metadata_sha256')}"
-        )
-
-    # Optional deep cryptographic audit of raw files
-    if verify_raw_hash:
-        print("  -> Computing & verifying raw data SHA-256 checksums (deep verification enabled)...")
-        act_rev_hash = compute_file_sha256(reviews_file)
-        assert act_rev_hash == manifest["reviews_sha256"], (
-            f"Raw reviews SHA-256 mismatch! Manifest: {manifest['reviews_sha256']}, Computed: {act_rev_hash}"
-        )
-        if manifest.get("metadata_file"):
-            act_meta_hash = compute_file_sha256(meta_file)
-            assert act_meta_hash == manifest["metadata_sha256"], (
-                f"Raw metadata SHA-256 mismatch! Manifest: {manifest['metadata_sha256']}, Computed: {act_meta_hash}"
-            )
-        print("  -> [PASS] Cryptographic SHA-256 checksums strictly verified for raw files.")
-    else:
-        print("  -> [PASS] Raw file existence and 64-hex SHA-256 signature formats verified.")
-
-    # -------------------------------------------------------------
-    # 5. G05 Acceptance Test: Dual Modality Mask Dominance (Addresses Issues 2 & 3)
-    # -------------------------------------------------------------
-    print("5. G05 Acceptance Test: Dual Modality Mask Dominance in Model Loader")
-    # Dynamically select test items without hardcoding or risking out-of-bounds slicing
-    k_test = min(n_train_base, 5)
-
-    # Synthetic non-zero tensors guarantee test cannot pass by accidental zeroes:
-    # 1. 2D Dense Embedding (Title): distinct non-zero vectors for all test items
-    dummy_title_attrs = torch.empty((k_test, dim), dtype=torch.float32)
-    for i in range(k_test):
-        dummy_title_attrs[i] = torch.full((dim,), fill_value=float(i + 10.0))
-
-    # 2. 1D Categorical Attribute (Category): distinct non-zero integer IDs for all test items
-    dummy_cat_attrs = torch.tensor([idx + 100 for idx in range(k_test)], dtype=torch.long)
-
-    # Masks for test items:
-    # For Title: Item 1 has mask=0 (disabled), Item 2 has mask=1 (enabled)
-    title_mask = torch.ones(k_test, dtype=torch.float32)
-    title_mask[0] = 0.0  # Item 1 disabled
-
-    # For Category: Item 1 has mask=1 (enabled), Item 2 has mask=0 (disabled)
-    cat_mask = torch.ones(k_test, dtype=torch.float32)
-    cat_mask[1] = 0.0  # Item 2 disabled
-
-    # History: [0, 1, 2] -> index 0 is padding (0), index 1 is item 1, index 2 is item 2
-    sample = SequenceSample(
-        user_idx=0,
-        history=[0, 1, 2],
-        target=2,
-        history_len=2,
-    )
-
-    ds = MultimodalSequenceDataset(
-        samples=[sample],
-        catalog_source_attrs={"title": dummy_title_attrs, "category": dummy_cat_attrs},
-        catalog_availability_masks={"title": title_mask, "category": cat_mask},
-    )
-
-    batch_item = ds[0]
-    source_seqs = batch_item["source_seqs"]
-    title_seq = source_seqs["title"]      # Shape: (3, dim)
-    cat_seq = source_seqs["category"]     # Shape: (3,)
-
-    # Verification A: Padding position (item 0) MUST produce zeros
-    assert torch.allclose(title_seq[0], torch.zeros(dim)), "Padding position did not produce zero title vector"
-    assert cat_seq[0].item() == 0, "Padding position did not produce zero category"
-
-    # Verification B: Title Modality (Dense 2D)
-    # Item 1 (mask=0): Negative control -> MUST be strictly zero vector
-    assert torch.allclose(title_seq[1], torch.zeros(dim)), (
-        "CRITICAL: Title mask=0 did NOT block features in MultimodalSequenceDataset!"
-    )
-    # Item 2 (mask=1): Positive control -> MUST retain the non-zero attribute vector exactly
-    assert torch.allclose(title_seq[2], dummy_title_attrs[1]), (
-        "CRITICAL: Title mask=1 did NOT preserve the original attribute vector!"
-    )
-    assert not torch.allclose(title_seq[2], torch.zeros(dim)), (
-        "Positive control failed: Item 2 title is unexpectedly zero"
-    )
-
-    # Verification C: Category Modality (Categorical 1D)
-    # Item 1 (mask=1): Positive control -> MUST retain the category index exactly (100)
-    assert cat_seq[1].item() == dummy_cat_attrs[0].item(), (
-        "CRITICAL: Category mask=1 did NOT preserve the original category index!"
-    )
-    # Item 2 (mask=0): Negative control -> MUST be strictly zero
-    assert cat_seq[2].item() == 0, (
-        "CRITICAL: Category mask=0 did NOT block categorical feature in MultimodalSequenceDataset!"
-    )
-
-    print("  -> [PASS] G05 Certified: Dual-modality positive & negative controls prove mask dominance 100%.")
-
-    print(f"\nAll verification checks PASSED for {dataset_name}!\n")
-    return {
-        "status": "PASS",
-        "dataset": dataset_name,
-        "items": n_train_base,
-        "oov_items": len(df_oov_map),
-        "embedding_shape": list(embed_shape),
-        "coverage": tb_cov,
-    }
+def validate_perturbations(directory, avail, config):
+    root = directory/"perturbations"
+    manifest = read_json(root/"perturbations_manifest.json")
+    ratios, seeds, sources = config["missing_ratios"], config["seeds"], config["sources"]
+    require(manifest["masks"]["ratios"] == ratios and manifest["masks"]["seeds"] == seeds
+            and manifest["masks"]["sources"] == sources, "Perturbation config/manifest mismatch")
+    require(manifest["permutations"]["seeds"] == seeds and manifest["permutations"]["sources"] == sources,
+            "Permutation config/manifest mismatch")
+    expected_masks, expected_perms = set(), set()
+    for source in sources:
+        original = flags(avail[f"has_{source}"])
+        valid = np.flatnonzero(original)
+        for seed in seeds:
+            for ratio in ratios:
+                name = f"mask_{source}_ratio_{ratio:.2f}_seed_{seed}.csv"
+                expected_masks.add(name)
+                table = read_table(root/"masks"/name)
+                expected = original.copy()
+                rng = np.random.RandomState(seed + int(ratio*1000))
+                expected[rng.choice(valid, size=round(len(valid)*ratio), replace=False)] = False
+                require(np.array_equal(table.model_item_id, avail.model_item_id), f"{name}: ID alignment")
+                require(np.array_equal(flags(table.original_available), original), f"{name}: base mask")
+                require(np.array_equal(flags(table.simulated_available), expected), f"{name}: seed/ratio/mask mismatch")
+                require(np.array_equal(flags(table.is_dropped), original & ~expected), f"{name}: is_dropped mismatch")
+            name = f"perm_{source}_seed_{seed}.csv"
+            expected_perms.add(name)
+            table = read_table(root/"permutations"/name)
+            expected = avail.model_item_id.to_numpy().copy()
+            expected[valid] = expected[valid[np.random.RandomState(seed).permutation(len(valid))]]
+            require(np.array_equal(table.model_item_id, avail.model_item_id), f"{name}: ID alignment")
+            require(np.array_equal(table.permuted_source_item_id, expected), f"{name}: permutation mismatch")
+            require(np.array_equal(flags(table.is_available), original), f"{name}: availability mismatch")
+            require((table.source == source).all() and (table.seed == seed).all(), f"{name}: source/seed mismatch")
+    require({p.name for p in (root/"masks").glob("*.csv")} == expected_masks, "Missing/extra mask files")
+    require({p.name for p in (root/"permutations").glob("*.csv")} == expected_perms, "Missing/extra permutations")
+    for section, names, count_key in [("masks", expected_masks, "num_masks_generated"),
+                                       ("permutations", expected_perms, "num_permutations_generated")]:
+        records = manifest[section]["manifest"]
+        require(len(records) == len(names) and {r["file"] for r in records} == names
+                and manifest[section][count_key] == len(names), f"{section}: incomplete manifest")
+    return len(expected_masks), len(expected_perms)
 
 
-def resolve_metadata_base(path_str: str) -> Path:
-    """Resolve directory path intelligently from either current dir or repo root."""
-    candidate = Path(path_str).expanduser()
-    if candidate.exists():
-        return candidate.resolve()
-    resolved = resolve_project_path(path_str)
-    return resolved
+def check_loader(directory, avail, config):
+    attrs, masks = load_catalog(directory)
+    n = len(avail)
+    # Sample actual enabled/disabled rows, and exercise each saved perturbation type.
+    for source in SOURCES:
+        original = flags(avail[f"has_{source}"])
+        indices = list(np.flatnonzero(original)[:2]) + list(np.flatnonzero(~original)[:2])
+        sample = SequenceSample(0, [0] + [int(i)+1 for i in indices], 1, len(indices))
+        batch = MultimodalSequenceDataset([sample], attrs, masks)[0]
+        expected = torch.zeros_like(batch["source_seqs"][source])
+        for pos, i in enumerate(indices, 1):
+            if original[i]:
+                expected[pos] = attrs[source][i]
+        require(torch.equal(batch["source_seqs"][source], expected), f"{source}: real loader mask failure")
+        seed, ratio = config["seeds"][0], max(config["missing_ratios"])
+        mask_path = directory/"perturbations/masks"/f"mask_{source}_ratio_{ratio:.2f}_seed_{seed}.csv"
+        perm_path = directory/"perturbations/permutations"/f"perm_{source}_seed_{seed}.csv"
+        pert_attrs, pert_masks = load_catalog(directory, {source:mask_path}, {source:perm_path})
+        table = read_table(mask_path)
+        require(torch.equal(pert_masks[source], torch.tensor(flags(table.simulated_available), dtype=torch.float32)),
+                f"{source}: saved synthetic mask not applied")
+        donor = read_table(perm_path).permuted_source_item_id.to_numpy(dtype=np.int64)-1
+        require(torch.equal(pert_attrs[source], attrs[source][torch.from_numpy(donor)]),
+                f"{source}: saved permutation not applied")
+        dropped = np.flatnonzero(original & ~flags(table.simulated_available))[:2]
+        sample = SequenceSample(0, [0]+[int(i)+1 for i in dropped], 1, len(dropped))
+        batch = MultimodalSequenceDataset([sample], pert_attrs, pert_masks)[0]
+        require(torch.count_nonzero(batch["source_seqs"][source]) == 0,
+                f"{source}: dropped features leaked through sequence loader")
+
+
+def validate_dataset_artifacts(dataset_dir, verify_raw_hash=False, raw_root=None,
+                               artifacts_only=False, perturbation_config=None):
+    directory = Path(dataset_dir)
+    manifest = read_json(directory/"manifest.json")
+    require(manifest["dataset_key"].lower().split("_")[0] == directory.name, "Dataset directory/key mismatch")
+    require(manifest.get("schema_version") == 2, "Regenerate legacy metadata with schema_version=2")
+    require(manifest["category_policy"] == "multilabel_without_root", "Unexpected Category policy")
+    meta, avail = read_table(directory/"metadata.csv"), read_table(directory/"availability_mask.csv")
+    mapping, cohort = read_table(directory/"item_map.csv"), read_table(directory/"cohort_metadata.csv")
+    cov, stats = read_json(directory/"coverage.json"), read_json(directory/"statistics.json")
+    n = len(meta)
+    require(n > 0, "Empty catalog")
+    check_availability(meta)
+    check_availability(avail)
+    require(len(avail) == n, "Availability row count mismatch")
+    require(mapping.raw_item_id.is_unique and cohort.raw_item_id.is_unique, "Duplicate raw item IDs")
+    require(mapping[["model_item_id","raw_item_id","in_train_base"]].equals(
+            cohort[["model_item_id","raw_item_id","in_train_base"]]), "Cohort/mapping mismatch")
+    train = mapping[flags(mapping.in_train_base)].sort_values("model_item_id")
+    require(np.array_equal(train.model_item_id, meta.model_item_id)
+            and np.array_equal(train.raw_item_id, meta.raw_item_id), "Catalog mapping mismatch")
+    require((mapping.loc[~flags(mapping.in_train_base), "model_item_id"] == 0).all(), "OOV IDs must be zero")
+    cat_vocab, brand_vocab = read_json(directory/"category_vocab.json"), read_json(directory/"brand_vocab.json")
+    labels = [categories(v) for v in meta.categories]
+    expected_cats = {v:i+1 for i,v in enumerate(sorted({v for vs in labels for v in vs}))}
+    expected_brands = {v:i+1 for i,v in enumerate(sorted({v for v in meta.brand if v.strip()}))}
+    require(cat_vocab == expected_cats and brand_vocab == expected_brands, "Vocabulary differs from Train-base labels")
+    require([json.loads(v) for v in meta.category_indices] == [[cat_vocab[v] for v in vs] for vs in labels],
+            "Category indices/vocabulary mismatch")
+    require(meta.brand_idx.tolist() == [brand_vocab.get(v,0) for v in meta.brand], "Brand indices/vocabulary mismatch")
+    for table in (meta, cohort):
+        true_presence = dict(category=np.asarray([bool(categories(v)) for v in table.categories]),
+                             brand=table.brand.str.strip().ne("").to_numpy(), title=table.title.str.strip().ne("").to_numpy())
+        for source in SOURCES:
+            require(np.array_equal(flags(table[f"has_{source}"]), true_presence[source]), f"{source}: flags/content mismatch")
+    for source in SOURCES:
+        require(np.array_equal(flags(avail[f"has_{source}"]), flags(meta[f"has_{source}"])), f"{source}: availability/metadata mismatch")
+    cohort_train = cohort[flags(cohort.in_train_base)].sort_values("model_item_id")
+    for col in ("categories","brand","title",*[f"has_{s}" for s in SOURCES]):
+        require(np.array_equal(cohort_train[col], meta[col]), f"Cohort/catalog mismatch: {col}")
+    for name, table in [("train_base_catalog", meta),("all_unique_items_cohort",cohort)]:
+        actual = coverage(table)
+        require(all(cov[name][key] == value for key,value in actual.items()), f"{name}: coverage mismatch")
+    oov = len(mapping)-n
+    require(cov["oov_items_count"] == oov and manifest["num_oov_items"] == oov, "OOV count mismatch")
+    require(manifest["num_catalog_items"] == n and manifest["num_total_cohort_items"] == len(mapping), "Manifest counts mismatch")
+    require(stats["original_items"] == len(mapping) and stats["catalog_train_base_items"] == n
+            and stats["metadata_status"] == "available", "Statistics/catalog mismatch")
+    embed_info = manifest["title_embedding"]
+    require(embed_info["mode"] == "sentence-transformers" and bool(embed_info["encoder"]), "Real Title encoder required")
+    emb = np.load(directory/"title_embeddings.npy", allow_pickle=False)
+    require(emb.ndim == 2 and emb.shape[0] == n and emb.shape[1] > 0 and emb.dtype == np.float32
+            and np.isfinite(emb).all(), "Invalid Title embedding array")
+    require(embed_info["shape"] == list(emb.shape) and embed_info["dim"] == emb.shape[1]
+            and embed_info["path"] == "title_embeddings.npy", "Embedding manifest mismatch")
+    has_title = flags(meta.has_title)
+    require((emb[~has_title] == 0).all() and np.allclose(np.linalg.norm(emb[has_title],axis=1),1,atol=1e-4),
+            "Title missing placeholders/unit norms invalid")
+    required_hashes = {"metadata.csv","cohort_metadata.csv","availability_mask.csv","item_map.csv",
+                       "title_embeddings.npy","category_vocab.json","brand_vocab.json","coverage.json","statistics.json"}
+    hashes = manifest["artifact_sha256"]
+    require(set(hashes) == required_hashes, "Incomplete artifact checksums")
+    for name in required_hashes:
+        require(is_valid_sha256(hashes[name]) and compute_file_sha256(str(directory/name)) == hashes[name],
+                f"Artifact checksum mismatch: {name}")
+    for key in ("reviews", "metadata"):
+        require(is_valid_sha256(manifest.get(f"{key}_sha256")) and bool(manifest.get(f"{key}_file")), f"Missing {key} provenance")
+    provenance = "NOT_CHECKED_ARTIFACTS_ONLY"
+    require(not (artifacts_only and verify_raw_hash), "--artifacts-only cannot verify raw hashes")
+    if not artifacts_only:
+        if raw_root is not None:
+            ingestor = Amazon2014Ingestor(str(resolve_project_path(raw_root)), manifest["dataset_key"])
+            reviews, metadata = ingestor.resolve_paths()
+        else:
+            reviews = str(resolve_project_path(manifest["reviews_file"]))
+            metadata = str(resolve_project_path(manifest["metadata_file"]))
+        require(Path(reviews).is_file() and metadata is not None and Path(metadata).is_file(),
+                "Raw inputs missing; use --raw_root or explicitly request --artifacts-only")
+        provenance = "FILES_PRESENT_HASH_NOT_CHECKED"
+        if verify_raw_hash:
+            for key,path in [("reviews",reviews),("metadata",metadata)]:
+                require(compute_file_sha256(str(path)) == manifest[f"{key}_sha256"], f"Raw {key} SHA256 mismatch")
+            ingestor = Amazon2014Ingestor()
+            ingestor.resolve_paths = lambda: (reviews, metadata)
+            sequences, records = ingestor.build_interaction_sequences(manifest["preprocessing_config"].get("min_interactions",5))
+            split = SequenceSplitter(min_seq_len=manifest["preprocessing_config"].get("min_interactions",5)).split(sequences)
+            require([split.idx2item[i] for i in range(1,split.num_items+1)] == meta.raw_item_id.tolist(), "Raw reviews/catalog mismatch")
+            require({x for seq in sequences for x in seq.items} == set(mapping.raw_item_id), "Raw cohort mismatch")
+            for row in cohort.itertuples():
+                rec = records.get(row.raw_item_id,{})
+                require(categories(row.categories) == (rec.get("categories") or [])
+                        and row.brand == (rec.get("brand") or "") and row.title == (rec.get("title") or ""),
+                        f"Raw metadata mismatch: {row.raw_item_id}")
+            from taimma.experiments.reporting import dataset_statistics
+            actual_stats = dataset_statistics(sequences, split, records, True, stats["dataset"])
+            for name in ("users", "original_items", "catalog_train_base_items", "interactions",
+                         "category_vocab_train_base", "brand_vocab_train_base"):
+                require(stats[name] == actual_stats[name], f"Raw statistics mismatch: {name}")
+            provenance = "VERIFIED_SHA256_AND_RAW_MAPPING"
+    if perturbation_config is None:
+        perturbation_config = yaml.safe_load(resolve_project_path("configs/metadata.yaml").read_text(encoding="utf-8"))["perturbations"]
+    counts = validate_perturbations(directory, avail, perturbation_config)
+    check_loader(directory, avail, perturbation_config)
+    return dict(status="PASS", dataset=directory.name, items=n, oov_items=oov, embedding_shape=list(emb.shape),
+                coverage=cov["train_base_catalog"], provenance=provenance, masks=counts[0], permutations=counts[1])
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate metadata artifacts against acceptance criteria.")
-    parser.add_argument(
-        "--metadata_dir",
-        default="artifacts/metadata",
-        help="Base metadata artifacts directory (e.g. artifacts/metadata)",
-    )
-    parser.add_argument(
-        "--dataset",
-        choices=["beauty", "sports", "toys", "all"],
-        default="all",
-        help="Target dataset to validate (default: all)",
-    )
-    parser.add_argument(
-        "--allow-missing",
-        action="store_true",
-        help="Permit missing datasets without failing (default: strict mode fails if any expected dataset is missing)",
-    )
-    parser.add_argument(
-        "--verify-raw-hash",
-        action="store_true",
-        help="Compute and verify cryptographic SHA-256 checksums of raw input files against manifest",
-    )
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--metadata_dir", default="artifacts/metadata")
+    parser.add_argument("--dataset", choices=["beauty","sports","toys","all"], default="all")
+    parser.add_argument("--config", default="configs/metadata.yaml")
+    parser.add_argument("--raw_root")
+    parser.add_argument("--artifacts-only", action="store_true")
+    parser.add_argument("--verify-raw-hash", action="store_true")
     args = parser.parse_args()
-
-    meta_base = resolve_metadata_base(args.metadata_dir)
-    target_keys = ["beauty", "sports", "toys"] if args.dataset == "all" else [args.dataset]
-
-    print(f"=== Metadata Artifacts Acceptance Suite ===")
-    print(f"Base Directory: {meta_base}")
-    print(f"Target Datasets: {target_keys}")
-    print(f"Mode: {'Permissive (--allow-missing)' if args.allow_missing else 'Strict (All Required)'}")
-    print(f"Verify Raw SHA-256: {args.verify_raw_hash}\n")
-
-    summary_results: Dict[str, Dict[str, Any]] = {}
-    any_failed = False
-
-    for key in target_keys:
-        ds_path = meta_base / key.lower()
-        if not ds_path.exists():
-            if args.allow_missing:
-                print(f"[WARN] Dataset directory not found: {ds_path} (Skipped due to --allow-missing)")
-                summary_results[key] = {"status": "SKIPPED", "reason": "Directory not found"}
-            else:
-                print(f"[FAIL] Required dataset directory not found: {ds_path}")
-                summary_results[key] = {"status": "FAIL", "reason": f"Directory missing: {ds_path}"}
-                any_failed = True
-            continue
-
+    config = yaml.safe_load(resolve_project_path(args.config).read_text(encoding="utf-8"))["perturbations"]
+    failed = False
+    for key in (["beauty","sports","toys"] if args.dataset == "all" else [args.dataset]):
         try:
-            res = validate_dataset_artifacts(ds_path, verify_raw_hash=args.verify_raw_hash)
-            summary_results[key] = res
+            result = validate_dataset_artifacts(resolve_project_path(args.metadata_dir)/key,
+                        args.verify_raw_hash,args.raw_root,args.artifacts_only,config)
+            print(json.dumps(result, ensure_ascii=False))
         except Exception as exc:
-            print(f"\n[FAIL] Verification error for {key}: {exc}")
-            summary_results[key] = {"status": "FAIL", "error": str(exc)}
-            any_failed = True
-
-    # Print Final Acceptance Report Table
-    print("\n" + "=" * 65)
-    print("FINAL ACCEPTANCE VERIFICATION SUMMARY")
-    print("=" * 65)
-    print(f"{'Dataset':<15} | {'Status':<10} | {'Details'}")
-    print("-" * 65)
-
-    passed_count = 0
-    for key in target_keys:
-        info = summary_results.get(key, {"status": "UNKNOWN"})
-        status = info.get("status", "FAIL")
-        if status == "PASS":
-            passed_count += 1
-            details = f"Items: {info.get('items')}, Dim: {info.get('embedding_shape', [0, 0])[1]}, OOV: {info.get('oov_items')}"
-        elif status == "SKIPPED":
-            details = info.get("reason", "Skipped")
-        else:
-            details = info.get("error", info.get("reason", "Unknown failure"))
-        print(f"{key:<15} | {status:<10} | {details}")
-
-    print("=" * 65)
-
-    if any_failed or passed_count == 0:
-        print(f"\n[RESULT] [FAILED] ACCEPTANCE SUITE FAILED ({passed_count}/{len(target_keys)} passed).")
-        sys.exit(1)
-    else:
-        print(f"\n[RESULT] [SUCCESS] ALL ACCEPTANCE CHECKS PASSED ({passed_count}/{len(target_keys)} passed)!")
-        sys.exit(0)
+            print(f"[FAIL] {key}: {exc}", file=sys.stderr)
+            failed = True
+    raise SystemExit(1 if failed else 0)
 
 
 if __name__ == "__main__":

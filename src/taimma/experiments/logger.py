@@ -175,6 +175,11 @@ class ExperimentLogger:
         files = sorted([p for name in ('src', 'scripts', 'configs') for p in (root / name).rglob('*')
                         if p.is_file() and p.suffix in ('.py', '.yaml') and '__pycache__' not in p.parts])
         hashes = {}
+        # Exact working changes accompany every run even when other local files are uncommitted.
+        diff = subprocess.run(['git','diff','--binary','HEAD','--','src','scripts','configs',
+                               'pyproject.toml','requirements.txt','.gitignore','.gitattributes'],
+                              cwd=root,capture_output=True,check=True).stdout
+        (folder/'working_tree.diff').write_bytes(diff)
         with zipfile.ZipFile(folder / 'source_snapshot.zip', 'x', compression=zipfile.ZIP_DEFLATED) as z:
             for file in files:
                 data = file.read_bytes()

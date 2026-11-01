@@ -158,7 +158,7 @@ class SASRecTrainer:
                 seqs = torch.tensor([s.history for s in batch], dtype=torch.long, device=self.device)
                 result = self.evaluator.evaluate_ranks(
                     self.model.predict_all(seqs), [s.target for s in batch],
-                    [s.user_idx for s in batch], seen_items,
+                    [s.user_idx for s in batch], seen_items, histories=[s.history for s in batch],
                 )
                 records.extend(result.per_user_records)
         return self.evaluator.result_from_records(records)

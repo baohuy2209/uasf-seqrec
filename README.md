@@ -222,4 +222,86 @@ The module path must belong to this checkout. Raw `data/` files are inputs; the 
 
 ## Scientific protocol
 
-The project uses chronological per-user Train-base/Train-meta/validation/test splits with `n >= 5`, maximum input length 50, Train-base candidate catalogs, full-catalog cross-entropy and ranking, documented Train-base seen-item masking, deterministic ties, and OOV evaluation targets retained as misses. Checkpoints are selected using validation NDCG@10. Missing scientific evidence remains pending.
+The project uses chronological per-user Train-base/Train-meta/validation/test splits with `n >= 5`, maximum input length 50, Train-base candidate catalogs, full-catalog cross-entropy and ranking, strict per-prediction input-history masking (including repeated targets as misses), deterministic ties, and OOV evaluation targets retained as misses. Checkpoints are selected using validation NDCG@10. Missing scientific evidence remains pending.
+
+
+## Checkpoint 1 execution after the 29 October memo
+
+Use a separate CUDA environment on Windows if WSL cannot start. The existing CPU
+`.venv` remains available for tests. A clean CUDA setup selects PyTorch first:
+
+```powershell
+py -3.12 -m venv .venv-cuda
+.\.venv-cuda\Scripts\python.exe -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+.\.venv-cuda\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv-cuda\Scripts\python.exe -m pip install -e .
+.\.venv-cuda\Scripts\python.exe -m pytest -q tests
+.\.venv-cuda\Scripts\python.exe -u scripts/run_checkpoint1.py --device cuda --stage all --workers 2
+```
+
+The driver uses real Beauty data and verified metadata. It audits repeated/OOV
+targets and four named masking policies on the same historical checkpoint, then
+runs standard LOO. It tries d=256 only if d=64 fails the fixed Recall/NDCG bounds;
+it stops the diagnostic grid if both fail. The sequential DIF-SR reference uses
+no history mask; the main four-segment experiments use `input_history_strict`.
+Validation selection, test, baselines and multimodal evaluation share the named
+main policy. Masking affects ranking scores, not the model's input sequence.
+
+After the gate passes, the driver measures one real epoch with 1/2/3 CUDA
+processes; fits independent ID backbones and seven late-fusion subsets for seeds
+42/43/44; stores unmasked float32 ID scores for Train-meta/validation/test; fits
+the first early-fusion CBT model; repeats ID seed 42; evaluates inference
+missingness/permutation; creates paired utility labels and runs real E0/E1.
+Residual final projections start at zero and ID parameters stay frozen.
+
+Default output: `runs/checkpoint1_20261101_batch`. Repeating the same command resumes
+completed stages; changed experiment code/config/metadata requires a new
+`--output`. Failed attempts retain their logs. Use `--stage loo` to stop after
+the comparison or `--stage grid` after the training grid. Diagnostic robustness
+results currently vary one metadata source at a time, preserving the others.
+
+After all stages succeed, create the measured tables and provisional budget:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[analysis]"
+.\.venv-cuda\Scripts\python.exe analysis/checkpoint1_postprocess.py
+.\.venv\Scripts\python.exe analysis/plot_checkpoint1.py
+.\.venv\Scripts\python.exe analysis/build_checkpoint1_report.py
+```
+
+The last command needs reportlab/pypdf and Unicode fonts. The report enforces the
+two-page limit. Scientific acceptance is separate from execution completion:
+read `e0_e1.json`, including confidence intervals and the decision regime.
+Derived tables go to `reports/`; training checkpoints and raw score caches stay
+in the run folder. Analysis source hashes are recorded independently of the
+locked experiment source. No results are automatically published or emailed.
+
+
+### Prepare now and run later without GPU
+
+`--prepare-only` does not initialize CUDA, train, evaluate, or generate utility
+labels. It validates the real data setup and writes a resumable execution plan.
+For this checkout, the earlier LOO and ID seed 42 have finished. Reuse them
+explicitly while discarding the interrupted metadata fit:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/run_checkpoint1.py --prepare-only --device cuda --output runs/checkpoint1_20261101_batch --reuse-completed-from runs/checkpoint1_20261101
+```
+
+Reuse verifies the unchanged ID algorithms/model construction, input manifest,
+completed run status, and checkpoint/per-user evidence hashes. It never reuses
+an incomplete residual fit. Keep the source run directory because imported
+checkpoints and ID-score arrays remain there. The transfer is recorded in
+`reused_stages.json`.
+
+When CUDA is ready, use the same destination, without `--prepare-only`:
+
+```powershell
+.\.venv-cuda\Scripts\python.exe -u scripts/run_checkpoint1.py --device cuda --output runs/checkpoint1_20261101_batch --stage all --workers 2
+```
+
+For a fresh experiment, choose a new output directory and omit
+`--reuse-completed-from`. Completed stages are retained; robustness resumes
+at saved measurement boundaries and utility writes are promoted atomically.
+The first interrupted CBT profiling attempt remains in the old run directory
+and is not a completed experimental result.

@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Preserve generated artifact bytes and literal whitespace inside quoted titles.
+artifacts/metadata/** -text whitespace=-blank-at-eol

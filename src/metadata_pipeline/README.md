@@ -1,91 +1,94 @@
-# Metadata Pipeline for TAIMMA Sequential Recommendation
+# Metadata pipeline
 
-Pipeline chuẩn bị metadata (Category, Brand, Title) cho các tập dữ liệu **Beauty**, **Sports and Outdoors**, và **Toys and Games** (Amazon 2014 benchmark) phục vụ nghiên cứu TAIMMA / UASF.
+Prepare Category (all non-root labels), Brand, and real SentenceTransformer Title
+vectors for Amazon 2014 Beauty, Sports and Toys. Catalog IDs come only from
+Train-base and stay 1..N; array row i-1 represents model item i. Missing values
+have explicit availability flags. Vocabularies are fitted only on Train-base.
 
-Pipeline tuân thủ nghiêm ngặt các nguyên tắc:
-1. **Khóa Catalog & Chia tập**: Sử dụng chính xác split Train-base (1..n-3), Train-meta (n-2), Val (n-1), Test (n) theo chỉ đạo memo 26/10. Catalog chuẩn `model_item_id` 1..N được suy ra từ Train-base interactions.
-2. **True Missingness vs Unknown Token**: Chỉ đánh dấu `has_source=True` khi nguồn dữ liệu thực sự tồn tại, không coi token unknown hay placeholder là metadata thật.
-3. **Alignment**: Thứ tự `model_item_id` trong `metadata.csv`, `availability_mask.csv` và `title_embeddings.npy` khớp nhau 100%.
-4. **Perturbations (Beauty)**: Sinh synthetic masks (0% đến 80%) và permutations với hạt giống xác định.
-
----
-
-## 1. Cài đặt môi trường
+## Install and obtain sources
 
 ```powershell
-Set-Location uasf-seqrec
-# Sử dụng virtualenv đã tạo
 .\.venv\Scripts\python.exe -m pip install -e .
-```
-
----
-
-## 2. Các bước thực thi
-
-### Bước 1: Chuẩn bị dữ liệu thô (Raw Data)
-Tải reviews 5-core và metadata chính thức từ Stanford SNAP:
-```powershell
 .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Beauty
 .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Sports_and_Outdoors
 .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Toys_and_Games
 ```
-*Dữ liệu sẽ được lưu tại `data/raw/amazon_reviews/2014`.*
 
----
+The downloader defaults to `data/raw`. Existing uncompressed reviews may live
+in category subdirectories. Both reviews and metadata must exist. Encoder errors,
+missing metadata, and mismatched expected statistics stop preparation. No random
+Title replacement is permitted.
 
-### Bước 2: Chạy trích xuất metadata và sinh Title Embeddings (G01 & G02)
+## Build and validate
+
 ```powershell
-# Chạy cho Beauty
-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset beauty
-
-# Chạy cho Sports và Toys
-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset sports
-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset toys
-
-# Hoặc chạy cho tất cả 3 bộ dữ liệu:
-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset all
+.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --dataset all
+.\.venv\Scripts\python.exe -m metadata_pipeline.build_perturbations --dataset all
+.\.venv\Scripts\python.exe -m metadata_pipeline.validate --dataset all --verify-raw-hash
+.\.venv\Scripts\python.exe -m metadata_pipeline.report
 ```
 
----
+Choose a fresh `--output_dir` for preparation. `--overwrite` explicitly replaces
+an existing dataset only after all new metadata and embeddings have been built;
+old perturbations are discarded and must be regenerated. Never overwrite
+artifacts associated with completed experiment runs.
 
-### Bước 3: Sinh Availability Mask & Perturbations cho Beauty (G03)
-Sinh các tệp mô phỏng thiếu metadata (từ 0.0 đến 0.8) và các phép hoán vị (permutations) theo các seed ngẫu nhiên cố định:
+For a relocated checkout, pass `--raw_root data/raw` to validation. Raw input
+checksums are preserved and compared to the selected files. Compressed and
+uncompressed review dumps have different byte hashes: use the same source format
+as the manifest, or regenerate into a new output directory rather than editing
+checksums. Default validation checks raw file availability; `--verify-raw-hash`
+also checks SHA256 and reconstructs the catalog and metadata from raw inputs.
+
+If only the handoff artifacts are available, explicitly use `--artifacts-only`.
+Its result says `NOT_CHECKED_ARTIFACTS_ONLY` for source provenance. It still
+checks artifact hashes, full coverage, vocabularies, all masks/permutations and
+the actual sequence loader. This mode is not a raw-source certification.
+
+## Schema version 2
+
+- `metadata.csv`: ordered Train-base catalog; `categories` and `category_indices`
+  are JSON lists. `brand_idx` is an integer. Index zero means padding/missing.
+- `cohort_metadata.csv`: metadata and availability for all unique cohort items,
+  including OOV items, so full-cohort coverage can be independently counted.
+- `item_map.csv`, `availability_mask.csv`, `title_embeddings.npy`: aligned IDs,
+  explicit source flags and float32 vectors. Missing Title rows are exactly zero.
+- `category_vocab.json`, `brand_vocab.json`: sorted Train-base vocabularies.
+- `coverage.json`, `statistics.json`: measured coverage and full Table 1 inputs.
+- `manifest.json`: schema, preprocessing/category policy, source and output hashes.
+- `perturbations`: per-source masks for 0–80% of originally available metadata,
+  three seeds, and permutations among available items with natural missing rows
+  fixed. The ratio is additional missingness, not total natural plus synthetic
+  missingness. Training perturbations require a separate experiment invocation;
+  these mappings do not modify interactions or targets.
+
+Legacy single-category artifacts must be regenerated from raw metadata. Labels
+that were discarded cannot be recovered from the old CSV. Regenerate residual
+models using Category after this schema change; do not reuse checkpoints whose
+category vocabulary was fitted to the former single-label representation.
+
+## Load for inference
+
+```python
+from metadata_pipeline.loader import load_catalog
+attrs, masks = load_catalog("artifacts/metadata/beauty")
+# Pass the same attrs/masks to MultimodalSequenceDataset and the model's catalog
+# arguments so the history and candidate sides use identical perturbations.
+attrs, masks = load_catalog(
+    "artifacts/metadata/beauty",
+    mask_files={"brand": "artifacts/metadata/beauty/perturbations/masks/mask_brand_ratio_0.80_seed_42.csv"},
+    permutation_files={"title": "artifacts/metadata/beauty/perturbations/permutations/perm_title_seed_42.csv"},
+)
+```
+
+Category tensors have shape `[N,L]` and dtype long; Brand `[N]` long; Title
+`[N,D]` float32. Padding is added by MultimodalSequenceDataset, not by shifting
+catalog arrays. Availability masks must also be passed to the residual model
+so masked candidate scores are disabled. ID-only checkpoint/vocabulary IDs
+remain unchanged.
+
+Regression checks:
+
 ```powershell
-.\.venv\Scripts\python.exe -m metadata_pipeline.build_perturbations --config configs/metadata.yaml --dataset beauty
+.\.venv\Scripts\python.exe -m pytest -q tests/test_metadata_pipeline.py
 ```
-
----
-
-### Bước 4: Tạo Bảng 1 tóm tắt độ phủ (G04)
-Xuất thống kê số lượng và độ phủ Category/Brand/Title cho cả 3 bộ dữ liệu (cả trên Train-base catalog và toàn bộ cohort):
-```powershell
-.\.venv\Scripts\python.exe -m metadata_pipeline.report --output reports/table_1_metadata.csv
-```
-*Tệp kết quả sẽ có tại: `reports/table_1_metadata.csv` và `reports/table_1_metadata.md`.*
-
----
-
-### Bước 5: Kiểm thử và xác thực (G05 & Acceptance Criteria)
-Chạy kiểm tra tự động toàn bộ ràng buộc kỹ thuật và kiểm thử tích hợp loader:
-```powershell
-.\.venv\Scripts\python.exe -m metadata_pipeline.validate --dataset all
-```
-
----
-
-## 3. Cấu trúc thư mục artifacts bàn giao
-
-```text
-artifacts/metadata/<dataset>/
-├── item_map.csv               # raw_item_id <-> model_item_id (cùng cờ in_train_base)
-├── metadata.csv               # model_item_id (1..N), raw_item_id, category, brand, title, has_*
-├── title_embeddings.npy       # Shape [N, dim], row order = model_item_id (1..N)
-├── availability_mask.csv      # model_item_id, has_category, has_brand, has_title
-├── coverage.json              # Độ phủ chi tiết theo Train-base catalog & Toàn bộ cohort
-├── manifest.json              # Hash nguồn dữ liệu, thông số encoder, shape, seeds
-└── perturbations/             # Riêng cho Beauty (G03)
-    ├── masks/                 # Các mask tỷ lệ 0.0 - 0.8 theo seed
-    ├── permutations/          # Các mapping hoán vị 1-1 theo seed
-    └── perturbations_manifest.json
-```
-

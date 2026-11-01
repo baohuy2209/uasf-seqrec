@@ -19,6 +19,15 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from taimma.paths import resolve_project_path
+from .contracts import SOURCES, check_availability, flags, read_table, require
+
+
+def validate_options(table, ratios, seeds, sources):
+    check_availability(table)
+    require(bool(sources) and set(sources).issubset(SOURCES) and len(set(sources)) == len(sources), "Invalid sources")
+    require(bool(seeds) and len(set(seeds)) == len(seeds) and all(isinstance(s, int) and s >= 0 for s in seeds), "Invalid seeds")
+    require(bool(ratios) and len(set(ratios)) == len(ratios) and all(0 <= r <= 1 for r in ratios), "Invalid ratios")
+    require(len({f"{r:.2f}" for r in ratios}) == len(ratios), "Ratios collide in output filenames")
 
 
 def generate_synthetic_masks(
@@ -35,6 +44,7 @@ def generate_synthetic_masks(
       - NEVER turns 0 (originally missing) -> 1.
       - Fully reproducible by (ratio, seed, source).
     """
+    validate_options(availability_df, ratios, seeds, sources)
     masks_dir = output_dir / "masks"
     masks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -50,7 +60,7 @@ def generate_synthetic_masks(
                     continue
 
                 rng = np.random.RandomState(seed + int(ratio * 1000))
-                orig_status = availability_df[col_name].values.astype(bool)
+                orig_status = flags(availability_df[col_name])
                 avail_indices = np.where(orig_status)[0]
 
                 # Number of items to drop out
@@ -70,7 +80,7 @@ def generate_synthetic_masks(
                     "is_dropped": False,
                 })
                 df_out.loc[drop_indices, "is_dropped"] = True
-                df_out.to_csv(file_path, index=False)
+                df_out.to_csv(file_path, index=False, lineterminator="\n")
 
                 actual_dropped_ratio = len(drop_indices) / max(1, len(avail_indices))
                 manifest_records.append({
@@ -106,6 +116,7 @@ def generate_permutations(
       - Preserves both marginal distribution and exact missingness structure.
       - Does NOT alter user interaction sequences, target items, or model catalog IDs.
     """
+    validate_options(metadata_df, [0.0], seeds, sources)
     perm_dir = output_dir / "permutations"
     perm_dir.mkdir(parents=True, exist_ok=True)
 
@@ -117,7 +128,7 @@ def generate_permutations(
         for source in sources:
             flag_col = f"has_{source}"
             if flag_col in metadata_df.columns:
-                avail_mask = metadata_df[flag_col].values.astype(bool)
+                avail_mask = flags(metadata_df[flag_col])
             else:
                 avail_mask = np.ones(num_items, dtype=bool)
 
@@ -144,7 +155,7 @@ def generate_permutations(
                 "seed": seed,
                 "is_available": avail_mask,
             })
-            df_perm.to_csv(file_path, index=False)
+            df_perm.to_csv(file_path, index=False, lineterminator="\n")
 
             manifest_records.append({
                 "file": filename,
@@ -180,8 +191,12 @@ def process_dataset_perturbations(
     if not avail_mask_path.exists():
         raise FileNotFoundError(f"Missing availability mask at: {avail_mask_path}. Run prepare.py first.")
 
-    avail_df = pd.read_csv(avail_mask_path)
-    meta_df = pd.read_csv(meta_path) if meta_path.exists() else avail_df
+    avail_df = read_table(avail_mask_path)
+    meta_df = read_table(meta_path)
+    require(np.array_equal(avail_df.model_item_id, meta_df.model_item_id), "Metadata/mask ID mismatch")
+    for source in sources:
+        require(np.array_equal(flags(avail_df[f"has_{source}"]), flags(meta_df[f"has_{source}"])),
+                f"{source}: metadata/mask mismatch")
 
     pert_out_dir = ds_dir / "perturbations"
     pert_out_dir.mkdir(parents=True, exist_ok=True)

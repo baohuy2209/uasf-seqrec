@@ -1,10 +1,9 @@
 # Metadata Processing Pipeline Configuration
 
 pipeline:
-  version: "1.0.0"
+  version: "2.0.0"
   random_seed: 42
   title_encoder: "all-MiniLM-L6-v2"  # standard 384-dim sentence transformer
-  fallback_feature_dim: 64         # used if offline random projection or model requires 64-dim
 
 datasets:
   beauty:

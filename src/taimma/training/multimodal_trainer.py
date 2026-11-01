@@ -28,6 +28,22 @@ from ..models.late_fusion import ResidualLateFusionModel
 from .trainer import TrainingHistory, set_seed
 
 
+def gather_source_sequences(item_seqs, catalog_source_attrs, catalog_availability_masks):
+    """Gather identical item metadata for an entire batch on its execution device."""
+    result = {}
+    for source, attrs in catalog_source_attrs.items():
+        if attrs.size(0) < 1:
+            raise ValueError('Cannot gather from an empty metadata catalog')
+        indices = (item_seqs - 1).clamp(0, attrs.size(0) - 1)
+        active = (item_seqs > 0) & (item_seqs <= attrs.size(0))
+        active = active & (catalog_availability_masks[source][indices] > 0)
+        values = attrs[indices]
+        if attrs.ndim > 1:
+            active = active.unsqueeze(-1)
+        result[source] = values * active
+    return result
+
+
 class MultimodalSequenceDataset(Dataset):
     """
     Multimodal Sequence Dataset.
@@ -39,7 +55,9 @@ class MultimodalSequenceDataset(Dataset):
         samples: List[SequenceSample],
         catalog_source_attrs: Dict[str, torch.Tensor],
         catalog_availability_masks: Dict[str, torch.Tensor],
+        defer_features: bool = False,
     ):
+        self.defer_features = defer_features
         self.samples = samples
         if set(catalog_source_attrs) != set(catalog_availability_masks):
             raise ValueError('Every source requires an explicit availability mask')
@@ -61,26 +79,17 @@ class MultimodalSequenceDataset(Dataset):
 
         # 2. Source sequence tensors
         source_seqs: Dict[str, torch.Tensor] = {}
-        for src_name in self.sources:
+        for src_name in ([] if self.defer_features else self.sources):
             attrs = self.catalog_source_attrs[src_name]
             avail = self.catalog_availability_masks.get(src_name)
-            # If attrs has shape (N,) -> 1D attribute (e.g. categorical index)
-            # If attrs has shape (N, D) -> 2D attribute (e.g. dense title embedding)
-            if attrs.dim() == 1:
-                src_seq = torch.zeros(len(history_items), dtype=attrs.dtype)
-                for t, itm in enumerate(history_items):
-                    if itm > 0 and itm <= attrs.size(0):
-                        if avail is not None and not bool(avail[itm - 1].item() > 0):
-                            continue
-                        src_seq[t] = attrs[itm - 1]
-            else:
-                feature_dim = attrs.size(1)
-                src_seq = torch.zeros(len(history_items), feature_dim, dtype=attrs.dtype)
-                for t, itm in enumerate(history_items):
-                    if itm > 0 and itm <= attrs.size(0):
-                        if avail is not None and not bool(avail[itm - 1].item() > 0):
-                            continue
-                        src_seq[t] = attrs[itm - 1]
+            # Gather a whole history at once; retain identical padding/missing semantics.
+            valid = (item_seq > 0) & (item_seq <= attrs.size(0))
+            src_seq = torch.zeros((len(history_items), *attrs.shape[1:]), dtype=attrs.dtype)
+            positions = torch.flatnonzero(valid) if hasattr(torch, 'flatnonzero') else torch.nonzero(valid, as_tuple=True)[0]
+            if len(positions):
+                indices = item_seq[positions] - 1
+                active = avail[indices] > 0
+                src_seq[positions[active]] = attrs[indices[active]]
 
             source_seqs[src_name] = src_seq
 
@@ -169,7 +178,7 @@ class ResidualLateFusionTrainer:
         for batch in dataloader:
             item_seqs = batch["item_seqs"].to(self.device)
             targets = batch["targets"].to(self.device)
-            source_seqs = {k: v.to(self.device) for k, v in batch["source_seqs"].items()}
+            source_seqs = gather_source_sequences(item_seqs, self.catalog_source_attrs, self.catalog_availability_masks)
 
             self.optimizer.zero_grad()
             loss = self.model.compute_loss(
@@ -196,7 +205,7 @@ class ResidualLateFusionTrainer:
         """Full-catalog evaluation across validation or test samples."""
         self.model.eval()
         dataset = MultimodalSequenceDataset(
-            samples, self.catalog_source_attrs, self.catalog_availability_masks
+            samples, self.catalog_source_attrs, self.catalog_availability_masks, defer_features=True
         )
         dataloader = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_multimodal_batch
@@ -207,11 +216,11 @@ class ResidualLateFusionTrainer:
             for batch in dataloader:
                 scores = self.model.predict_all(
                     item_id_seqs=batch['item_seqs'].to(self.device),
-                    source_seqs={k: v.to(self.device) for k, v in batch['source_seqs'].items()},
+                    source_seqs=gather_source_sequences(batch['item_seqs'].to(self.device), self.catalog_source_attrs, self.catalog_availability_masks),
                     catalog_source_attrs=self.catalog_source_attrs,
                     catalog_availability_masks=self.catalog_availability_masks,
                 )
-                result = self.evaluator.evaluate_ranks(scores, batch['targets'].tolist(), batch['user_indices'], seen_items)
+                result = self.evaluator.evaluate_ranks(scores, batch['targets'].tolist(), batch['user_indices'], seen_items, histories=batch['item_seqs'].tolist())
                 records.extend(result.per_user_records)
         return self.evaluator.result_from_records(records)
 
@@ -227,7 +236,7 @@ class ResidualLateFusionTrainer:
         set_seed(self.seed)
 
         train_dataset = MultimodalSequenceDataset(
-            train_samples, self.catalog_source_attrs, self.catalog_availability_masks
+            train_samples, self.catalog_source_attrs, self.catalog_availability_masks, defer_features=True
         )
         train_loader = DataLoader(
             train_dataset,
@@ -238,8 +247,15 @@ class ResidualLateFusionTrainer:
         )
 
         history = TrainingHistory()
-        best_val_ndcg = -1.0
-        best_weights = None
+        initial = self.evaluate(val_samples, seen_items=seen_train_items, batch_size=self.batch_size)
+        best_val_ndcg = initial.ndcg_10
+        history.best_val_ndcg = best_val_ndcg
+        best_weights = copy.deepcopy(self.model.state_dict())
+        if checkpoint_path:
+            PathFolder = os.path.dirname(checkpoint_path)
+            os.makedirs(PathFolder, exist_ok=True)
+            torch.save(dict(epoch=0,model_state_dict=best_weights,val_ndcg_10=initial.ndcg_10,
+                            val_recall_10=initial.recall_10,seed=self.seed,sources_enabled=self.model.sources_enabled),checkpoint_path)
         patience_counter = 0
         if self.device.type == 'cuda':
             torch.cuda.synchronize(self.device)

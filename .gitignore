@@ -17,4 +17,6 @@ NotPush/
 build/
 dist/
 docs/
-tests
+.venv-cuda/
+.agents
+

@@ -1,8 +1,11 @@
 {
+  "schema_version": 2,
   "dataset": "Sports and Outdoors",
-  "reviews_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\reviews_Sports_and_Outdoors_5.json.gz",
-  "reviews_sha256": "8130a2206c3062db1b4b9d4353efc303b0ebd13f48372559fee26c47a1d7fe51",
-  "metadata_file": "D:\\NCKH\\NCKH_NQP\\TAIMMA_Code_space\\uasf-seqrec\\data\\raw\\meta_Sports_and_Outdoors.json.gz",
+  "dataset_key": "Sports_and_Outdoors",
+  "category_policy": "multilabel_without_root",
+  "reviews_file": "data/raw/Sports and Outdoors/Sports_and_Outdoors_5.json",
+  "reviews_sha256": "24143dfc6a718fa6e40c7615ff55d29420a613028a5e6e77088cd07ab07948db",
+  "metadata_file": "data/raw/meta_Sports_and_Outdoors.json.gz",
   "metadata_sha256": "677108a0fe0f47cce08885a348879a5a89dd69e75fbc5d66410ae436750df086",
   "num_catalog_items": 18132,
   "num_total_cohort_items": 18357,
@@ -14,11 +17,31 @@
       384
     ],
     "encoder": "all-MiniLM-L6-v2",
-    "dim": 384,
-    "mode": "sentence-transformers"
+    "mode": "sentence-transformers",
+    "dim": 384
+  },
+  "preprocessing_config": {
+    "dataset_name": "Sports_and_Outdoors_2014",
+    "raw_data_dir": "data/raw",
+    "category_subdir": "Sports and Outdoors",
+    "reviews_file": "Sports_and_Outdoors_5.json",
+    "ratings_file": "ratings_Sports_and_Outdoors.csv",
+    "metadata_file": null,
+    "processed_dir": "data/processed/sports_and_outdoors_2014",
+    "splits_dir": "data/splits/sports_and_outdoors_2014",
+    "min_interactions": 5,
+    "max_seq_len": 50,
+    "attributes": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "expected_stats": {
+      "users": 35598,
+      "items": 18357
+    }
   },
   "coverage_train_base": {
-    "scope": "train_base_catalog",
     "total_items": 18132,
     "category": {
       "available": 17889,
@@ -35,5 +58,16 @@
       "missing": 90,
       "coverage_pct": 99.5
     }
+  },
+  "artifact_sha256": {
+    "availability_mask.csv": "12be0b3ddd7315b7bc1999e0d42f11204cfea789130f3a7548d6979f90d8207f",
+    "brand_vocab.json": "aa7da0967ee95ae0aa9368941f21633e13df587ae09531365e9807ad51494498",
+    "category_vocab.json": "b8d226cc3641baca4447eba1dd7c2666ae7327da1e9f22443cfaedde38bdc8cb",
+    "cohort_metadata.csv": "3bd79601b3018d4e819f800fd7c6dabbb4d36e08e3146efd333a55a4094cbe32",
+    "coverage.json": "ff93947cdc45c06aa76a467a29f6b480331de129dd882454ffe499af5309bec9",
+    "item_map.csv": "f5a37353f6763065974f625025f5817c23c1a6805a3209e5071f7343530e7876",
+    "metadata.csv": "1c1c5b05a9738196879faf9ff74b1f2055439510d05c9007e85ef5da4ebce009",
+    "statistics.json": "d8e1d4c780d2fcdb58d3267943f8a15c6e9be18488023ef796088e2b52fb699b",
+    "title_embeddings.npy": "e5f906e0663ff94369987906a137796903446d17c0a3882e9fc865ebad090452"
   }
 }

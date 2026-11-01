@@ -62,6 +62,9 @@ class SourceSequentialEncoder(nn.Module):
             [TransformerBlock(feature_dim, num_heads, dropout_rate) for _ in range(num_blocks)]
         )
         self.final_layer_norm = nn.LayerNorm(feature_dim, eps=1e-12)
+        # Memo 29 October: initial total scores must equal the frozen ID scores.
+        self.output_projection = nn.Linear(feature_dim, feature_dim, bias=False)
+        nn.init.zeros_(self.output_projection.weight)
 
         causal_mask = torch.triu(torch.ones(max_seq_len, max_seq_len, dtype=torch.bool), diagonal=1)
         self.register_buffer("causal_mask", causal_mask)
@@ -127,7 +130,7 @@ class SourceSequentialEncoder(nn.Module):
             scores: Tensor (B, K)
         """
         candidate_embeds = self.get_candidate_embeddings(candidate_attrs)  # (K, D)
-        return torch.matmul(context_embedding, candidate_embeds.t())
+        return torch.matmul(self.output_projection(context_embedding), candidate_embeds.t())
 
 
 class ResidualLateFusionModel(nn.Module):

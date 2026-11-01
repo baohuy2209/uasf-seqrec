@@ -16,9 +16,12 @@ dependencies = [
     "scikit-learn",
     "PyYAML",
     "psutil",
+    "sentence-transformers>=3,<6",
+    "tabulate>=0.9,<1",
 ]
 
 [project.optional-dependencies]
+analysis = ["matplotlib", "reportlab", "pypdf"]
 test = [
     "pytest",
 ]
@@ -32,7 +35,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["taimma*"]
+include = ["taimma*", "metadata_pipeline*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

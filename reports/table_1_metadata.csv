@@ -1,7 +1,7 @@
-Dataset,Scope,Total Items,Category (Avail / %),Brand (Avail / %),Title (Avail / %),Category Avail,Category Missing,Category Pct,Brand Avail,Brand Missing,Brand Pct,Title Avail,Title Missing,Title Pct,OOV Items Count
-Beauty,Train-base Catalog,11998,"11,998 (100.0%)","9,905 (82.6%)","11,991 (99.9%)",11998,0,100.0,9905,2093,82.56,11991,7,99.94,103
-Beauty,All Unique Items Cohort,12101,"12,101 (100.0%)","9,983 (82.5%)","12,094 (99.9%)",12101,0,100.0,9983,2118,82.5,12094,7,99.94,103
-Sports and Outdoors,Train-base Catalog,18132,"17,889 (98.7%)","12,151 (67.0%)","18,042 (99.5%)",17889,243,98.66,12151,5981,67.01,18042,90,99.5,225
-Sports and Outdoors,All Unique Items Cohort,18357,"18,112 (98.7%)","12,259 (66.8%)","18,267 (99.5%)",18112,245,98.67,12259,6098,66.78,18267,90,99.51,225
-Toys and Games,Train-base Catalog,11766,"11,422 (97.1%)","10,040 (85.3%)","11,710 (99.5%)",11422,344,97.08,10040,1726,85.33,11710,56,99.52,158
-Toys and Games,All Unique Items Cohort,11924,"11,579 (97.1%)","10,173 (85.3%)","11,865 (99.5%)",11579,345,97.11,10173,1751,85.32,11865,59,99.51,158
+Dataset,Scope,Total Items,users,original_items,catalog_train_base_items,interactions,sparsity,mean_sequence_length,category_vocab_train_base,brand_vocab_train_base,metadata_status,OOV Items Count,Category Avail,Category Missing,Category Pct,Brand Avail,Brand Missing,Brand Pct,Title Avail,Title Missing,Title Pct
+Beauty,Train-base Catalog,11998,22363,12101,11998,198502,0.9992664772935825,8.876358270357287,246,2032,available,103,11998,0,100.0,9905,2093,82.56,11991,7,99.94
+Beauty,All Unique Items Cohort,12101,22363,12101,11998,198502,0.9992664772935825,8.876358270357287,246,2032,available,103,12101,0,100.0,9983,2118,82.5,12094,7,99.94
+Sports and Outdoors,Train-base Catalog,18132,35598,18357,18132,296337,0.9995465195454304,8.324540704533963,1428,2382,available,225,17889,243,98.66,12151,5981,67.01,18042,90,99.5
+Sports and Outdoors,All Unique Items Cohort,18357,35598,18357,18132,296337,0.9995465195454304,8.324540704533963,1428,2382,available,225,18112,245,98.67,12259,6098,66.78,18267,90,99.51
+Toys and Games,Train-base Catalog,11766,19412,11924,11766,167597,0.9992759409428199,8.633680197815783,443,1285,available,158,11422,344,97.08,10040,1726,85.33,11710,56,99.52
+Toys and Games,All Unique Items Cohort,11924,19412,11924,11766,167597,0.9992759409428199,8.633680197815783,443,1285,available,158,11579,345,97.11,10173,1751,85.32,11865,59,99.51

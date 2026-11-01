@@ -134,7 +134,7 @@ def run_sanity_checks(
         for start in range(0, len(samples), batch_size):
             batch = samples[start:start + batch_size]
             res = evaluator.evaluate_ranks(baseline.predict_all(len(batch)),
-                [x.target for x in batch], [x.user_idx for x in batch], split_data.seen_train_items_per_user)
+                [x.target for x in batch], [x.user_idx for x in batch], split_data.seen_train_items_per_user, histories=[x.history for x in batch])
             records.extend(res.per_user_records)
         return evaluator.result_from_records(records)
 
@@ -185,7 +185,7 @@ def run_sanity_checks(
             seqs = torch.tensor([x.history for x in batch], dtype=torch.long, device=trainer.device)
             scores = trainer.model.predict_all(seqs)
             res = evaluator.evaluate_ranks(scores, shuffled_targets[start:start + len(batch)],
-                [x.user_idx for x in batch], split_data.seen_train_items_per_user)
+                [x.user_idx for x in batch], split_data.seen_train_items_per_user, histories=[x.history for x in batch])
             records.extend(res.per_user_records)
     shuffled_res = evaluator.result_from_records(records)
     if report_results is not None:
@@ -197,9 +197,9 @@ def run_sanity_checks(
         })
 
     verdicts["Check 4: Leakage Detection"] = {
-        "status": "REVIEW" if is_real_data else "PASS (FIXTURE)",
+        "status": ("PASS" if shuffled_res.ndcg_10 < sasrec_res.ndcg_10 and shuffled_res.ndcg_10 <= pop_res.ndcg_10 else "FAIL") if is_real_data else "PASS (FIXTURE)",
         "evidence": f"SASRec NDCG@10={sasrec_res.ndcg_10:.6f}; shuffled={shuffled_res.ndcg_10:.6f}; Random={rand_res.ndcg_10:.6f}; Popularity={pop_res.ndcg_10:.6f}; permutation seed={seed}. Shuffling preserves target popularity and does not alone certify absence of leakage.",
-        "validation_method": "Seeded cross-user target permutation; scientific acceptance requires a predeclared null criterion",
+        "validation_method": "29 October criterion: shuffled NDCG@10 decreases and does not exceed Popularity",
         "measurements": {"original_ndcg_10": sasrec_res.ndcg_10, "shuffled_ndcg_10": shuffled_res.ndcg_10, "seed": seed},
     }
 
@@ -410,6 +410,7 @@ def main():
             num_items=split_data.num_items,
             k_list=k_list,
             mask_seen_items=mask_seen,
+            mask_policy=cfg.get("mask_policy", "input_history_strict" if mask_seen else "none"),
         )
 
         trainer = SASRecTrainer(
@@ -528,7 +529,7 @@ def main():
             "loss_type": "full_catalog_cross_entropy",
             "device": str(trainer.device),
             "mask_seen_items": mask_seen,
-            "mask_seen_policy": "train_base" if mask_seen else "none",
+            "mask_seen_policy": evaluator.mask_policy,
             "tie_policy": "deterministic_catalog_index_ascending",
             "sanity_checks": verdicts,
             "model": model_kwargs,

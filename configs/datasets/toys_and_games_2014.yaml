@@ -6,7 +6,7 @@ category_subdir: "Toys and Games"
 # Canonical raw data files on disk
 reviews_file: "Toys_and_Games_5.json"
 ratings_file: "ratings_Toys_and_Games.csv"
-metadata_file: null
+metadata_file: "meta_Toys_and_Games.json.gz"  # Official metadata under data/raw
 
 # Processed paths
 processed_dir: "data/processed/toys_and_games_2014"
