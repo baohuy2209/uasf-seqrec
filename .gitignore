@@ -8,12 +8,15 @@ __pycache__/
 # Datasets and generated experiment outputs
 data/
 results/
+runs/
 .tmp/
+NotPush/
+
 # Editable-install and package build metadata
 *.egg-info/
 build/
 dist/
 docs/
-tests
+.venv-cuda/
 .agents
 skills-lock.json

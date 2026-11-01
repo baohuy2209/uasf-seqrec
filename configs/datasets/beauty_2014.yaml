@@ -6,7 +6,7 @@ category_subdir: "Beauty"
 # Canonical raw data files on disk
 reviews_file: "Beauty_5.json"            # 5-core interaction sequences (JSON Lines, 198,502 records)
 ratings_file: "ratings_Beauty.csv"        # Full unpruned ratings dump (CSV, 2,023,070 records)
-metadata_file: null                      # No metadata provided for 2014 Beauty
+metadata_file: "meta_Beauty.json.gz"  # Official metadata under data/raw
 
 # Processed paths
 processed_dir: "data/processed/beauty_2014"

@@ -1,0 +1,40 @@
+{
+  "dataset": "Toys and Games",
+  "train_base_catalog": {
+    "total_items": 11766,
+    "category": {
+      "available": 11422,
+      "missing": 344,
+      "coverage_pct": 97.08
+    },
+    "brand": {
+      "available": 10040,
+      "missing": 1726,
+      "coverage_pct": 85.33
+    },
+    "title": {
+      "available": 11710,
+      "missing": 56,
+      "coverage_pct": 99.52
+    }
+  },
+  "all_unique_items_cohort": {
+    "total_items": 11924,
+    "category": {
+      "available": 11579,
+      "missing": 345,
+      "coverage_pct": 97.11
+    },
+    "brand": {
+      "available": 10173,
+      "missing": 1751,
+      "coverage_pct": 85.32
+    },
+    "title": {
+      "available": 11865,
+      "missing": 59,
+      "coverage_pct": 99.51
+    }
+  },
+  "oov_items_count": 158
+}

@@ -1,0 +1,45 @@
+{
+  "dataset": "Beauty_2014",
+  "users": 22363,
+  "original_items": 12101,
+  "catalog_train_base_items": 11998,
+  "interactions": 198502,
+  "unique_user_item_pairs": 198502,
+  "sparsity": 0.9992664772935825,
+  "sparsity_definition": "1 - unique_user_item_pairs / (users * original_items)",
+  "mean_sequence_length": 8.876358270357287,
+  "min_sequence_length": 5,
+  "max_sequence_length": 204,
+  "train_base_events": 131413,
+  "train_base_pairs": 109050,
+  "train_meta_contexts": 22240,
+  "validation_contexts": 22363,
+  "test_contexts": 22363,
+  "oov_counts": {
+    "train_meta": 123,
+    "val": 178,
+    "test": 479
+  },
+  "metadata_status": "available",
+  "metadata_coverage_original_items": {
+    "category": 1.0,
+    "brand": 0.8249731427154781,
+    "title": 0.9994215354102967
+  },
+  "metadata_coverage_train_base_catalog": {
+    "category": 1.0,
+    "brand": 0.8255542590431738,
+    "title": 0.9994165694282381
+  },
+  "category_vocab_train_base": 246,
+  "brand_vocab_train_base": 2032,
+  "title_encoder": "all-MiniLM-L6-v2",
+  "title_encoder_status": "encoded",
+  "expected_reference_stats": {
+    "users": 22363,
+    "items": 12101,
+    "interactions": 198502,
+    "catalog_train_base_items": 11998
+  },
+  "reference_users_items_match": true
+}

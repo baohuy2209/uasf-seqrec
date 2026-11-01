@@ -1,0 +1,36 @@
+# Metadata Processing Pipeline Configuration
+
+pipeline:
+  version: "2.0.0"
+  random_seed: 42
+  title_encoder: "all-MiniLM-L6-v2"  # standard 384-dim sentence transformer
+
+datasets:
+  beauty:
+    dataset_key: "Beauty"
+    display_name: "Beauty"
+    config_file: "configs/datasets/beauty_2014.yaml"
+    expected_stats:
+      users: 22363
+      items: 12101
+      catalog_train_base_items: 11998
+  sports:
+    dataset_key: "Sports_and_Outdoors"
+    display_name: "Sports and Outdoors"
+    config_file: "configs/datasets/sports_and_outdoors_2014.yaml"
+    expected_stats:
+      users: 35598
+      items: 18357
+  toys:
+    dataset_key: "Toys_and_Games"
+    display_name: "Toys and Games"
+    config_file: "configs/datasets/toys_and_games_2014.yaml"
+    expected_stats:
+      users: 19412
+      items: 11924
+
+perturbations:
+  # Ratios of missing metadata to simulate (0.0 to 0.8)
+  missing_ratios: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+  seeds: [42, 43, 44]
+  sources: ["category", "brand", "title"]

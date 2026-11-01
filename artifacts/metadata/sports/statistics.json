@@ -1,0 +1,43 @@
+{
+  "dataset": "Sports_and_Outdoors_2014",
+  "users": 35598,
+  "original_items": 18357,
+  "catalog_train_base_items": 18132,
+  "interactions": 296337,
+  "unique_user_item_pairs": 296337,
+  "sparsity": 0.9995465195454304,
+  "sparsity_definition": "1 - unique_user_item_pairs / (users * original_items)",
+  "mean_sequence_length": 8.324540704533963,
+  "min_sequence_length": 5,
+  "max_sequence_length": 296,
+  "train_base_events": 189543,
+  "train_base_pairs": 153945,
+  "train_meta_contexts": 35343,
+  "validation_contexts": 35598,
+  "test_contexts": 35598,
+  "oov_counts": {
+    "train_meta": 255,
+    "val": 346,
+    "test": 788
+  },
+  "metadata_status": "available",
+  "metadata_coverage_original_items": {
+    "category": 0.9866535926349621,
+    "brand": 0.6678106444408127,
+    "title": 0.9950972381108024
+  },
+  "metadata_coverage_train_base_catalog": {
+    "category": 0.9865982792852416,
+    "brand": 0.6701411868519744,
+    "title": 0.9950363997352747
+  },
+  "category_vocab_train_base": 1428,
+  "brand_vocab_train_base": 2382,
+  "title_encoder": "all-MiniLM-L6-v2",
+  "title_encoder_status": "encoded",
+  "expected_reference_stats": {
+    "users": 35598,
+    "items": 18357
+  },
+  "reference_users_items_match": true
+}

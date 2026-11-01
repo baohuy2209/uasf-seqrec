@@ -16,7 +16,8 @@ device: "cpu"  # "cuda" if GPU is available, else "cpu"
 eval_batch_size: 256
 k_list: [10, 20]
 primary_metric: "NDCG@10"
-mask_seen_items: true  # Mask historical items in candidate catalog
+mask_seen_items: true  # Ranking mask; input sequence is unchanged
+mask_policy: "input_history_strict"
 ranking_protocol: "full_catalog"
 
 # Artifact and logging paths
