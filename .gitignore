@@ -19,4 +19,4 @@ dist/
 docs/
 .venv-cuda/
 .agents
-
+skills-lock.json
