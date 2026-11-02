@@ -1,0 +1,68 @@
+{
+  "dataset": "Sports_and_Outdoors_2014",
+  "users": 35598,
+  "original_items": 18357,
+  "catalog_train_base_items": 18132,
+  "interactions": 296337,
+  "unique_user_item_pairs": 296337,
+  "sparsity": 0.9995465195454304,
+  "sparsity_definition": "1 - unique_user_item_pairs / (users * original_items)",
+  "mean_sequence_length": 8.324540704533963,
+  "min_sequence_length": 5,
+  "max_sequence_length": 296,
+  "train_base_events": 189543,
+  "train_base_pairs": 153945,
+  "train_meta_contexts": 35343,
+  "validation_contexts": 35598,
+  "test_contexts": 35598,
+  "oov_counts": {
+    "train_meta": 255,
+    "val": 346,
+    "test": 788
+  },
+  "metadata_status": "missing_file",
+  "metadata_coverage_original_items": {
+    "category": null,
+    "brand": null,
+    "title": null
+  },
+  "metadata_coverage_train_base_catalog": {
+    "category": null,
+    "brand": null,
+    "title": null
+  },
+  "category_vocab_train_base": null,
+  "brand_vocab_train_base": null,
+  "title_encoder": null,
+  "title_encoder_status": "not_encoded_by_this_collection",
+  "expected_reference_stats": {
+    "users": 35598,
+    "items": 18357
+  },
+  "reference_users_items_match": true,
+  "reviews_file": "D:\\Github\\data-handle-pipeline\\data\\raw\\amazon_reviews\\2014\\Sports and Outdoors\\Sports_and_Outdoors_5.json",
+  "reviews_sha256": "24143dfc6a718fa6e40c7615ff55d29420a613028a5e6e77088cd07ab07948db",
+  "metadata_file": null,
+  "metadata_sha256": null,
+  "preprocessing_config": {
+    "dataset_name": "Sports_and_Outdoors_2014",
+    "raw_data_dir": "data/raw/amazon_reviews/2014",
+    "category_subdir": "Sports and Outdoors",
+    "reviews_file": "Sports_and_Outdoors_5.json",
+    "ratings_file": "ratings_Sports_and_Outdoors.csv",
+    "metadata_file": null,
+    "processed_dir": "data/taimma/processed/sports_and_outdoors_2014",
+    "splits_dir": "data/taimma/splits/sports_and_outdoors_2014",
+    "min_interactions": 5,
+    "max_seq_len": 50,
+    "attributes": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "expected_stats": {
+      "users": 35598,
+      "items": 18357
+    }
+  }
+}

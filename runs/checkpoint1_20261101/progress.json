@@ -1,0 +1,65 @@
+{
+  "audit": {
+    "metadata_all_three": "VERIFIED_ARTIFACT_AND_RAW_SHA256",
+    "validation": {
+      "total": 22363,
+      "oov": 178,
+      "overlap": 0,
+      "denominator": "all users, OOV retained as misses"
+    },
+    "test": {
+      "total": 22363,
+      "oov": 479,
+      "overlap": 0,
+      "denominator": "all users, OOV retained as misses"
+    },
+    "historical_checkpoint_sha256": "a546d61a871d219da17df6fa7f1760738ace419610fdf5f60db4b37bc1ac8699"
+  },
+  "loo_d64": {
+    "folder": "D:\\Github\\uasf-seqrec\\runs\\checkpoint1_20261101\\runs\\loo_d64_20261101_213705_683251_112f253e",
+    "checkpoint": "D:\\Github\\uasf-seqrec\\runs\\checkpoint1_20261101\\runs\\loo_d64_20261101_213705_683251_112f253e\\checkpoint.pt",
+    "seed": 42,
+    "dim": 64,
+    "sources": [],
+    "validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.05218,
+      "Recall@10": 0.099003,
+      "NDCG@20": 0.061234,
+      "Recall@20": 0.134955
+    },
+    "test": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.040574,
+      "Recall@10": 0.075348,
+      "NDCG@20": 0.048594,
+      "Recall@20": 0.107231
+    },
+    "training_sec": 820.6467471000069,
+    "supervisor_condition_3": "PASS"
+  },
+  "backbone_dim": 64,
+  "condition_3": "PASS",
+  "id_seed42": {
+    "folder": "D:\\Github\\uasf-seqrec\\runs\\checkpoint1_20261101\\runs\\id_seed42_20261101_215352_305645_16f2ce32",
+    "checkpoint": "D:\\Github\\uasf-seqrec\\runs\\checkpoint1_20261101\\runs\\id_seed42_20261101_215352_305645_16f2ce32\\checkpoint.pt",
+    "seed": 42,
+    "dim": 64,
+    "sources": [],
+    "validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.060897,
+      "Recall@10": 0.10097,
+      "NDCG@20": 0.069326,
+      "Recall@20": 0.134508
+    },
+    "test": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.046859,
+      "Recall@10": 0.078701,
+      "NDCG@20": 0.054093,
+      "Recall@20": 0.10732
+    },
+    "training_sec": 378.7131143000006
+  }
+}

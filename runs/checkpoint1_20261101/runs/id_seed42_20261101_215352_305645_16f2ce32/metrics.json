@@ -1,0 +1,20 @@
+{
+  "run_id": "id_seed42_20261101_215352_305645_16f2ce32",
+  "best_epoch": 9,
+  "total_epochs": 19,
+  "train_time_sec": 378.71,
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.060897,
+    "Recall@10": 0.10097,
+    "NDCG@20": 0.069326,
+    "Recall@20": 0.134508
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.046859,
+    "Recall@10": 0.078701,
+    "NDCG@20": 0.054093,
+    "Recall@20": 0.10732
+  }
+}

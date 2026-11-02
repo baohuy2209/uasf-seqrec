@@ -1,0 +1,25 @@
+{
+  "data_mode": "real",
+  "costs": {
+    "mean_epoch_train_sec": 16.79899034594505,
+    "mean_epoch_wall_sec": 22.179639383782774,
+    "stop_reason": "early_stopping",
+    "training_resources": {
+      "device": "cuda",
+      "cpu_name": "Intel64 Family 6 Model 151 Stepping 2, GenuineIntel",
+      "host_ram_bytes": 25463480320,
+      "process_rss_bytes": 1007910912,
+      "process_peak_rss_bytes": 1531174912,
+      "ram_measurement_scope": "process_lifetime_peak",
+      "ram_status": "measured",
+      "gpu_name": "NVIDIA GeForce RTX 2050",
+      "gpu_total_bytes": 4294443008,
+      "gpu_peak_allocated_bytes": 239739392,
+      "gpu_peak_reserved_bytes": 285212672,
+      "gpu_status": "measured",
+      "cuda_version": "12.4",
+      "gpu_measurement_scope": "PyTorch allocator since last peak reset; excludes other processes and non-PyTorch allocations",
+      "psutil_version": "7.2.2"
+    }
+  }
+}

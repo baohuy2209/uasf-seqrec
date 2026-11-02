@@ -1,0 +1,10 @@
+{
+  "data_mode": "real",
+  "training_performed": false,
+  "datasets": [
+    "Beauty_2014",
+    "Sports_and_Outdoors_2014",
+    "Toys_and_Games_2014"
+  ],
+  "missing_metadata_is_null_not_zero": true
+}

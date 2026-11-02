@@ -1,0 +1,12 @@
+[id_seed42] training id_seed42_20261101_215352_305645_16f2ce32
+Epoch 001 | Train Loss: 8.6011 | Val NDCG@10: 0.0208 | Val Recall@10: 0.0408 | Time: 14.26s
+Epoch 002 | Train Loss: 7.7480 | Val NDCG@10: 0.0391 | Val Recall@10: 0.0685 | Time: 15.12s
+Epoch 003 | Train Loss: 7.1570 | Val NDCG@10: 0.0515 | Val Recall@10: 0.0863 | Time: 14.57s
+Epoch 004 | Train Loss: 6.7106 | Val NDCG@10: 0.0546 | Val Recall@10: 0.0918 | Time: 14.84s
+Epoch 005 | Train Loss: 6.4138 | Val NDCG@10: 0.0570 | Val Recall@10: 0.0942 | Time: 14.53s
+Epoch 006 | Train Loss: 6.2213 | Val NDCG@10: 0.0585 | Val Recall@10: 0.0965 | Time: 14.19s
+Epoch 007 | Train Loss: 6.0873 | Val NDCG@10: 0.0594 | Val Recall@10: 0.0989 | Time: 14.56s
+Epoch 009 | Train Loss: 5.8975 | Val NDCG@10: 0.0609 | Val Recall@10: 0.1010 | Time: 14.00s
+Epoch 010 | Train Loss: 5.8323 | Val NDCG@10: 0.0597 | Val Recall@10: 0.0981 | Time: 13.26s
+Epoch 015 | Train Loss: 5.5739 | Val NDCG@10: 0.0588 | Val Recall@10: 0.0971 | Time: 14.39s
+Early stopping triggered at epoch 19. Best epoch: 9

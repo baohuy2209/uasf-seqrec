@@ -1,0 +1,67 @@
+{
+  "scope": "one full real Beauty ID Train-base training epoch, excludes loading and validation",
+  "dimension": 64,
+  "measurements": [
+    {
+      "processes": 1,
+      "elapsed_training_sec": 16.866010199999437,
+      "workers": [
+        {
+          "samples": 109050,
+          "train_sec": 14.999266700004227,
+          "loss": 8.60111748780443,
+          "peak_gpu_allocated_bytes": 236201984
+        }
+      ],
+      "errors": [],
+      "examples_per_sec": 6465.666669643283
+    },
+    {
+      "processes": 2,
+      "elapsed_training_sec": 31.735718500000075,
+      "workers": [
+        {
+          "samples": 109050,
+          "train_sec": 29.80147630001011,
+          "loss": 8.596335200636599,
+          "peak_gpu_allocated_bytes": 236201984
+        },
+        {
+          "samples": 109050,
+          "train_sec": 29.88066140000592,
+          "loss": 8.60111748780443,
+          "peak_gpu_allocated_bytes": 236201984
+        }
+      ],
+      "errors": [],
+      "examples_per_sec": 6872.3826120401045
+    },
+    {
+      "processes": 3,
+      "elapsed_training_sec": 46.07430999999633,
+      "workers": [
+        {
+          "samples": 109050,
+          "train_sec": 43.329802699998254,
+          "loss": 8.60111748780443,
+          "peak_gpu_allocated_bytes": 236201984
+        },
+        {
+          "samples": 109050,
+          "train_sec": 44.01631459999771,
+          "loss": 8.596335200636599,
+          "peak_gpu_allocated_bytes": 236201984
+        },
+        {
+          "samples": 109050,
+          "train_sec": 44.01633339999535,
+          "loss": 8.615063967279426,
+          "peak_gpu_allocated_bytes": 236201984
+        }
+      ],
+      "errors": [],
+      "examples_per_sec": 7100.4861494404595
+    }
+  ],
+  "best_workers": 3
+}

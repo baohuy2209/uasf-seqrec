@@ -1,0 +1,2065 @@
+diff --git a/.gitattributes b/.gitattributes
+index dfe0770..936c7be 100644
+--- a/.gitattributes
++++ b/.gitattributes
+@@ -1,2 +1,5 @@
+ # Auto detect text files and perform LF normalization
+ * text=auto
++
++# Preserve generated artifact bytes and literal whitespace inside quoted titles.
++artifacts/metadata/** -text whitespace=-blank-at-eol
+diff --git a/.gitignore b/.gitignore
+index 100159d..bcc9645 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -18,3 +18,15 @@ build/
+ dist/
+ docs/
+ tests
++
++# Keep metadata regression tests in version control.
++!tests/
++/tests/*
++!/tests/test_metadata_pipeline.py
++!/tests/test_data_ingestion.py
++!/tests/test_migration_contracts.py
++
++.venv-cuda/
++.agents
++tests!/tests/test_checkpoint1_protocol.py
++!/tests/test_checkpoint_state.py
+diff --git a/configs/datasets/beauty_2014.yaml b/configs/datasets/beauty_2014.yaml
+index 9d45317..001d8fd 100644
+--- a/configs/datasets/beauty_2014.yaml
++++ b/configs/datasets/beauty_2014.yaml
+@@ -6,7 +6,7 @@ category_subdir: "Beauty"
+ # Canonical raw data files on disk
+ reviews_file: "Beauty_5.json"            # 5-core interaction sequences (JSON Lines, 198,502 records)
+ ratings_file: "ratings_Beauty.csv"        # Full unpruned ratings dump (CSV, 2,023,070 records)
+-metadata_file: null                      # No metadata provided for 2014 Beauty
++metadata_file: "meta_Beauty.json.gz"  # Official metadata under data/raw
+ 
+ # Processed paths
+ processed_dir: "data/processed/beauty_2014"
+diff --git a/configs/datasets/sports_and_outdoors_2014.yaml b/configs/datasets/sports_and_outdoors_2014.yaml
+index 6818180..5c2f0cc 100644
+--- a/configs/datasets/sports_and_outdoors_2014.yaml
++++ b/configs/datasets/sports_and_outdoors_2014.yaml
+@@ -6,7 +6,7 @@ category_subdir: "Sports and Outdoors"
+ # Canonical raw data files on disk
+ reviews_file: "Sports_and_Outdoors_5.json"
+ ratings_file: "ratings_Sports_and_Outdoors.csv"
+-metadata_file: null
++metadata_file: "meta_Sports_and_Outdoors.json.gz"  # Official metadata under data/raw
+ 
+ # Processed paths
+ processed_dir: "data/processed/sports_and_outdoors_2014"
+diff --git a/configs/datasets/toys_and_games_2014.yaml b/configs/datasets/toys_and_games_2014.yaml
+index 2bcb711..6cc05ee 100644
+--- a/configs/datasets/toys_and_games_2014.yaml
++++ b/configs/datasets/toys_and_games_2014.yaml
+@@ -6,7 +6,7 @@ category_subdir: "Toys and Games"
+ # Canonical raw data files on disk
+ reviews_file: "Toys_and_Games_5.json"
+ ratings_file: "ratings_Toys_and_Games.csv"
+-metadata_file: null
++metadata_file: "meta_Toys_and_Games.json.gz"  # Official metadata under data/raw
+ 
+ # Processed paths
+ processed_dir: "data/processed/toys_and_games_2014"
+diff --git a/configs/experiments/pilot_beauty.yaml b/configs/experiments/pilot_beauty.yaml
+index 32669b8..84e4aeb 100644
+--- a/configs/experiments/pilot_beauty.yaml
++++ b/configs/experiments/pilot_beauty.yaml
+@@ -16,7 +16,8 @@ device: "cpu"  # "cuda" if GPU is available, else "cpu"
+ eval_batch_size: 256
+ k_list: [10, 20]
+ primary_metric: "NDCG@10"
+-mask_seen_items: true  # Mask historical items in candidate catalog
++mask_seen_items: true  # Ranking mask; input sequence is unchanged
++mask_policy: "input_history_strict"
+ ranking_protocol: "full_catalog"
+ 
+ # Artifact and logging paths
+diff --git a/configs/metadata.yaml b/configs/metadata.yaml
+index 0f1f0b5..1097e49 100644
+--- a/configs/metadata.yaml
++++ b/configs/metadata.yaml
+@@ -1,10 +1,9 @@
+ # Metadata Processing Pipeline Configuration
+ 
+ pipeline:
+-  version: "1.0.0"
++  version: "2.0.0"
+   random_seed: 42
+   title_encoder: "all-MiniLM-L6-v2"  # standard 384-dim sentence transformer
+-  fallback_feature_dim: 64         # used if offline random projection or model requires 64-dim
+ 
+ datasets:
+   beauty:
+diff --git a/pyproject.toml b/pyproject.toml
+index 51fbbbc..5a92cb5 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -16,9 +16,12 @@ dependencies = [
+     "scikit-learn",
+     "PyYAML",
+     "psutil",
++    "sentence-transformers>=3,<6",
++    "tabulate>=0.9,<1",
+ ]
+ 
+ [project.optional-dependencies]
++analysis = ["matplotlib", "reportlab", "pypdf"]
+ test = [
+     "pytest",
+ ]
+@@ -32,7 +35,7 @@ dev = [
+ 
+ [tool.setuptools.packages.find]
+ where = ["src"]
+-include = ["taimma*"]
++include = ["taimma*", "metadata_pipeline*"]
+ 
+ [tool.pytest.ini_options]
+ testpaths = ["tests"]
+diff --git a/requirements.txt b/requirements.txt
+index 4962350..7a45911 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -10,5 +10,7 @@ scipy==1.18.0
+ scikit-learn==1.9.0
+ PyYAML==6.0.3
+ psutil==7.2.2
++sentence-transformers>=3,<6
++tabulate>=0.9,<1
+ 
+ # Optional, install separately when needed: pyarrow (Parquet).
+diff --git a/scripts/run_pilot.py b/scripts/run_pilot.py
+index f2a64a4..c38ebda 100644
+--- a/scripts/run_pilot.py
++++ b/scripts/run_pilot.py
+@@ -134,7 +134,7 @@ def run_sanity_checks(
+         for start in range(0, len(samples), batch_size):
+             batch = samples[start:start + batch_size]
+             res = evaluator.evaluate_ranks(baseline.predict_all(len(batch)),
+-                [x.target for x in batch], [x.user_idx for x in batch], split_data.seen_train_items_per_user)
++                [x.target for x in batch], [x.user_idx for x in batch], split_data.seen_train_items_per_user, histories=[x.history for x in batch])
+             records.extend(res.per_user_records)
+         return evaluator.result_from_records(records)
+ 
+@@ -185,7 +185,7 @@ def run_sanity_checks(
+             seqs = torch.tensor([x.history for x in batch], dtype=torch.long, device=trainer.device)
+             scores = trainer.model.predict_all(seqs)
+             res = evaluator.evaluate_ranks(scores, shuffled_targets[start:start + len(batch)],
+-                [x.user_idx for x in batch], split_data.seen_train_items_per_user)
++                [x.user_idx for x in batch], split_data.seen_train_items_per_user, histories=[x.history for x in batch])
+             records.extend(res.per_user_records)
+     shuffled_res = evaluator.result_from_records(records)
+     if report_results is not None:
+@@ -197,9 +197,9 @@ def run_sanity_checks(
+         })
+ 
+     verdicts["Check 4: Leakage Detection"] = {
+-        "status": "REVIEW" if is_real_data else "PASS (FIXTURE)",
++        "status": ("PASS" if shuffled_res.ndcg_10 < sasrec_res.ndcg_10 and shuffled_res.ndcg_10 <= pop_res.ndcg_10 else "FAIL") if is_real_data else "PASS (FIXTURE)",
+         "evidence": f"SASRec NDCG@10={sasrec_res.ndcg_10:.6f}; shuffled={shuffled_res.ndcg_10:.6f}; Random={rand_res.ndcg_10:.6f}; Popularity={pop_res.ndcg_10:.6f}; permutation seed={seed}. Shuffling preserves target popularity and does not alone certify absence of leakage.",
+-        "validation_method": "Seeded cross-user target permutation; scientific acceptance requires a predeclared null criterion",
++        "validation_method": "29 October criterion: shuffled NDCG@10 decreases and does not exceed Popularity",
+         "measurements": {"original_ndcg_10": sasrec_res.ndcg_10, "shuffled_ndcg_10": shuffled_res.ndcg_10, "seed": seed},
+     }
+ 
+@@ -410,6 +410,7 @@ def main():
+             num_items=split_data.num_items,
+             k_list=k_list,
+             mask_seen_items=mask_seen,
++            mask_policy=cfg.get("mask_policy", "input_history_strict" if mask_seen else "none"),
+         )
+ 
+         trainer = SASRecTrainer(
+@@ -528,7 +529,7 @@ def main():
+             "loss_type": "full_catalog_cross_entropy",
+             "device": str(trainer.device),
+             "mask_seen_items": mask_seen,
+-            "mask_seen_policy": "train_base" if mask_seen else "none",
++            "mask_seen_policy": evaluator.mask_policy,
+             "tie_policy": "deterministic_catalog_index_ascending",
+             "sanity_checks": verdicts,
+             "model": model_kwargs,
+diff --git a/src/metadata_pipeline/README.md b/src/metadata_pipeline/README.md
+index 7def358..eeae068 100644
+--- a/src/metadata_pipeline/README.md
++++ b/src/metadata_pipeline/README.md
+@@ -1,91 +1,94 @@
+-# Metadata Pipeline for TAIMMA Sequential Recommendation
++# Metadata pipeline
+ 
+-Pipeline chuẩn bị metadata (Category, Brand, Title) cho các tập dữ liệu **Beauty**, **Sports and Outdoors**, và **Toys and Games** (Amazon 2014 benchmark) phục vụ nghiên cứu TAIMMA / UASF.
++Prepare Category (all non-root labels), Brand, and real SentenceTransformer Title
++vectors for Amazon 2014 Beauty, Sports and Toys. Catalog IDs come only from
++Train-base and stay 1..N; array row i-1 represents model item i. Missing values
++have explicit availability flags. Vocabularies are fitted only on Train-base.
+ 
+-Pipeline tuân thủ nghiêm ngặt các nguyên tắc:
+-1. **Khóa Catalog & Chia tập**: Sử dụng chính xác split Train-base (1..n-3), Train-meta (n-2), Val (n-1), Test (n) theo chỉ đạo memo 26/10. Catalog chuẩn `model_item_id` 1..N được suy ra từ Train-base interactions.
+-2. **True Missingness vs Unknown Token**: Chỉ đánh dấu `has_source=True` khi nguồn dữ liệu thực sự tồn tại, không coi token unknown hay placeholder là metadata thật.
+-3. **Alignment**: Thứ tự `model_item_id` trong `metadata.csv`, `availability_mask.csv` và `title_embeddings.npy` khớp nhau 100%.
+-4. **Perturbations (Beauty)**: Sinh synthetic masks (0% đến 80%) và permutations với hạt giống xác định.
+-
+----
+-
+-## 1. Cài đặt môi trường
++## Install and obtain sources
+ 
+ ```powershell
+-Set-Location uasf-seqrec
+-# Sử dụng virtualenv đã tạo
+ .\.venv\Scripts\python.exe -m pip install -e .
+-```
+-
+----
+-
+-## 2. Các bước thực thi
+-
+-### Bước 1: Chuẩn bị dữ liệu thô (Raw Data)
+-Tải reviews 5-core và metadata chính thức từ Stanford SNAP:
+-```powershell
+ .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Beauty
+ .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Sports_and_Outdoors
+ .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Toys_and_Games
+ ```
+-*Dữ liệu sẽ được lưu tại `data/raw/amazon_reviews/2014`.*
+-
+----
+-
+-### Bước 2: Chạy trích xuất metadata và sinh Title Embeddings (G01 & G02)
+-```powershell
+-# Chạy cho Beauty
+-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset beauty
+-
+-# Chạy cho Sports và Toys
+-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset sports
+-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset toys
+ 
+-# Hoặc chạy cho tất cả 3 bộ dữ liệu:
+-.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset all
+-```
++The downloader defaults to `data/raw`. Existing uncompressed reviews may live
++in category subdirectories. Both reviews and metadata must exist. Encoder errors,
++missing metadata, and mismatched expected statistics stop preparation. No random
++Title replacement is permitted.
+ 
+----
++## Build and validate
+ 
+-### Bước 3: Sinh Availability Mask & Perturbations cho Beauty (G03)
+-Sinh các tệp mô phỏng thiếu metadata (từ 0.0 đến 0.8) và các phép hoán vị (permutations) theo các seed ngẫu nhiên cố định:
+ ```powershell
+-.\.venv\Scripts\python.exe -m metadata_pipeline.build_perturbations --config configs/metadata.yaml --dataset beauty
++.\.venv\Scripts\python.exe -m metadata_pipeline.prepare --dataset all
++.\.venv\Scripts\python.exe -m metadata_pipeline.build_perturbations --dataset all
++.\.venv\Scripts\python.exe -m metadata_pipeline.validate --dataset all --verify-raw-hash
++.\.venv\Scripts\python.exe -m metadata_pipeline.report
+ ```
+ 
+----
+-
+-### Bước 4: Tạo Bảng 1 tóm tắt độ phủ (G04)
+-Xuất thống kê số lượng và độ phủ Category/Brand/Title cho cả 3 bộ dữ liệu (cả trên Train-base catalog và toàn bộ cohort):
+-```powershell
+-.\.venv\Scripts\python.exe -m metadata_pipeline.report --output reports/table_1_metadata.csv
++Choose a fresh `--output_dir` for preparation. `--overwrite` explicitly replaces
++an existing dataset only after all new metadata and embeddings have been built;
++old perturbations are discarded and must be regenerated. Never overwrite
++artifacts associated with completed experiment runs.
++
++For a relocated checkout, pass `--raw_root data/raw` to validation. Raw input
++checksums are preserved and compared to the selected files. Compressed and
++uncompressed review dumps have different byte hashes: use the same source format
++as the manifest, or regenerate into a new output directory rather than editing
++checksums. Default validation checks raw file availability; `--verify-raw-hash`
++also checks SHA256 and reconstructs the catalog and metadata from raw inputs.
++
++If only the handoff artifacts are available, explicitly use `--artifacts-only`.
++Its result says `NOT_CHECKED_ARTIFACTS_ONLY` for source provenance. It still
++checks artifact hashes, full coverage, vocabularies, all masks/permutations and
++the actual sequence loader. This mode is not a raw-source certification.
++
++## Schema version 2
++
++- `metadata.csv`: ordered Train-base catalog; `categories` and `category_indices`
++  are JSON lists. `brand_idx` is an integer. Index zero means padding/missing.
++- `cohort_metadata.csv`: metadata and availability for all unique cohort items,
++  including OOV items, so full-cohort coverage can be independently counted.
++- `item_map.csv`, `availability_mask.csv`, `title_embeddings.npy`: aligned IDs,
++  explicit source flags and float32 vectors. Missing Title rows are exactly zero.
++- `category_vocab.json`, `brand_vocab.json`: sorted Train-base vocabularies.
++- `coverage.json`, `statistics.json`: measured coverage and full Table 1 inputs.
++- `manifest.json`: schema, preprocessing/category policy, source and output hashes.
++- `perturbations`: per-source masks for 0–80% of originally available metadata,
++  three seeds, and permutations among available items with natural missing rows
++  fixed. The ratio is additional missingness, not total natural plus synthetic
++  missingness. Training perturbations require a separate experiment invocation;
++  these mappings do not modify interactions or targets.
++
++Legacy single-category artifacts must be regenerated from raw metadata. Labels
++that were discarded cannot be recovered from the old CSV. Regenerate residual
++models using Category after this schema change; do not reuse checkpoints whose
++category vocabulary was fitted to the former single-label representation.
++
++## Load for inference
++
++```python
++from metadata_pipeline.loader import load_catalog
++attrs, masks = load_catalog("artifacts/metadata/beauty")
++# Pass the same attrs/masks to MultimodalSequenceDataset and the model's catalog
++# arguments so the history and candidate sides use identical perturbations.
++attrs, masks = load_catalog(
++    "artifacts/metadata/beauty",
++    mask_files={"brand": "artifacts/metadata/beauty/perturbations/masks/mask_brand_ratio_0.80_seed_42.csv"},
++    permutation_files={"title": "artifacts/metadata/beauty/perturbations/permutations/perm_title_seed_42.csv"},
++)
+ ```
+-*Tệp kết quả sẽ có tại: `reports/table_1_metadata.csv` và `reports/table_1_metadata.md`.*
+ 
+----
++Category tensors have shape `[N,L]` and dtype long; Brand `[N]` long; Title
++`[N,D]` float32. Padding is added by MultimodalSequenceDataset, not by shifting
++catalog arrays. Availability masks must also be passed to the residual model
++so masked candidate scores are disabled. ID-only checkpoint/vocabulary IDs
++remain unchanged.
+ 
+-### Bước 5: Kiểm thử và xác thực (G05 & Acceptance Criteria)
+-Chạy kiểm tra tự động toàn bộ ràng buộc kỹ thuật và kiểm thử tích hợp loader:
+-```powershell
+-.\.venv\Scripts\python.exe -m metadata_pipeline.validate --dataset all
+-```
++Regression checks:
+ 
+----
+-
+-## 3. Cấu trúc thư mục artifacts bàn giao
+-
+-```text
+-artifacts/metadata/<dataset>/
+-├── item_map.csv               # raw_item_id <-> model_item_id (cùng cờ in_train_base)
+-├── metadata.csv               # model_item_id (1..N), raw_item_id, category, brand, title, has_*
+-├── title_embeddings.npy       # Shape [N, dim], row order = model_item_id (1..N)
+-├── availability_mask.csv      # model_item_id, has_category, has_brand, has_title
+-├── coverage.json              # Độ phủ chi tiết theo Train-base catalog & Toàn bộ cohort
+-├── manifest.json              # Hash nguồn dữ liệu, thông số encoder, shape, seeds
+-└── perturbations/             # Riêng cho Beauty (G03)
+-    ├── masks/                 # Các mask tỷ lệ 0.0 - 0.8 theo seed
+-    ├── permutations/          # Các mapping hoán vị 1-1 theo seed
+-    └── perturbations_manifest.json
++```powershell
++.\.venv\Scripts\python.exe -m pytest -q tests/test_metadata_pipeline.py
+ ```
+-
+diff --git a/src/metadata_pipeline/build_perturbations.py b/src/metadata_pipeline/build_perturbations.py
+index a2fdc4e..3accdcc 100644
+--- a/src/metadata_pipeline/build_perturbations.py
++++ b/src/metadata_pipeline/build_perturbations.py
+@@ -19,6 +19,15 @@ if str(SRC_DIR) not in sys.path:
+     sys.path.insert(0, str(SRC_DIR))
+ 
+ from taimma.paths import resolve_project_path
++from .contracts import SOURCES, check_availability, flags, read_table, require
++
++
++def validate_options(table, ratios, seeds, sources):
++    check_availability(table)
++    require(bool(sources) and set(sources).issubset(SOURCES) and len(set(sources)) == len(sources), "Invalid sources")
++    require(bool(seeds) and len(set(seeds)) == len(seeds) and all(isinstance(s, int) and s >= 0 for s in seeds), "Invalid seeds")
++    require(bool(ratios) and len(set(ratios)) == len(ratios) and all(0 <= r <= 1 for r in ratios), "Invalid ratios")
++    require(len({f"{r:.2f}" for r in ratios}) == len(ratios), "Ratios collide in output filenames")
+ 
+ 
+ def generate_synthetic_masks(
+@@ -35,6 +44,7 @@ def generate_synthetic_masks(
+       - NEVER turns 0 (originally missing) -> 1.
+       - Fully reproducible by (ratio, seed, source).
+     """
++    validate_options(availability_df, ratios, seeds, sources)
+     masks_dir = output_dir / "masks"
+     masks_dir.mkdir(parents=True, exist_ok=True)
+ 
+@@ -50,7 +60,7 @@ def generate_synthetic_masks(
+                     continue
+ 
+                 rng = np.random.RandomState(seed + int(ratio * 1000))
+-                orig_status = availability_df[col_name].values.astype(bool)
++                orig_status = flags(availability_df[col_name])
+                 avail_indices = np.where(orig_status)[0]
+ 
+                 # Number of items to drop out
+@@ -70,7 +80,7 @@ def generate_synthetic_masks(
+                     "is_dropped": False,
+                 })
+                 df_out.loc[drop_indices, "is_dropped"] = True
+-                df_out.to_csv(file_path, index=False)
++                df_out.to_csv(file_path, index=False, lineterminator="\n")
+ 
+                 actual_dropped_ratio = len(drop_indices) / max(1, len(avail_indices))
+                 manifest_records.append({
+@@ -106,6 +116,7 @@ def generate_permutations(
+       - Preserves both marginal distribution and exact missingness structure.
+       - Does NOT alter user interaction sequences, target items, or model catalog IDs.
+     """
++    validate_options(metadata_df, [0.0], seeds, sources)
+     perm_dir = output_dir / "permutations"
+     perm_dir.mkdir(parents=True, exist_ok=True)
+ 
+@@ -117,7 +128,7 @@ def generate_permutations(
+         for source in sources:
+             flag_col = f"has_{source}"
+             if flag_col in metadata_df.columns:
+-                avail_mask = metadata_df[flag_col].values.astype(bool)
++                avail_mask = flags(metadata_df[flag_col])
+             else:
+                 avail_mask = np.ones(num_items, dtype=bool)
+ 
+@@ -144,7 +155,7 @@ def generate_permutations(
+                 "seed": seed,
+                 "is_available": avail_mask,
+             })
+-            df_perm.to_csv(file_path, index=False)
++            df_perm.to_csv(file_path, index=False, lineterminator="\n")
+ 
+             manifest_records.append({
+                 "file": filename,
+@@ -180,8 +191,12 @@ def process_dataset_perturbations(
+     if not avail_mask_path.exists():
+         raise FileNotFoundError(f"Missing availability mask at: {avail_mask_path}. Run prepare.py first.")
+ 
+-    avail_df = pd.read_csv(avail_mask_path)
+-    meta_df = pd.read_csv(meta_path) if meta_path.exists() else avail_df
++    avail_df = read_table(avail_mask_path)
++    meta_df = read_table(meta_path)
++    require(np.array_equal(avail_df.model_item_id, meta_df.model_item_id), "Metadata/mask ID mismatch")
++    for source in sources:
++        require(np.array_equal(flags(avail_df[f"has_{source}"]), flags(meta_df[f"has_{source}"])),
++                f"{source}: metadata/mask mismatch")
+ 
+     pert_out_dir = ds_dir / "perturbations"
+     pert_out_dir.mkdir(parents=True, exist_ok=True)
+diff --git a/src/metadata_pipeline/prepare.py b/src/metadata_pipeline/prepare.py
+index d679468..7d542e1 100644
+--- a/src/metadata_pipeline/prepare.py
++++ b/src/metadata_pipeline/prepare.py
+@@ -1,360 +1,147 @@
+-"""
+-prepare.py - Extract and build normalized metadata, item mapping, and title embeddings.
+-Supports both Beauty, Sports, and Toys.
+-"""
+-
++"""Prepare real Amazon 2014 metadata with Train-base-only vocabularies."""
+ import argparse
+ import json
+-import os
+ import sys
++import tempfile
+ from pathlib import Path
+-from typing import Dict, List, Optional, Tuple, Any
+-
+ import numpy as np
+ import pandas as pd
+ import yaml
+ 
+-# Resolve paths
+ SRC_DIR = Path(__file__).resolve().parents[1]
+-PROJECT_ROOT = SRC_DIR.parent
+ if str(SRC_DIR) not in sys.path:
+     sys.path.insert(0, str(SRC_DIR))
+-
+-from taimma.paths import resolve_project_path
++from taimma.paths import PROJECT_ROOT, resolve_project_path
+ from taimma.data.ingestion import Amazon2014Ingestor
+ from taimma.data.split import SequenceSplitter, compute_file_sha256
+-
+-
+-def is_valid_string(val: Any) -> bool:
+-    if val is None or pd.isna(val):
+-        return False
+-    if not isinstance(val, str):
+-        val = str(val)
+-    return bool(val.strip())
+-
+-
+-def normalize_string(val: Optional[Any]) -> Optional[str]:
+-    if not is_valid_string(val):
+-        return None
+-    return str(val).strip()
+-
+-
+-def get_title_embeddings(
+-    titles: List[Optional[str]],
+-    encoder_name: str = "all-MiniLM-L6-v2",
+-    batch_size: int = 256,
+-    target_dim: Optional[int] = None,
+-) -> Tuple[np.ndarray, Dict[str, Any]]:
+-    """
+-    Generate normalized embeddings for non-empty titles using SentenceTransformers or deterministic projection.
+-    Empty/missing titles have a deterministic zero vector.
+-    """
+-    num_items = len(titles)
+-    embedding_info = {
+-        "encoder": encoder_name,
+-        "num_items": num_items,
+-    }
+-
++from taimma.experiments.reporting import dataset_statistics
++from .contracts import SOURCES, coverage, require, write_json
++
++
++def is_valid_string(value):
++    return isinstance(value, str) and bool(value.strip())
++
++
++def get_title_embeddings(titles, encoder_name="all-MiniLM-L6-v2", batch_size=256, target_dim=None):
++    """Encoder failures are fatal; only missing titles receive zero vectors."""
++    from sentence_transformers import SentenceTransformer
++    model = SentenceTransformer(encoder_name)
++    dimension = getattr(model, "get_embedding_dimension", None) or model.get_sentence_embedding_dimension
++    dim = dimension()
++    require(isinstance(dim, int) and dim > 0, "Invalid encoder dimension")
++    require(target_dim is None or target_dim == dim, "Encoder dimension differs from target_dim")
++    embeddings = np.zeros((len(titles), dim), dtype=np.float32)
++    valid = [i for i, title in enumerate(titles) if is_valid_string(title)]
++    if valid:
++        encoded = np.asarray(model.encode([titles[i].strip() for i in valid], batch_size=batch_size,
++                             show_progress_bar=True, normalize_embeddings=True), dtype=np.float32)
++        require(encoded.shape == (len(valid), dim) and np.isfinite(encoded).all(), "Invalid Title vectors")
++        require(np.allclose(np.linalg.norm(encoded, axis=1), 1, atol=1e-4), "Title vectors must have unit norm")
++        embeddings[valid] = encoded
++    return embeddings, dict(encoder=encoder_name, mode="sentence-transformers", dim=dim)
++
++
++def source_path(path):
++    path = Path(path).resolve()
+     try:
+-        from sentence_transformers import SentenceTransformer
+-        model = SentenceTransformer(encoder_name)
+-        dim = getattr(model, "get_embedding_dimension", getattr(model, "get_sentence_embedding_dimension", lambda: 384))()
+-        embedding_info["dim"] = dim
+-        embedding_info["mode"] = "sentence-transformers"
+-
+-        embeddings = np.zeros((num_items, dim), dtype=np.float32)
+-        valid_indices = [idx for idx, t in enumerate(titles) if is_valid_string(t)]
+-        valid_texts = [str(titles[idx]).strip() for idx in valid_indices]
+-
+-        if valid_texts:
+-            encoded_vecs = model.encode(
+-                valid_texts,
+-                batch_size=batch_size,
+-                show_progress_bar=True,
+-                normalize_embeddings=True,
+-            )
+-            for idx, vec in zip(valid_indices, encoded_vecs):
+-                embeddings[idx] = vec
+-
+-        return embeddings, embedding_info
+-    except Exception as exc:
+-        print(f"[Warning] SentenceTransformer failed or offline ({exc}). Using deterministic reproducible hash projection.")
+-        dim = target_dim or 64
+-        embedding_info["dim"] = dim
+-        embedding_info["mode"] = "deterministic-hash-projection"
+-
+-        embeddings = np.zeros((num_items, dim), dtype=np.float32)
+-        import hashlib
+-        for idx, t in enumerate(titles):
+-            if is_valid_string(t):
+-                # Deterministic random vector from title string SHA256
+-                seed_val = int(hashlib.sha256(str(t).strip().encode("utf-8")).hexdigest()[:8], 16)
+-                rng = np.random.RandomState(seed_val)
+-                vec = rng.randn(dim).astype(np.float32)
+-                norm = np.linalg.norm(vec)
+-                embeddings[idx] = vec / (norm + 1e-12)
+-
+-        return embeddings, embedding_info
+-
+-
+-def process_dataset_metadata(
+-    dataset_name: str,
+-    raw_root: str,
+-    output_base_dir: str,
+-    config_file: str,
+-    dataset_slug: Optional[str] = None,
+-    encoder_name: str = "all-MiniLM-L6-v2",
+-    expected_stats: Optional[Dict[str, int]] = None,
+-) -> Dict[str, Any]:
+-    print(f"\n=======================================================")
+-    print(f"Processing Metadata for: {dataset_name}")
+-    print(f"=======================================================")
+-
+-    folder_name = dataset_slug.lower() if dataset_slug else dataset_name.lower()
+-    raw_root_path = resolve_project_path(raw_root)
+-    output_dir = resolve_project_path(output_base_dir) / folder_name
+-    output_dir.mkdir(parents=True, exist_ok=True)
+-
+-    with open(resolve_project_path(config_file), "r", encoding="utf-8") as f:
+-        ds_config = yaml.safe_load(f)
+-
+-    category_key = ds_config.get("dataset_name", dataset_name).replace("_2014", "")
+-    ingestor = Amazon2014Ingestor(str(raw_root_path), dataset_key=category_key)
++        return path.relative_to(PROJECT_ROOT).as_posix()
++    except ValueError:
++        return str(path)
++
++
++def process_dataset_metadata(dataset_name, raw_root, output_base_dir, config_file,
++                             dataset_slug=None, encoder_name="all-MiniLM-L6-v2",
++                             expected_stats=None, overwrite=False):
++    output_dir = resolve_project_path(output_base_dir) / (dataset_slug or dataset_name).lower()
++    require(not output_dir.exists() or overwrite, f"Output exists: {output_dir}; use --overwrite explicitly")
++    config = yaml.safe_load(resolve_project_path(config_file).read_text(encoding="utf-8"))
++    key = config["dataset_name"].replace("_2014", "")
++    ingestor = Amazon2014Ingestor(str(resolve_project_path(raw_root)), key)
+     reviews_path, meta_path = ingestor.resolve_paths()
+-
+-    print(f"- Reviews file: {reviews_path}")
+-    print(f"- Metadata file: {meta_path}")
+-
+-    # Build sequence splits to lock exact Train-base catalog
+-    min_interactions = ds_config.get("min_interactions", 5)
+-    max_seq_len = ds_config.get("max_seq_len", 50)
+-    sequences, raw_meta_dict = ingestor.build_interaction_sequences(min_interactions=min_interactions)
+-
+-    splitter = SequenceSplitter(max_seq_len=max_seq_len, min_seq_len=min_interactions)
+-    split_data = splitter.split(sequences)
+-
+-    # All unique raw items in the 5-core interaction sequences
+-    all_raw_items_set = set()
+-    for seq in sequences:
+-        all_raw_items_set.update(seq.items)
+-    sorted_all_raw_items = sorted(list(all_raw_items_set))
+-
+-    # Train-base catalog items (model_item_id 1..N)
+-    # item2idx has 1-based indexing for train-base items
+-    train_base_catalog_size = split_data.num_items
+-    total_raw_items_count = len(sorted_all_raw_items)
+-
+-    print(f"Interaction Users: {len(sequences)}")
+-    print(f"Total Unique Items (All Cohort): {total_raw_items_count}")
+-    print(f"Train-base Catalog Items: {train_base_catalog_size}")
+-
+-    if expected_stats:
+-        if "items" in expected_stats:
+-            print(f"Expected items: {expected_stats['items']} | Actual: {total_raw_items_count} | Match: {expected_stats['items'] == total_raw_items_count}")
+-        if "catalog_train_base_items" in expected_stats:
+-            print(f"Expected train-base: {expected_stats['catalog_train_base_items']} | Actual: {train_base_catalog_size} | Match: {expected_stats['catalog_train_base_items'] == train_base_catalog_size}")
+-
+-    # Build item_map.csv
+-    # model_item_id: 1..N for Train-base items, 0 for OOV / padding
+-    # For alignment in metadata tables:
+-    # 1. We provide train_base_catalog (index 1..N) as the primary model catalog table
+-    # 2. We also record in_train_base flag for any out-of-catalog items
+-    catalog_rows = []
+-    # Index 0 is reserved for padding in sequential recommendation models
+-    # Row i corresponds to model_item_id i (1..N)
+-    for model_id in range(1, train_base_catalog_size + 1):
+-        raw_asin = split_data.idx2item[model_id]
+-        meta = raw_meta_dict.get(raw_asin, {})
+-        category = meta.get("category")
+-        brand = meta.get("brand")
+-        title = meta.get("title")
+-
+-        has_cat = bool(category is not None and str(category).strip())
+-        has_brd = bool(brand is not None and str(brand).strip())
+-        has_ttl = bool(title is not None and str(title).strip())
+-
+-        catalog_rows.append({
+-            "model_item_id": model_id,
+-            "raw_item_id": raw_asin,
+-            "category": category,
+-            "brand": brand,
+-            "title": title,
+-            "has_category": has_cat,
+-            "has_brand": has_brd,
+-            "has_title": has_ttl,
+-            "in_train_base": True,
+-        })
+-
+-    # OOV items (items present in Val/Test but not in Train-base)
+-    oov_asins = sorted([asin for asin in sorted_all_raw_items if asin not in split_data.item2idx])
+-    for oov_idx, raw_asin in enumerate(oov_asins):
+-        meta = raw_meta_dict.get(raw_asin, {})
+-        category = meta.get("category")
+-        brand = meta.get("brand")
+-        title = meta.get("title")
+-
+-        has_cat = bool(category is not None and str(category).strip())
+-        has_brd = bool(brand is not None and str(brand).strip())
+-        has_ttl = bool(title is not None and str(title).strip())
+-
+-        catalog_rows.append({
+-            "model_item_id": 0,  # 0 indicates out-of-catalog / padding in model ID space
+-            "raw_item_id": raw_asin,
+-            "category": category,
+-            "brand": brand,
+-            "title": title,
+-            "has_category": has_cat,
+-            "has_brand": has_brd,
+-            "has_title": has_ttl,
+-            "in_train_base": False,
+-        })
+-
+-    df_full = pd.DataFrame(catalog_rows)
+-    df_train_base = df_full[df_full["in_train_base"]].copy().sort_values("model_item_id")
+-
+-    # Build integer vocabulary mappings for Category and Brand strictly from Train-base
+-    # Index 0 is reserved for padding / missing / unknown
+-    # 1. Category Vocab
+-    unique_cats = sorted(list(set(c for c in df_train_base["category"].dropna() if str(c).strip())))
+-    cat2idx = {cat: idx + 1 for idx, cat in enumerate(unique_cats)}
+-    with open(output_dir / "category_vocab.json", "w", encoding="utf-8") as f:
+-        json.dump(cat2idx, f, indent=2, ensure_ascii=False)
+-
+-    # 2. Brand Vocab
+-    unique_brands = sorted(list(set(b for b in df_train_base["brand"].dropna() if str(b).strip())))
+-    brand2idx = {brand: idx + 1 for idx, brand in enumerate(unique_brands)}
+-    with open(output_dir / "brand_vocab.json", "w", encoding="utf-8") as f:
+-        json.dump(brand2idx, f, indent=2, ensure_ascii=False)
+-
+-    # Assign integer idx columns (0 if missing or not in train-base vocab)
+-    df_train_base["category_idx"] = df_train_base["category"].map(lambda c: cat2idx.get(c, 0)).astype(int)
+-    df_train_base["brand_idx"] = df_train_base["brand"].map(lambda b: brand2idx.get(b, 0)).astype(int)
+-
+-    # 1. Save item_map.csv
+-    item_map_path = output_dir / "item_map.csv"
+-    df_full[["model_item_id", "raw_item_id", "in_train_base"]].to_csv(item_map_path, index=False)
+-
+-    # 2. Save metadata.csv (model_item_id, category, brand, title, has_*, category_idx, brand_idx)
+-    metadata_csv_path = output_dir / "metadata.csv"
+-    df_train_base[[
+-        "model_item_id", "raw_item_id",
+-        "category", "brand", "title",
+-        "category_idx", "brand_idx",
+-        "has_category", "has_brand", "has_title"
+-    ]].to_csv(metadata_csv_path, index=False)
+-
+-    # 3. Save availability_mask.csv
+-    avail_mask_path = output_dir / "availability_mask.csv"
+-    df_train_base[["model_item_id", "has_category", "has_brand", "has_title"]].to_csv(avail_mask_path, index=False)
+-
+-    # 4. Generate & Save title_embeddings.npy
+-    # Order strictly matches model_item_id 1..N (shape: [num_items, dim])
+-    titles_list = df_train_base["title"].tolist()
+-    embeddings, embed_info = get_title_embeddings(titles_list, encoder_name=encoder_name)
+-    title_npy_path = output_dir / "title_embeddings.npy"
+-    np.save(title_npy_path, embeddings)
+-
+-    # 5. Calculate Coverage metrics on BOTH:
+-    # A) Train-base catalog (1..N)
+-    # B) Total unique items across all cohorts (All 5-core items)
+-    def calc_coverage(df_subset, scope_name):
+-        n_total = len(df_subset)
+-        cat_count = int(df_subset["has_category"].sum())
+-        brd_count = int(df_subset["has_brand"].sum())
+-        ttl_count = int(df_subset["has_title"].sum())
+-        return {
+-            "scope": scope_name,
+-            "total_items": n_total,
+-            "category": {
+-                "available": cat_count,
+-                "missing": n_total - cat_count,
+-                "coverage_pct": round(cat_count / max(1, n_total) * 100.0, 2),
+-            },
+-            "brand": {
+-                "available": brd_count,
+-                "missing": n_total - brd_count,
+-                "coverage_pct": round(brd_count / max(1, n_total) * 100.0, 2),
+-            },
+-            "title": {
+-                "available": ttl_count,
+-                "missing": n_total - ttl_count,
+-                "coverage_pct": round(ttl_count / max(1, n_total) * 100.0, 2),
+-            },
+-        }
+-
+-    cov_train_base = calc_coverage(df_train_base, "train_base_catalog")
+-    cov_all = calc_coverage(df_full, "all_unique_items_cohort")
+-
+-    coverage_payload = {
+-        "dataset": dataset_name,
+-        "train_base_catalog": cov_train_base,
+-        "all_unique_items_cohort": cov_all,
+-        "oov_items_count": len(oov_asins),
+-    }
+-
+-    coverage_json_path = output_dir / "coverage.json"
+-    with open(coverage_json_path, "w", encoding="utf-8") as f:
+-        json.dump(coverage_payload, f, indent=2)
+-
+-    # 6. Save Manifest
+-    manifest = {
+-        "dataset": dataset_name,
+-        "reviews_file": reviews_path,
+-        "reviews_sha256": compute_file_sha256(reviews_path),
+-        "metadata_file": meta_path,
+-        "metadata_sha256": compute_file_sha256(meta_path) if meta_path else None,
+-        "num_catalog_items": train_base_catalog_size,
+-        "num_total_cohort_items": total_raw_items_count,
+-        "num_oov_items": len(oov_asins),
+-        "title_embedding": {
+-            "path": str(title_npy_path.name),
+-            "shape": list(embeddings.shape),
+-            "encoder": embed_info["encoder"],
+-            "dim": embed_info["dim"],
+-            "mode": embed_info["mode"],
+-        },
+-        "coverage_train_base": cov_train_base,
+-    }
+-    manifest_path = output_dir / "manifest.json"
+-    with open(manifest_path, "w", encoding="utf-8") as f:
+-        json.dump(manifest, f, indent=2)
+-
+-    print(f"Artifacts successfully written to: {output_dir}")
++    if meta_path is None:
++        raise FileNotFoundError(f"Metadata missing for {key}; download meta_{key}.json.gz first")
++    print(f"Reading reviews/metadata for {key}", flush=True)
++    sequences, metadata = ingestor.build_interaction_sequences(config.get("min_interactions", 5))
++    require(bool(sequences) and bool(metadata), "Reviews and metadata must be nonempty")
++    split = SequenceSplitter(config.get("max_seq_len", 50), config.get("min_interactions", 5)).split(sequences)
++    all_items = sorted({item for seq in sequences for item in seq.items})
++    actual = dict(users=len(sequences), items=len(all_items), catalog_train_base_items=split.num_items,
++                  interactions=sum(len(seq.items) for seq in sequences))
++    for name, expected in {**config.get("expected_stats", {}), **(expected_stats or {})}.items():
++        require(name in actual and actual[name] == expected,
++                f"Dataset statistic {name}: expected {expected}, actual {actual.get(name)}")
++    require(split.num_items > 0, "Empty Train-base catalog")
++    rows = []
++    for asin in all_items:
++        rec = metadata.get(asin, {})
++        labels = rec.get("categories") or ([rec["category"]] if rec.get("category") else [])
++        labels = list(dict.fromkeys(str(x).strip() for x in labels if str(x).strip()))
++        brand, title = rec.get("brand") or "", rec.get("title") or ""
++        rows.append(dict(model_item_id=split.item2idx.get(asin, 0), raw_item_id=asin,
++                         in_train_base=asin in split.item2idx, categories=labels, brand=brand, title=title,
++                         has_category=bool(labels), has_brand=is_valid_string(brand), has_title=is_valid_string(title)))
++    full = pd.DataFrame(rows)
++    catalog = full[full.in_train_base].copy().sort_values("model_item_id")
++    cat_vocab = {v: i + 1 for i, v in enumerate(sorted({v for vs in catalog.categories for v in vs}))}
++    brand_vocab = {v: i + 1 for i, v in enumerate(sorted({v for v in catalog.brand if v}))}
++    catalog["category_indices"] = catalog.categories.map(lambda vs: json.dumps([cat_vocab[v] for v in vs]))
++    catalog["brand_idx"] = catalog.brand.map(lambda v: brand_vocab.get(v, 0))
++    catalog["categories"] = catalog.categories.map(lambda vs: json.dumps(vs, ensure_ascii=False))
++    embeddings, embed_info = get_title_embeddings(catalog.title.tolist(), encoder_name=encoder_name)
++    stats = dataset_statistics(sequences, split, metadata, True, config["dataset_name"], config.get("expected_stats"))
++    stats.update(title_encoder=embed_info["encoder"], title_encoder_status="encoded")
++    cov = dict(dataset=dataset_name, train_base_catalog=coverage(catalog),
++               all_unique_items_cohort=coverage(full), oov_items_count=len(full) - len(catalog))
++    manifest = dict(schema_version=2, dataset=dataset_name, dataset_key=key, category_policy="multilabel_without_root",
++                    reviews_file=source_path(reviews_path), reviews_sha256=compute_file_sha256(reviews_path),
++                    metadata_file=source_path(meta_path), metadata_sha256=compute_file_sha256(meta_path),
++                    num_catalog_items=len(catalog), num_total_cohort_items=len(full), num_oov_items=len(full)-len(catalog),
++                    title_embedding=dict(path="title_embeddings.npy", shape=list(embeddings.shape), **embed_info),
++                    preprocessing_config=config, coverage_train_base=cov["train_base_catalog"])
++    output_dir.parent.mkdir(parents=True, exist_ok=True)
++    # Failed inputs/encoding cannot overwrite a previous complete handoff.
++    with tempfile.TemporaryDirectory(prefix=".metadata-", dir=output_dir.parent) as scratch:
++        stage = Path(scratch) / "payload"
++        stage.mkdir()
++        full[["model_item_id", "raw_item_id", "in_train_base"]].to_csv(stage/"item_map.csv", index=False, lineterminator="\n")
++        catalog.drop(columns="in_train_base").to_csv(stage/"metadata.csv", index=False, lineterminator="\n")
++        cohort = full.copy()
++        cohort["categories"] = cohort.categories.map(lambda vs: json.dumps(vs, ensure_ascii=False))
++        cohort.to_csv(stage/"cohort_metadata.csv", index=False, lineterminator="\n")
++        catalog[["model_item_id", *[f"has_{s}" for s in SOURCES]]].to_csv(stage/"availability_mask.csv", index=False, lineterminator="\n")
++        np.save(stage/"title_embeddings.npy", embeddings)
++        for name, data in [("category_vocab",cat_vocab),("brand_vocab",brand_vocab),("coverage",cov),("statistics",stats)]:
++            write_json(stage/f"{name}.json", data)
++        manifest["artifact_sha256"] = {p.name:compute_file_sha256(str(p)) for p in stage.iterdir()}
++        write_json(stage/"manifest.json", manifest)
++        if output_dir.exists():
++            backup = Path(scratch)/"previous"
++            output_dir.rename(backup)
++            try:
++                stage.rename(output_dir)
++            except Exception:
++                backup.rename(output_dir)
++                raise
++        else:
++            stage.rename(output_dir)
++    print(f"Metadata prepared: {output_dir}")
+     return manifest
+ 
+ 
+ def main():
+-    parser = argparse.ArgumentParser(description="Prepare metadata artifacts for Beauty, Sports, and Toys.")
+-    parser.add_argument("--config", default="configs/metadata.yaml", help="Metadata pipeline config path")
+-    parser.add_argument("--dataset", choices=["beauty", "sports", "toys", "all"], default="all", help="Target dataset")
+-    parser.add_argument("--raw_root", default="data/raw", help="Raw dataset root directory")
+-    parser.add_argument("--output_dir", default="artifacts/metadata", help="Output artifact directory")
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--config", default="configs/metadata.yaml")
++    parser.add_argument("--dataset", choices=["beauty","sports","toys","all"], default="all")
++    parser.add_argument("--raw_root", default="data/raw")
++    parser.add_argument("--output_dir", default="artifacts/metadata")
++    parser.add_argument("--overwrite", action="store_true")
+     args = parser.parse_args()
+-
+-    with open(resolve_project_path(args.config), "r", encoding="utf-8") as f:
+-        config = yaml.safe_load(f)
+-
+-    encoder_name = config.get("pipeline", {}).get("title_encoder", "all-MiniLM-L6-v2")
+-    datasets_cfg = config.get("datasets", {})
+-
+-    target_keys = ["beauty", "sports", "toys"] if args.dataset == "all" else [args.dataset]
+-
+-    for key in target_keys:
+-        d_cfg = datasets_cfg.get(key)
+-        if not d_cfg:
+-            print(f"Skipping unknown dataset key: {key}")
+-            continue
+-        process_dataset_metadata(
+-            dataset_name=d_cfg["display_name"],
+-            raw_root=args.raw_root,
+-            output_base_dir=args.output_dir,
+-            config_file=d_cfg["config_file"],
+-            dataset_slug=key,
+-            encoder_name=encoder_name,
+-            expected_stats=d_cfg.get("expected_stats"),
+-        )
++    config = yaml.safe_load(resolve_project_path(args.config).read_text(encoding="utf-8"))
++    for key in (["beauty","sports","toys"] if args.dataset == "all" else [args.dataset]):
++        ds = config["datasets"][key]
++        process_dataset_metadata(ds["display_name"],args.raw_root,args.output_dir,ds["config_file"],key,
++                                 config["pipeline"]["title_encoder"],ds.get("expected_stats"),args.overwrite)
+ 
+ 
+ if __name__ == "__main__":
+     main()
+-
+diff --git a/src/metadata_pipeline/report.py b/src/metadata_pipeline/report.py
+index 5018fba..ebe864b 100644
+--- a/src/metadata_pipeline/report.py
++++ b/src/metadata_pipeline/report.py
+@@ -1,123 +1,63 @@
+-"""
+-report.py - Generate Table 1 with metadata coverage and counts across Beauty, Sports, and Toys.
+-Outputs both CSV and Markdown formats into reports/.
+-"""
+-
++"""Generate a complete Table 1; unavailable measurements never become zero."""
+ import argparse
+-import json
+-import os
+ import sys
+ from pathlib import Path
+-from typing import Dict, List, Any
+-
+ import pandas as pd
+-import yaml
+ 
+ SRC_DIR = Path(__file__).resolve().parents[1]
+ if str(SRC_DIR) not in sys.path:
+-    sys.path.insert(0, str(SRC_DIR))
+-
++    sys.path.insert(0,str(SRC_DIR))
+ from taimma.paths import resolve_project_path
++from .contracts import SOURCES, read_json, require
+ 
+ 
+-def generate_table1(
+-    metadata_dir: str = "artifacts/metadata",
+-    output_file: str = "reports/table_1_metadata.csv",
+-    datasets: List[str] = ["beauty", "sports", "toys"],
+-) -> pd.DataFrame:
+-    meta_path = resolve_project_path(metadata_dir)
+-    out_path = resolve_project_path(output_file)
+-    out_path.parent.mkdir(parents=True, exist_ok=True)
+-
++def generate_table1(metadata_dir="artifacts/metadata", output_file="reports/table_1_metadata.csv",
++                    datasets=("beauty","sports","toys")):
+     rows = []
+-    for ds in datasets:
+-        cov_file = meta_path / ds.lower() / "coverage.json"
+-        if not cov_file.exists():
+-            print(f"[Warning] Coverage file missing for {ds}: {cov_file}")
+-            continue
+-
+-        with open(cov_file, "r", encoding="utf-8") as f:
+-            data = json.load(f)
+-
+-        ds_name = data.get("dataset", ds.capitalize())
+-
+-        # Coverage on Train-base catalog
+-        tb_cov = data.get("train_base_catalog", {})
+-        all_cov = data.get("all_unique_items_cohort", {})
+-
+-        n_tb = tb_cov.get("total_items", 0)
+-        cat_tb = tb_cov.get("category", {})
+-        brd_tb = tb_cov.get("brand", {})
+-        ttl_tb = tb_cov.get("title", {})
+-
+-        n_all = all_cov.get("total_items", 0)
+-        cat_all = all_cov.get("category", {})
+-        brd_all = all_cov.get("brand", {})
+-        ttl_all = all_cov.get("title", {})
+-
+-        rows.append({
+-            "Dataset": ds_name,
+-            "Scope": "Train-base Catalog",
+-            "Total Items": n_tb,
+-            "Category (Avail / %)": f"{cat_tb.get('available', 0):,} ({cat_tb.get('coverage_pct', 0.0):.1f}%)",
+-            "Brand (Avail / %)": f"{brd_tb.get('available', 0):,} ({brd_tb.get('coverage_pct', 0.0):.1f}%)",
+-            "Title (Avail / %)": f"{ttl_tb.get('available', 0):,} ({ttl_tb.get('coverage_pct', 0.0):.1f}%)",
+-            "Category Avail": cat_tb.get("available", 0),
+-            "Category Missing": cat_tb.get("missing", 0),
+-            "Category Pct": cat_tb.get("coverage_pct", 0.0),
+-            "Brand Avail": brd_tb.get("available", 0),
+-            "Brand Missing": brd_tb.get("missing", 0),
+-            "Brand Pct": brd_tb.get("coverage_pct", 0.0),
+-            "Title Avail": ttl_tb.get("available", 0),
+-            "Title Missing": ttl_tb.get("missing", 0),
+-            "Title Pct": ttl_tb.get("coverage_pct", 0.0),
+-            "OOV Items Count": data.get("oov_items_count", 0),
+-        })
+-
+-        rows.append({
+-            "Dataset": ds_name,
+-            "Scope": "All Unique Items Cohort",
+-            "Total Items": n_all,
+-            "Category (Avail / %)": f"{cat_all.get('available', 0):,} ({cat_all.get('coverage_pct', 0.0):.1f}%)",
+-            "Brand (Avail / %)": f"{brd_all.get('available', 0):,} ({brd_all.get('coverage_pct', 0.0):.1f}%)",
+-            "Title (Avail / %)": f"{ttl_all.get('available', 0):,} ({ttl_all.get('coverage_pct', 0.0):.1f}%)",
+-            "Category Avail": cat_all.get("available", 0),
+-            "Category Missing": cat_all.get("missing", 0),
+-            "Category Pct": cat_all.get("coverage_pct", 0.0),
+-            "Brand Avail": brd_all.get("available", 0),
+-            "Brand Missing": brd_all.get("missing", 0),
+-            "Brand Pct": brd_all.get("coverage_pct", 0.0),
+-            "Title Avail": ttl_all.get("available", 0),
+-            "Title Missing": ttl_all.get("missing", 0),
+-            "Title Pct": ttl_all.get("coverage_pct", 0.0),
+-            "OOV Items Count": data.get("oov_items_count", 0),
+-        })
+-
+-    df = pd.DataFrame(rows)
+-    df.to_csv(out_path, index=False)
+-    print(f"Table 1 saved to CSV: {out_path}")
+-
+-    # Also save markdown version
+-    md_path = out_path.with_suffix(".md")
+-    display_cols = ["Dataset", "Scope", "Total Items", "Category (Avail / %)", "Brand (Avail / %)", "Title (Avail / %)"]
+-    if not df.empty:
+-        md_text = df[display_cols].to_markdown(index=False)
+-        with open(md_path, "w", encoding="utf-8") as f:
+-            f.write(f"# Table 1: Dataset Metadata Coverage Summary\n\n{md_text}\n")
+-        print(f"Table 1 saved to Markdown: {md_path}")
+-
+-    return df
++    for key in datasets:
++        directory = resolve_project_path(metadata_dir)/key
++        cov, stats = read_json(directory/"coverage.json"), read_json(directory/"statistics.json")
++        require(stats["metadata_status"] == "available", f"{key}: metadata not measured")
++        for scope, name in [("train_base_catalog","Train-base Catalog"),("all_unique_items_cohort","All Unique Items Cohort")]:
++            section = cov[scope]
++            total = section["total_items"]
++            require(total > 0, f"{key}: empty coverage scope")
++            require(total == stats["catalog_train_base_items" if scope == "train_base_catalog" else "original_items"],
++                    f"{key}: statistics/coverage item mismatch")
++            row = {"Dataset":cov["dataset"],"Scope":name,"Total Items":total,
++                   **{k:stats[k] for k in ("users","original_items","catalog_train_base_items","interactions",
++                       "sparsity","mean_sequence_length","category_vocab_train_base","brand_vocab_train_base","metadata_status")},
++                   "OOV Items Count":cov["oov_items_count"]}
++            for source in SOURCES:
++                info = section[source]
++                require(info["available"]+info["missing"] == total and 0 <= info["available"] <= total
++                        and abs(info["coverage_pct"]-round(info["available"]/total*100,2)) < 1e-8,
++                        f"{key}/{source}: invalid coverage")
++                title = source.capitalize()
++                row.update({f"{title} Avail":info["available"],f"{title} Missing":info["missing"],
++                            f"{title} Pct":info["coverage_pct"]})
++            rows.append(row)
++    require(bool(rows), "No datasets selected")
++    frame = pd.DataFrame(rows)
++    display = frame[["Dataset","Scope","users","Total Items","interactions","sparsity",
++                     "mean_sequence_length","Category Pct","Brand Pct","Title Pct"]]
++    # Resolve formatting dependencies before writing either output.
++    markdown = "# Table 1 Dataset statistics and metadata coverage\n\n"+display.to_markdown(index=False)+"\n"
++    output = resolve_project_path(output_file)
++    output.parent.mkdir(parents=True,exist_ok=True)
++    frame.to_csv(output,index=False, lineterminator="\n")
++    output.with_suffix(".md").write_text(markdown,encoding="utf-8")
++    print(f"Table 1 saved: {output}")
++    return frame
+ 
+ 
+ def main():
+-    parser = argparse.ArgumentParser(description="Generate Table 1 Metadata Summary.")
+-    parser.add_argument("--metadata_dir", default="artifacts/metadata", help="Metadata artifacts directory")
+-    parser.add_argument("--output", default="reports/table_1_metadata.csv", help="Output file path")
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--metadata_dir",default="artifacts/metadata")
++    parser.add_argument("--output",default="reports/table_1_metadata.csv")
+     args = parser.parse_args()
+-
+-    generate_table1(metadata_dir=args.metadata_dir, output_file=args.output)
++    generate_table1(args.metadata_dir,args.output)
+ 
+ 
+ if __name__ == "__main__":
+     main()
+-
+diff --git a/src/metadata_pipeline/validate.py b/src/metadata_pipeline/validate.py
+index a182e9b..d964c81 100644
+--- a/src/metadata_pipeline/validate.py
++++ b/src/metadata_pipeline/validate.py
+@@ -1,492 +1,229 @@
+-"""
+-validate.py - Comprehensive acceptance criteria verification for metadata artifacts.
+-
+-Verifications performed:
+-1. Item Mapping & Row Alignment (item_map.csv vs metadata.csv vs availability_mask.csv):
+-   - model_item_id is strictly 1..N continuous.
+-   - All train-base items in item_map.csv match metadata.csv model_item_id and raw_item_id exactly.
+-   - OOV items have model_item_id == 0 and in_train_base == False.
+-2. Title Embeddings Integrity (title_embeddings.npy):
+-   - Dimension, dtype (float32), finite values (no NaN or Inf).
+-   - Missing titles (has_title == False) strictly map to zero vectors.
+-   - Available titles (has_title == True) have non-zero norm.
+-3. Coverage Consistency & Ground-Truth Cross-Check (coverage.json vs metadata.csv):
+-   - Available + Missing == Total.
+-   - Coverage percentage formula: CoveragePct == round(Available / Total * 100, 2).
+-   - Ground-truth counts in coverage.json match exact boolean sums in metadata.csv.
+-   - Full cohort coverage consistency against item_map.csv.
+-4. Manifest Deep Integrity & Provenance (manifest.json):
+-   - num_catalog_items, num_total_cohort_items, num_oov_items match metadata and item_map.
+-   - title_embedding shape, dimension, and relative path match actual array.
+-   - Raw data files exist and have valid SHA-256 signatures; optional re-computation via --verify-raw-hash.
+-5. G05 Acceptance Test (Mask Dominance in MultimodalSequenceDataset):
+-   - Evaluates both Dense (2D) and Categorical (1D) modalities.
+-   - Uses synthetic non-zero attribute tensors with positive and negative controls.
+-   - Mathematically proves that availability_mask == 0 completely zeroes features without false passes.
+-"""
+-
++"""Strict artifact, perturbation, loader and optional raw-source verification."""
+ import argparse
+ import json
+-import os
+ import re
+ import sys
+ from pathlib import Path
+-from typing import Any, Dict, List, Optional, Tuple
+-
+-# Enable UTF-8 console output if available
+-if hasattr(sys.stdout, "reconfigure"):
+-    try:
+-        sys.stdout.reconfigure(encoding="utf-8")
+-    except Exception:
+-        pass
+-if hasattr(sys.stderr, "reconfigure"):
+-    try:
+-        sys.stderr.reconfigure(encoding="utf-8")
+-    except Exception:
+-        pass
+-
+ import numpy as np
+-import pandas as pd
+ import torch
++import yaml
+ 
+-# Ensure src is on sys.path
+ SRC_DIR = Path(__file__).resolve().parents[1]
+ if str(SRC_DIR) not in sys.path:
+     sys.path.insert(0, str(SRC_DIR))
+-
+ from taimma.paths import resolve_project_path
+-from taimma.data.split import SequenceSample, compute_file_sha256
++from taimma.data.ingestion import Amazon2014Ingestor
++from taimma.data.split import SequenceSample, SequenceSplitter, compute_file_sha256
+ from taimma.training.multimodal_trainer import MultimodalSequenceDataset
+-
+-
+-def is_valid_sha256(hash_str: Optional[str]) -> bool:
+-    """Validate 64-character hexadecimal SHA256 string."""
+-    if not hash_str or not isinstance(hash_str, str):
+-        return False
+-    return bool(re.fullmatch(r"^[a-fA-F0-9]{64}$", hash_str.strip()))
+-
+-
+-def validate_dataset_artifacts(
+-    dataset_dir: Path,
+-    verify_raw_hash: bool = False,
+-) -> Dict[str, Any]:
+-    """
+-    Validate all metadata artifacts for a given dataset directory.
+-    Raises AssertionError or FileNotFoundError if any check fails.
+-    """
+-    dataset_name = dataset_dir.name
+-    print(f"\n=======================================================")
+-    print(f"Validating Metadata Artifacts: {dataset_name}")
+-    print(f"Directory: {dataset_dir}")
+-    print(f"=======================================================")
+-
+-    item_map_path = dataset_dir / "item_map.csv"
+-    meta_path = dataset_dir / "metadata.csv"
+-    mask_path = dataset_dir / "availability_mask.csv"
+-    embed_path = dataset_dir / "title_embeddings.npy"
+-    coverage_path = dataset_dir / "coverage.json"
+-    manifest_path = dataset_dir / "manifest.json"
+-
+-    # 0. Check Existence of All Required Artifacts
+-    required_files = [
+-        (item_map_path, "item_map.csv"),
+-        (meta_path, "metadata.csv"),
+-        (mask_path, "availability_mask.csv"),
+-        (embed_path, "title_embeddings.npy"),
+-        (coverage_path, "coverage.json"),
+-        (manifest_path, "manifest.json"),
+-    ]
+-    for p, name in required_files:
+-        if not p.exists():
+-            raise FileNotFoundError(f"Missing required artifact: {p}")
+-
+-    df_map = pd.read_csv(item_map_path)
+-    df_meta = pd.read_csv(meta_path)
+-    df_mask = pd.read_csv(mask_path)
+-    embeddings = np.load(embed_path)
+-
+-    with open(coverage_path, "r", encoding="utf-8") as f:
+-        cov_data = json.load(f)
+-
+-    with open(manifest_path, "r", encoding="utf-8") as f:
+-        manifest = json.load(f)
+-
+-    n_train_base = len(df_meta)
+-    assert n_train_base >= 2, f"Catalog must contain at least 2 items for verification, found {n_train_base}"
+-
+-    # -------------------------------------------------------------
+-    # 1. Item Mapping & Row Alignment (Addresses Issue 1)
+-    # -------------------------------------------------------------
+-    print(f"1. Checking Item Mapping, Row Alignment & 1..N Ordering: {n_train_base} items")
+-
+-    # model_item_id in metadata must be strictly 1..N continuous
+-    expected_ids = np.arange(1, n_train_base + 1)
+-    meta_model_ids = df_meta["model_item_id"].to_numpy()
+-    assert (meta_model_ids == expected_ids).all(), (
+-        f"metadata.csv model_item_id must be strictly 1..{n_train_base} continuous"
+-    )
+-
+-    # availability_mask.csv row alignment
+-    assert len(df_mask) == n_train_base, (
+-        f"Row count mismatch between mask ({len(df_mask)}) and metadata ({n_train_base})"
+-    )
+-    assert (df_mask["model_item_id"].to_numpy() == expected_ids).all(), (
+-        "availability_mask.csv model_item_id order must match metadata exactly"
+-    )
+-
+-    # item_map.csv validation against metadata.csv
+-    df_train_map = df_map[df_map["in_train_base"].astype(bool)].sort_values("model_item_id")
+-    assert len(df_train_map) == n_train_base, (
+-        f"item_map.csv in_train_base item count ({len(df_train_map)}) does not match metadata ({n_train_base})"
+-    )
+-    assert (df_train_map["model_item_id"].to_numpy() == expected_ids).all(), (
+-        "item_map.csv train-base model_item_id must match 1..N continuous"
+-    )
+-    assert (df_train_map["raw_item_id"].astype(str).to_numpy() == df_meta["raw_item_id"].astype(str).to_numpy()).all(), (
+-        "CRITICAL: Raw item ID mapping mismatch between item_map.csv and metadata.csv!"
+-    )
+-    assert df_train_map["raw_item_id"].nunique() == n_train_base, (
+-        "raw_item_id contains duplicate values in train-base catalog!"
+-    )
+-
+-    # Validate OOV rows in item_map.csv
+-    df_oov_map = df_map[~df_map["in_train_base"].astype(bool)]
+-    if len(df_oov_map) > 0:
+-        assert (df_oov_map["model_item_id"].to_numpy() == 0).all(), (
+-            "All OOV items in item_map.csv must have model_item_id == 0"
+-        )
+-        assert df_oov_map["raw_item_id"].notna().all(), (
+-            "OOV items in item_map.csv must have non-null raw_item_id"
+-        )
+-
+-    print(f"  -> [PASS] item_map.csv, metadata.csv, and availability_mask.csv are 100% aligned ({n_train_base} train-base, {len(df_oov_map)} OOV).")
+-
+-    # -------------------------------------------------------------
+-    # 2. Title Embeddings Integrity & Zero Placeholders (Addresses Issue 2 & 3)
+-    # -------------------------------------------------------------
+-    embed_shape = embeddings.shape
+-    dim = embed_shape[1]
+-    print(f"2. Checking Title Embeddings Integrity: shape={embed_shape}, dtype={embeddings.dtype}")
+-    assert embed_shape[0] == n_train_base, (
+-        f"Embedding rows ({embed_shape[0]}) do not match catalog items ({n_train_base})"
+-    )
+-    assert embeddings.dtype == np.float32, (
+-        f"Embedding dtype must be float32, got {embeddings.dtype}"
+-    )
+-    assert np.isfinite(embeddings).all(), "Title embeddings contain NaN or Inf values!"
+-
+-    # Check zero placeholders for missing titles
+-    has_title_flags = df_mask["has_title"].astype(bool).to_numpy()
+-    missing_title_indices = np.where(~has_title_flags)[0]
+-    available_title_indices = np.where(has_title_flags)[0]
+-
+-    if len(missing_title_indices) > 0:
+-        missing_vecs = embeddings[missing_title_indices]
+-        assert np.allclose(missing_vecs, 0.0), (
+-            "Items with has_title=False MUST have strictly zero embedding vectors!"
+-        )
+-
+-    if len(available_title_indices) > 0:
+-        avail_norms = np.linalg.norm(embeddings[available_title_indices], axis=1)
+-        assert (avail_norms > 1e-5).all(), (
+-            "Items with has_title=True must have non-zero embedding vectors!"
+-        )
+-
+-    print(f"  -> [PASS] Embeddings finite: {len(available_title_indices)} non-zero vectors, {len(missing_title_indices)} zero placeholders verified.")
+-
+-    # -------------------------------------------------------------
+-    # 3. Coverage Arithmetic, Percentage & Ground Truth (Addresses Issue 4)
+-    # -------------------------------------------------------------
+-    print("3. Checking Coverage Arithmetic, Formulas, and Ground-Truth Cross-Check")
+-    assert "train_base_catalog" in cov_data, "coverage.json missing 'train_base_catalog' section"
+-    tb_cov = cov_data["train_base_catalog"]
+-    assert tb_cov["total_items"] == n_train_base, (
+-        f"coverage.json train_base total_items ({tb_cov['total_items']}) != metadata items ({n_train_base})"
+-    )
+-
+-    for attr in ["category", "brand", "title"]:
+-        assert attr in tb_cov, f"Attribute '{attr}' missing in train_base_catalog coverage"
+-        c_info = tb_cov[attr]
+-        avail = c_info["available"]
+-        miss = c_info["missing"]
+-        cov_pct = c_info["coverage_pct"]
+-
+-        # A) Arithmetic: Available + Missing == Total
+-        assert avail + miss == n_train_base, (
+-            f"Coverage sum mismatch for '{attr}': {avail} + {miss} != {n_train_base}"
+-        )
+-
+-        # B) Percentage Formula Verification: CoveragePct == round(Available / Total * 100, 2)
+-        expected_pct = round(avail / max(1, n_train_base) * 100.0, 2)
+-        assert np.isclose(expected_pct, cov_pct, atol=1e-2), (
+-            f"Coverage percentage formula mismatch for '{attr}': expected {expected_pct}%, got {cov_pct}%"
+-        )
+-
+-        # C) Ground-Truth cross-check with metadata.csv boolean flags
+-        gt_avail = int(df_meta[f"has_{attr}"].astype(bool).sum())
+-        gt_miss = n_train_base - gt_avail
+-        assert avail == gt_avail, (
+-            f"Ground truth mismatch for '{attr}': coverage.json available ({avail}) != metadata.csv true count ({gt_avail})"
+-        )
+-        assert miss == gt_miss, (
+-            f"Ground truth mismatch for '{attr}': coverage.json missing ({miss}) != metadata.csv false count ({gt_miss})"
+-        )
+-
+-    # Validate all_unique_items_cohort in coverage.json
+-    if "all_unique_items_cohort" in cov_data:
+-        cohort_cov = cov_data["all_unique_items_cohort"]
+-        total_cohort = cohort_cov["total_items"]
+-        assert total_cohort == len(df_map), (
+-            f"Cohort total items ({total_cohort}) != item_map.csv total items ({len(df_map)})"
+-        )
+-        for attr in ["category", "brand", "title"]:
+-            c_info = cohort_cov[attr]
+-            assert c_info["available"] + c_info["missing"] == total_cohort
+-            exp_cohort_pct = round(c_info["available"] / max(1, total_cohort) * 100.0, 2)
+-            assert np.isclose(exp_cohort_pct, c_info["coverage_pct"], atol=1e-2)
+-
+-    assert cov_data.get("oov_items_count", 0) == len(df_oov_map), (
+-        f"OOV count mismatch in coverage.json: {cov_data.get('oov_items_count')} != {len(df_oov_map)}"
+-    )
+-    print("  -> [PASS] Coverage counts, mathematical percentages, and ground-truth metadata cross-checks verified.")
+-
+-    # -------------------------------------------------------------
+-    # 4. Manifest Deep Integrity & Provenance (Addresses Issue 5)
+-    # -------------------------------------------------------------
+-    print("4. Checking Manifest Deep Integrity & Data Provenance")
+-    assert manifest["dataset"].strip().lower().startswith(dataset_name.lower()) or dataset_name.lower() in manifest["dataset"].lower(), (
+-        f"Manifest dataset name '{manifest.get('dataset')}' does not match directory '{dataset_name}'"
+-    )
+-    assert manifest["num_catalog_items"] == n_train_base, (
+-        f"Manifest num_catalog_items ({manifest['num_catalog_items']}) != metadata items ({n_train_base})"
+-    )
+-    assert manifest["num_total_cohort_items"] == len(df_map), (
+-        f"Manifest num_total_cohort_items ({manifest['num_total_cohort_items']}) != item_map items ({len(df_map)})"
+-    )
+-    assert manifest["num_oov_items"] == len(df_oov_map), (
+-        f"Manifest num_oov_items ({manifest['num_oov_items']}) != actual OOV items ({len(df_oov_map)})"
+-    )
+-
+-    # Embedding metadata in manifest
+-    manifest_embed = manifest["title_embedding"]
+-    assert manifest_embed["shape"] == list(embed_shape), (
+-        f"Manifest title_embedding shape {manifest_embed['shape']} != actual {list(embed_shape)}"
+-    )
+-    assert manifest_embed["dim"] == dim, (
+-        f"Manifest title_embedding dim ({manifest_embed['dim']}) != actual {dim}"
+-    )
+-    assert manifest_embed["path"] == embed_path.name, (
+-        f"Manifest embedding path '{manifest_embed['path']}' != '{embed_path.name}'"
+-    )
+-
+-    # Raw files provenance check
+-    reviews_file = Path(manifest["reviews_file"])
+-    assert reviews_file.exists(), f"Raw reviews file in manifest does not exist: {reviews_file}"
+-    assert is_valid_sha256(manifest["reviews_sha256"]), (
+-        f"reviews_sha256 in manifest is not a valid 64-hex hash: {manifest.get('reviews_sha256')}"
+-    )
+-
+-    if manifest.get("metadata_file"):
+-        meta_file = Path(manifest["metadata_file"])
+-        assert meta_file.exists(), f"Raw metadata file in manifest does not exist: {meta_file}"
+-        assert is_valid_sha256(manifest["metadata_sha256"]), (
+-            f"metadata_sha256 in manifest is not a valid 64-hex hash: {manifest.get('metadata_sha256')}"
+-        )
+-
+-    # Optional deep cryptographic audit of raw files
+-    if verify_raw_hash:
+-        print("  -> Computing & verifying raw data SHA-256 checksums (deep verification enabled)...")
+-        act_rev_hash = compute_file_sha256(reviews_file)
+-        assert act_rev_hash == manifest["reviews_sha256"], (
+-            f"Raw reviews SHA-256 mismatch! Manifest: {manifest['reviews_sha256']}, Computed: {act_rev_hash}"
+-        )
+-        if manifest.get("metadata_file"):
+-            act_meta_hash = compute_file_sha256(meta_file)
+-            assert act_meta_hash == manifest["metadata_sha256"], (
+-                f"Raw metadata SHA-256 mismatch! Manifest: {manifest['metadata_sha256']}, Computed: {act_meta_hash}"
+-            )
+-        print("  -> [PASS] Cryptographic SHA-256 checksums strictly verified for raw files.")
+-    else:
+-        print("  -> [PASS] Raw file existence and 64-hex SHA-256 signature formats verified.")
+-
+-    # -------------------------------------------------------------
+-    # 5. G05 Acceptance Test: Dual Modality Mask Dominance (Addresses Issues 2 & 3)
+-    # -------------------------------------------------------------
+-    print("5. G05 Acceptance Test: Dual Modality Mask Dominance in Model Loader")
+-    # Dynamically select test items without hardcoding or risking out-of-bounds slicing
+-    k_test = min(n_train_base, 5)
+-
+-    # Synthetic non-zero tensors guarantee test cannot pass by accidental zeroes:
+-    # 1. 2D Dense Embedding (Title): distinct non-zero vectors for all test items
+-    dummy_title_attrs = torch.empty((k_test, dim), dtype=torch.float32)
+-    for i in range(k_test):
+-        dummy_title_attrs[i] = torch.full((dim,), fill_value=float(i + 10.0))
+-
+-    # 2. 1D Categorical Attribute (Category): distinct non-zero integer IDs for all test items
+-    dummy_cat_attrs = torch.tensor([idx + 100 for idx in range(k_test)], dtype=torch.long)
+-
+-    # Masks for test items:
+-    # For Title: Item 1 has mask=0 (disabled), Item 2 has mask=1 (enabled)
+-    title_mask = torch.ones(k_test, dtype=torch.float32)
+-    title_mask[0] = 0.0  # Item 1 disabled
+-
+-    # For Category: Item 1 has mask=1 (enabled), Item 2 has mask=0 (disabled)
+-    cat_mask = torch.ones(k_test, dtype=torch.float32)
+-    cat_mask[1] = 0.0  # Item 2 disabled
+-
+-    # History: [0, 1, 2] -> index 0 is padding (0), index 1 is item 1, index 2 is item 2
+-    sample = SequenceSample(
+-        user_idx=0,
+-        history=[0, 1, 2],
+-        target=2,
+-        history_len=2,
+-    )
+-
+-    ds = MultimodalSequenceDataset(
+-        samples=[sample],
+-        catalog_source_attrs={"title": dummy_title_attrs, "category": dummy_cat_attrs},
+-        catalog_availability_masks={"title": title_mask, "category": cat_mask},
+-    )
+-
+-    batch_item = ds[0]
+-    source_seqs = batch_item["source_seqs"]
+-    title_seq = source_seqs["title"]      # Shape: (3, dim)
+-    cat_seq = source_seqs["category"]     # Shape: (3,)
+-
+-    # Verification A: Padding position (item 0) MUST produce zeros
+-    assert torch.allclose(title_seq[0], torch.zeros(dim)), "Padding position did not produce zero title vector"
+-    assert cat_seq[0].item() == 0, "Padding position did not produce zero category"
+-
+-    # Verification B: Title Modality (Dense 2D)
+-    # Item 1 (mask=0): Negative control -> MUST be strictly zero vector
+-    assert torch.allclose(title_seq[1], torch.zeros(dim)), (
+-        "CRITICAL: Title mask=0 did NOT block features in MultimodalSequenceDataset!"
+-    )
+-    # Item 2 (mask=1): Positive control -> MUST retain the non-zero attribute vector exactly
+-    assert torch.allclose(title_seq[2], dummy_title_attrs[1]), (
+-        "CRITICAL: Title mask=1 did NOT preserve the original attribute vector!"
+-    )
+-    assert not torch.allclose(title_seq[2], torch.zeros(dim)), (
+-        "Positive control failed: Item 2 title is unexpectedly zero"
+-    )
+-
+-    # Verification C: Category Modality (Categorical 1D)
+-    # Item 1 (mask=1): Positive control -> MUST retain the category index exactly (100)
+-    assert cat_seq[1].item() == dummy_cat_attrs[0].item(), (
+-        "CRITICAL: Category mask=1 did NOT preserve the original category index!"
+-    )
+-    # Item 2 (mask=0): Negative control -> MUST be strictly zero
+-    assert cat_seq[2].item() == 0, (
+-        "CRITICAL: Category mask=0 did NOT block categorical feature in MultimodalSequenceDataset!"
+-    )
+-
+-    print("  -> [PASS] G05 Certified: Dual-modality positive & negative controls prove mask dominance 100%.")
+-
+-    print(f"\nAll verification checks PASSED for {dataset_name}!\n")
+-    return {
+-        "status": "PASS",
+-        "dataset": dataset_name,
+-        "items": n_train_base,
+-        "oov_items": len(df_oov_map),
+-        "embedding_shape": list(embed_shape),
+-        "coverage": tb_cov,
+-    }
+-
+-
+-def resolve_metadata_base(path_str: str) -> Path:
+-    """Resolve directory path intelligently from either current dir or repo root."""
+-    candidate = Path(path_str).expanduser()
+-    if candidate.exists():
+-        return candidate.resolve()
+-    resolved = resolve_project_path(path_str)
+-    return resolved
++from .contracts import SOURCES, categories, check_availability, coverage, flags, read_json, read_table, require
++from .loader import load_catalog
++
++
++def is_valid_sha256(value):
++    return isinstance(value, str) and re.fullmatch(r"[a-fA-F0-9]{64}", value) is not None
++
++
++def validate_perturbations(directory, avail, config):
++    root = directory/"perturbations"
++    manifest = read_json(root/"perturbations_manifest.json")
++    ratios, seeds, sources = config["missing_ratios"], config["seeds"], config["sources"]
++    require(manifest["masks"]["ratios"] == ratios and manifest["masks"]["seeds"] == seeds
++            and manifest["masks"]["sources"] == sources, "Perturbation config/manifest mismatch")
++    require(manifest["permutations"]["seeds"] == seeds and manifest["permutations"]["sources"] == sources,
++            "Permutation config/manifest mismatch")
++    expected_masks, expected_perms = set(), set()
++    for source in sources:
++        original = flags(avail[f"has_{source}"])
++        valid = np.flatnonzero(original)
++        for seed in seeds:
++            for ratio in ratios:
++                name = f"mask_{source}_ratio_{ratio:.2f}_seed_{seed}.csv"
++                expected_masks.add(name)
++                table = read_table(root/"masks"/name)
++                expected = original.copy()
++                rng = np.random.RandomState(seed + int(ratio*1000))
++                expected[rng.choice(valid, size=round(len(valid)*ratio), replace=False)] = False
++                require(np.array_equal(table.model_item_id, avail.model_item_id), f"{name}: ID alignment")
++                require(np.array_equal(flags(table.original_available), original), f"{name}: base mask")
++                require(np.array_equal(flags(table.simulated_available), expected), f"{name}: seed/ratio/mask mismatch")
++                require(np.array_equal(flags(table.is_dropped), original & ~expected), f"{name}: is_dropped mismatch")
++            name = f"perm_{source}_seed_{seed}.csv"
++            expected_perms.add(name)
++            table = read_table(root/"permutations"/name)
++            expected = avail.model_item_id.to_numpy().copy()
++            expected[valid] = expected[valid[np.random.RandomState(seed).permutation(len(valid))]]
++            require(np.array_equal(table.model_item_id, avail.model_item_id), f"{name}: ID alignment")
++            require(np.array_equal(table.permuted_source_item_id, expected), f"{name}: permutation mismatch")
++            require(np.array_equal(flags(table.is_available), original), f"{name}: availability mismatch")
++            require((table.source == source).all() and (table.seed == seed).all(), f"{name}: source/seed mismatch")
++    require({p.name for p in (root/"masks").glob("*.csv")} == expected_masks, "Missing/extra mask files")
++    require({p.name for p in (root/"permutations").glob("*.csv")} == expected_perms, "Missing/extra permutations")
++    for section, names, count_key in [("masks", expected_masks, "num_masks_generated"),
++                                       ("permutations", expected_perms, "num_permutations_generated")]:
++        records = manifest[section]["manifest"]
++        require(len(records) == len(names) and {r["file"] for r in records} == names
++                and manifest[section][count_key] == len(names), f"{section}: incomplete manifest")
++    return len(expected_masks), len(expected_perms)
++
++
++def check_loader(directory, avail, config):
++    attrs, masks = load_catalog(directory)
++    n = len(avail)
++    # Sample actual enabled/disabled rows, and exercise each saved perturbation type.
++    for source in SOURCES:
++        original = flags(avail[f"has_{source}"])
++        indices = list(np.flatnonzero(original)[:2]) + list(np.flatnonzero(~original)[:2])
++        sample = SequenceSample(0, [0] + [int(i)+1 for i in indices], 1, len(indices))
++        batch = MultimodalSequenceDataset([sample], attrs, masks)[0]
++        expected = torch.zeros_like(batch["source_seqs"][source])
++        for pos, i in enumerate(indices, 1):
++            if original[i]:
++                expected[pos] = attrs[source][i]
++        require(torch.equal(batch["source_seqs"][source], expected), f"{source}: real loader mask failure")
++        seed, ratio = config["seeds"][0], max(config["missing_ratios"])
++        mask_path = directory/"perturbations/masks"/f"mask_{source}_ratio_{ratio:.2f}_seed_{seed}.csv"
++        perm_path = directory/"perturbations/permutations"/f"perm_{source}_seed_{seed}.csv"
++        pert_attrs, pert_masks = load_catalog(directory, {source:mask_path}, {source:perm_path})
++        table = read_table(mask_path)
++        require(torch.equal(pert_masks[source], torch.tensor(flags(table.simulated_available), dtype=torch.float32)),
++                f"{source}: saved synthetic mask not applied")
++        donor = read_table(perm_path).permuted_source_item_id.to_numpy(dtype=np.int64)-1
++        require(torch.equal(pert_attrs[source], attrs[source][torch.from_numpy(donor)]),
++                f"{source}: saved permutation not applied")
++        dropped = np.flatnonzero(original & ~flags(table.simulated_available))[:2]
++        sample = SequenceSample(0, [0]+[int(i)+1 for i in dropped], 1, len(dropped))
++        batch = MultimodalSequenceDataset([sample], pert_attrs, pert_masks)[0]
++        require(torch.count_nonzero(batch["source_seqs"][source]) == 0,
++                f"{source}: dropped features leaked through sequence loader")
++
++
++def validate_dataset_artifacts(dataset_dir, verify_raw_hash=False, raw_root=None,
++                               artifacts_only=False, perturbation_config=None):
++    directory = Path(dataset_dir)
++    manifest = read_json(directory/"manifest.json")
++    require(manifest["dataset_key"].lower().split("_")[0] == directory.name, "Dataset directory/key mismatch")
++    require(manifest.get("schema_version") == 2, "Regenerate legacy metadata with schema_version=2")
++    require(manifest["category_policy"] == "multilabel_without_root", "Unexpected Category policy")
++    meta, avail = read_table(directory/"metadata.csv"), read_table(directory/"availability_mask.csv")
++    mapping, cohort = read_table(directory/"item_map.csv"), read_table(directory/"cohort_metadata.csv")
++    cov, stats = read_json(directory/"coverage.json"), read_json(directory/"statistics.json")
++    n = len(meta)
++    require(n > 0, "Empty catalog")
++    check_availability(meta)
++    check_availability(avail)
++    require(len(avail) == n, "Availability row count mismatch")
++    require(mapping.raw_item_id.is_unique and cohort.raw_item_id.is_unique, "Duplicate raw item IDs")
++    require(mapping[["model_item_id","raw_item_id","in_train_base"]].equals(
++            cohort[["model_item_id","raw_item_id","in_train_base"]]), "Cohort/mapping mismatch")
++    train = mapping[flags(mapping.in_train_base)].sort_values("model_item_id")
++    require(np.array_equal(train.model_item_id, meta.model_item_id)
++            and np.array_equal(train.raw_item_id, meta.raw_item_id), "Catalog mapping mismatch")
++    require((mapping.loc[~flags(mapping.in_train_base), "model_item_id"] == 0).all(), "OOV IDs must be zero")
++    cat_vocab, brand_vocab = read_json(directory/"category_vocab.json"), read_json(directory/"brand_vocab.json")
++    labels = [categories(v) for v in meta.categories]
++    expected_cats = {v:i+1 for i,v in enumerate(sorted({v for vs in labels for v in vs}))}
++    expected_brands = {v:i+1 for i,v in enumerate(sorted({v for v in meta.brand if v.strip()}))}
++    require(cat_vocab == expected_cats and brand_vocab == expected_brands, "Vocabulary differs from Train-base labels")
++    require([json.loads(v) for v in meta.category_indices] == [[cat_vocab[v] for v in vs] for vs in labels],
++            "Category indices/vocabulary mismatch")
++    require(meta.brand_idx.tolist() == [brand_vocab.get(v,0) for v in meta.brand], "Brand indices/vocabulary mismatch")
++    for table in (meta, cohort):
++        true_presence = dict(category=np.asarray([bool(categories(v)) for v in table.categories]),
++                             brand=table.brand.str.strip().ne("").to_numpy(), title=table.title.str.strip().ne("").to_numpy())
++        for source in SOURCES:
++            require(np.array_equal(flags(table[f"has_{source}"]), true_presence[source]), f"{source}: flags/content mismatch")
++    for source in SOURCES:
++        require(np.array_equal(flags(avail[f"has_{source}"]), flags(meta[f"has_{source}"])), f"{source}: availability/metadata mismatch")
++    cohort_train = cohort[flags(cohort.in_train_base)].sort_values("model_item_id")
++    for col in ("categories","brand","title",*[f"has_{s}" for s in SOURCES]):
++        require(np.array_equal(cohort_train[col], meta[col]), f"Cohort/catalog mismatch: {col}")
++    for name, table in [("train_base_catalog", meta),("all_unique_items_cohort",cohort)]:
++        actual = coverage(table)
++        require(all(cov[name][key] == value for key,value in actual.items()), f"{name}: coverage mismatch")
++    oov = len(mapping)-n
++    require(cov["oov_items_count"] == oov and manifest["num_oov_items"] == oov, "OOV count mismatch")
++    require(manifest["num_catalog_items"] == n and manifest["num_total_cohort_items"] == len(mapping), "Manifest counts mismatch")
++    require(stats["original_items"] == len(mapping) and stats["catalog_train_base_items"] == n
++            and stats["metadata_status"] == "available", "Statistics/catalog mismatch")
++    embed_info = manifest["title_embedding"]
++    require(embed_info["mode"] == "sentence-transformers" and bool(embed_info["encoder"]), "Real Title encoder required")
++    emb = np.load(directory/"title_embeddings.npy", allow_pickle=False)
++    require(emb.ndim == 2 and emb.shape[0] == n and emb.shape[1] > 0 and emb.dtype == np.float32
++            and np.isfinite(emb).all(), "Invalid Title embedding array")
++    require(embed_info["shape"] == list(emb.shape) and embed_info["dim"] == emb.shape[1]
++            and embed_info["path"] == "title_embeddings.npy", "Embedding manifest mismatch")
++    has_title = flags(meta.has_title)
++    require((emb[~has_title] == 0).all() and np.allclose(np.linalg.norm(emb[has_title],axis=1),1,atol=1e-4),
++            "Title missing placeholders/unit norms invalid")
++    required_hashes = {"metadata.csv","cohort_metadata.csv","availability_mask.csv","item_map.csv",
++                       "title_embeddings.npy","category_vocab.json","brand_vocab.json","coverage.json","statistics.json"}
++    hashes = manifest["artifact_sha256"]
++    require(set(hashes) == required_hashes, "Incomplete artifact checksums")
++    for name in required_hashes:
++        require(is_valid_sha256(hashes[name]) and compute_file_sha256(str(directory/name)) == hashes[name],
++                f"Artifact checksum mismatch: {name}")
++    for key in ("reviews", "metadata"):
++        require(is_valid_sha256(manifest.get(f"{key}_sha256")) and bool(manifest.get(f"{key}_file")), f"Missing {key} provenance")
++    provenance = "NOT_CHECKED_ARTIFACTS_ONLY"
++    require(not (artifacts_only and verify_raw_hash), "--artifacts-only cannot verify raw hashes")
++    if not artifacts_only:
++        if raw_root is not None:
++            ingestor = Amazon2014Ingestor(str(resolve_project_path(raw_root)), manifest["dataset_key"])
++            reviews, metadata = ingestor.resolve_paths()
++        else:
++            reviews = str(resolve_project_path(manifest["reviews_file"]))
++            metadata = str(resolve_project_path(manifest["metadata_file"]))
++        require(Path(reviews).is_file() and metadata is not None and Path(metadata).is_file(),
++                "Raw inputs missing; use --raw_root or explicitly request --artifacts-only")
++        provenance = "FILES_PRESENT_HASH_NOT_CHECKED"
++        if verify_raw_hash:
++            for key,path in [("reviews",reviews),("metadata",metadata)]:
++                require(compute_file_sha256(str(path)) == manifest[f"{key}_sha256"], f"Raw {key} SHA256 mismatch")
++            ingestor = Amazon2014Ingestor()
++            ingestor.resolve_paths = lambda: (reviews, metadata)
++            sequences, records = ingestor.build_interaction_sequences(manifest["preprocessing_config"].get("min_interactions",5))
++            split = SequenceSplitter(min_seq_len=manifest["preprocessing_config"].get("min_interactions",5)).split(sequences)
++            require([split.idx2item[i] for i in range(1,split.num_items+1)] == meta.raw_item_id.tolist(), "Raw reviews/catalog mismatch")
++            require({x for seq in sequences for x in seq.items} == set(mapping.raw_item_id), "Raw cohort mismatch")
++            for row in cohort.itertuples():
++                rec = records.get(row.raw_item_id,{})
++                require(categories(row.categories) == (rec.get("categories") or [])
++                        and row.brand == (rec.get("brand") or "") and row.title == (rec.get("title") or ""),
++                        f"Raw metadata mismatch: {row.raw_item_id}")
++            from taimma.experiments.reporting import dataset_statistics
++            actual_stats = dataset_statistics(sequences, split, records, True, stats["dataset"])
++            for name in ("users", "original_items", "catalog_train_base_items", "interactions",
++                         "category_vocab_train_base", "brand_vocab_train_base"):
++                require(stats[name] == actual_stats[name], f"Raw statistics mismatch: {name}")
++            provenance = "VERIFIED_SHA256_AND_RAW_MAPPING"
++    if perturbation_config is None:
++        perturbation_config = yaml.safe_load(resolve_project_path("configs/metadata.yaml").read_text(encoding="utf-8"))["perturbations"]
++    counts = validate_perturbations(directory, avail, perturbation_config)
++    check_loader(directory, avail, perturbation_config)
++    return dict(status="PASS", dataset=directory.name, items=n, oov_items=oov, embedding_shape=list(emb.shape),
++                coverage=cov["train_base_catalog"], provenance=provenance, masks=counts[0], permutations=counts[1])
+ 
+ 
+ def main():
+-    parser = argparse.ArgumentParser(description="Validate metadata artifacts against acceptance criteria.")
+-    parser.add_argument(
+-        "--metadata_dir",
+-        default="artifacts/metadata",
+-        help="Base metadata artifacts directory (e.g. artifacts/metadata)",
+-    )
+-    parser.add_argument(
+-        "--dataset",
+-        choices=["beauty", "sports", "toys", "all"],
+-        default="all",
+-        help="Target dataset to validate (default: all)",
+-    )
+-    parser.add_argument(
+-        "--allow-missing",
+-        action="store_true",
+-        help="Permit missing datasets without failing (default: strict mode fails if any expected dataset is missing)",
+-    )
+-    parser.add_argument(
+-        "--verify-raw-hash",
+-        action="store_true",
+-        help="Compute and verify cryptographic SHA-256 checksums of raw input files against manifest",
+-    )
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--metadata_dir", default="artifacts/metadata")
++    parser.add_argument("--dataset", choices=["beauty","sports","toys","all"], default="all")
++    parser.add_argument("--config", default="configs/metadata.yaml")
++    parser.add_argument("--raw_root")
++    parser.add_argument("--artifacts-only", action="store_true")
++    parser.add_argument("--verify-raw-hash", action="store_true")
+     args = parser.parse_args()
+-
+-    meta_base = resolve_metadata_base(args.metadata_dir)
+-    target_keys = ["beauty", "sports", "toys"] if args.dataset == "all" else [args.dataset]
+-
+-    print(f"=== Metadata Artifacts Acceptance Suite ===")
+-    print(f"Base Directory: {meta_base}")
+-    print(f"Target Datasets: {target_keys}")
+-    print(f"Mode: {'Permissive (--allow-missing)' if args.allow_missing else 'Strict (All Required)'}")
+-    print(f"Verify Raw SHA-256: {args.verify_raw_hash}\n")
+-
+-    summary_results: Dict[str, Dict[str, Any]] = {}
+-    any_failed = False
+-
+-    for key in target_keys:
+-        ds_path = meta_base / key.lower()
+-        if not ds_path.exists():
+-            if args.allow_missing:
+-                print(f"[WARN] Dataset directory not found: {ds_path} (Skipped due to --allow-missing)")
+-                summary_results[key] = {"status": "SKIPPED", "reason": "Directory not found"}
+-            else:
+-                print(f"[FAIL] Required dataset directory not found: {ds_path}")
+-                summary_results[key] = {"status": "FAIL", "reason": f"Directory missing: {ds_path}"}
+-                any_failed = True
+-            continue
+-
++    config = yaml.safe_load(resolve_project_path(args.config).read_text(encoding="utf-8"))["perturbations"]
++    failed = False
++    for key in (["beauty","sports","toys"] if args.dataset == "all" else [args.dataset]):
+         try:
+-            res = validate_dataset_artifacts(ds_path, verify_raw_hash=args.verify_raw_hash)
+-            summary_results[key] = res
++            result = validate_dataset_artifacts(resolve_project_path(args.metadata_dir)/key,
++                        args.verify_raw_hash,args.raw_root,args.artifacts_only,config)
++            print(json.dumps(result, ensure_ascii=False))
+         except Exception as exc:
+-            print(f"\n[FAIL] Verification error for {key}: {exc}")
+-            summary_results[key] = {"status": "FAIL", "error": str(exc)}
+-            any_failed = True
+-
+-    # Print Final Acceptance Report Table
+-    print("\n" + "=" * 65)
+-    print("FINAL ACCEPTANCE VERIFICATION SUMMARY")
+-    print("=" * 65)
+-    print(f"{'Dataset':<15} | {'Status':<10} | {'Details'}")
+-    print("-" * 65)
+-
+-    passed_count = 0
+-    for key in target_keys:
+-        info = summary_results.get(key, {"status": "UNKNOWN"})
+-        status = info.get("status", "FAIL")
+-        if status == "PASS":
+-            passed_count += 1
+-            details = f"Items: {info.get('items')}, Dim: {info.get('embedding_shape', [0, 0])[1]}, OOV: {info.get('oov_items')}"
+-        elif status == "SKIPPED":
+-            details = info.get("reason", "Skipped")
+-        else:
+-            details = info.get("error", info.get("reason", "Unknown failure"))
+-        print(f"{key:<15} | {status:<10} | {details}")
+-
+-    print("=" * 65)
+-
+-    if any_failed or passed_count == 0:
+-        print(f"\n[RESULT] [FAILED] ACCEPTANCE SUITE FAILED ({passed_count}/{len(target_keys)} passed).")
+-        sys.exit(1)
+-    else:
+-        print(f"\n[RESULT] [SUCCESS] ALL ACCEPTANCE CHECKS PASSED ({passed_count}/{len(target_keys)} passed)!")
+-        sys.exit(0)
++            print(f"[FAIL] {key}: {exc}", file=sys.stderr)
++            failed = True
++    raise SystemExit(1 if failed else 0)
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/src/taimma/evaluation/evaluator.py b/src/taimma/evaluation/evaluator.py
+index 429866d..06a8d6a 100644
+--- a/src/taimma/evaluation/evaluator.py
++++ b/src/taimma/evaluation/evaluator.py
+@@ -55,6 +55,7 @@ class IndependentEvaluator:
+         num_items: int,
+         k_list: List[int] = [10, 20],
+         mask_seen_items: bool = True,
++        mask_policy: Optional[str] = None,
+     ):
+         if num_items < 1:
+             raise ValueError("num_items must be positive")
+@@ -62,7 +63,10 @@ class IndependentEvaluator:
+             raise ValueError("Supported cutoffs are 10 and 20")
+         self.num_items = num_items
+         self.k_list = sorted(k_list)
+-        self.mask_seen_items = mask_seen_items
++        self.mask_policy = mask_policy or ('train_base_exclude_target' if mask_seen_items else 'none')
++        if self.mask_policy not in ('none','train_base_exclude_target','input_history_exclude_target','input_history_strict'):
++            raise ValueError('Unknown masking policy')
++        self.mask_seen_items = self.mask_policy != 'none'
+ 
+     @staticmethod
+     def _compute_ndcg(rank: int, k: int) -> float:
+@@ -80,6 +84,7 @@ class IndependentEvaluator:
+         targets: List[int],
+         user_indices: List[int],
+         seen_items_per_user: Optional[Dict[int, Set[int]]] = None,
++        histories: Optional[List[List[int]]] = None,
+     ) -> EvaluationResult:
+         """
+         Evaluate full ranking from score matrix (B, num_items) where items are 1..num_items.
+@@ -98,6 +103,8 @@ class IndependentEvaluator:
+         if scores_np.ndim != 2:
+             raise ValueError("scores must be a two-dimensional catalog matrix")
+         B, N = scores_np.shape
++        if self.mask_policy.startswith('input_history') and (histories is None or len(histories) != B):
++            raise ValueError('Input-history masking requires one aligned history per score row')
+         if N != self.num_items:
+             raise ValueError(f"Expected {self.num_items} catalog columns, got {N}")
+         if len(user_indices) != B:
+@@ -132,17 +139,17 @@ class IndependentEvaluator:
+             user_scores = scores_np[b]
+ 
+             # Seen-item masking: set score to -inf for items already in user history
+-            if self.mask_seen_items and seen_items_per_user and u_idx in seen_items_per_user:
+-                seen = seen_items_per_user[u_idx]
++            if self.mask_seen_items:
++                seen = set(histories[b]) if self.mask_policy.startswith('input_history') else (seen_items_per_user or {}).get(u_idx,set())
+                 for s_item in seen:
+                     # In 0-based column indexing: item i is at column i - 1
+                     col = s_item - 1
+-                    if 0 <= col < N and s_item != tgt:
++                    if 0 <= col < N and (s_item != tgt or self.mask_policy == "input_history_strict"):
+                         user_scores[col] = -np.inf
+ 
+             # Column of ground truth target
+             tgt_col = tgt - 1
+-            if tgt_col < 0 or tgt_col >= N:
++            if tgt_col < 0 or tgt_col >= N or not np.isfinite(user_scores[tgt_col]):
+                 # OOV target, assigned worst rank (always a miss across all k <= N)
+                 rank = N + 1
+             else:
+@@ -155,7 +162,7 @@ class IndependentEvaluator:
+                 tied_before = np.sum((user_scores == tgt_score) & (col_indices < tgt_col))
+                 rank = int(greater_count + tied_before + 1)
+ 
+-            valid_target = 0 <= tgt_col < N
++            valid_target = 0 <= tgt_col < N and np.isfinite(user_scores[tgt_col])
+             ndcg_10 = self._compute_ndcg(rank, 10) if valid_target else 0.0
+             recall_10 = self._compute_recall(rank, 10) if valid_target else 0.0
+             ndcg_20 = self._compute_ndcg(rank, 20) if valid_target else 0.0
+diff --git a/src/taimma/experiments/logger.py b/src/taimma/experiments/logger.py
+index 7ca18ab..5f89d81 100644
+--- a/src/taimma/experiments/logger.py
++++ b/src/taimma/experiments/logger.py
+@@ -175,6 +175,11 @@ class ExperimentLogger:
+         files = sorted([p for name in ('src', 'scripts', 'configs') for p in (root / name).rglob('*')
+                         if p.is_file() and p.suffix in ('.py', '.yaml') and '__pycache__' not in p.parts])
+         hashes = {}
++        # Exact working changes accompany every run even when other local files are uncommitted.
++        diff = subprocess.run(['git','diff','--binary','HEAD','--','src','scripts','configs',
++                               'pyproject.toml','requirements.txt','.gitignore','.gitattributes'],
++                              cwd=root,capture_output=True,check=True).stdout
++        (folder/'working_tree.diff').write_bytes(diff)
+         with zipfile.ZipFile(folder / 'source_snapshot.zip', 'x', compression=zipfile.ZIP_DEFLATED) as z:
+             for file in files:
+                 data = file.read_bytes()
+diff --git a/src/taimma/models/late_fusion.py b/src/taimma/models/late_fusion.py
+index 8200ebb..dc235db 100644
+--- a/src/taimma/models/late_fusion.py
++++ b/src/taimma/models/late_fusion.py
+@@ -62,6 +62,9 @@ class SourceSequentialEncoder(nn.Module):
+             [TransformerBlock(feature_dim, num_heads, dropout_rate) for _ in range(num_blocks)]
+         )
+         self.final_layer_norm = nn.LayerNorm(feature_dim, eps=1e-12)
++        # Memo 29 October: initial total scores must equal the frozen ID scores.
++        self.output_projection = nn.Linear(feature_dim, feature_dim, bias=False)
++        nn.init.zeros_(self.output_projection.weight)
+ 
+         causal_mask = torch.triu(torch.ones(max_seq_len, max_seq_len, dtype=torch.bool), diagonal=1)
+         self.register_buffer("causal_mask", causal_mask)
+@@ -127,7 +130,7 @@ class SourceSequentialEncoder(nn.Module):
+             scores: Tensor (B, K)
+         """
+         candidate_embeds = self.get_candidate_embeddings(candidate_attrs)  # (K, D)
+-        return torch.matmul(context_embedding, candidate_embeds.t())
++        return torch.matmul(self.output_projection(context_embedding), candidate_embeds.t())
+ 
+ 
+ class ResidualLateFusionModel(nn.Module):
+diff --git a/src/taimma/training/multimodal_trainer.py b/src/taimma/training/multimodal_trainer.py
+index a3fc0e9..9345863 100644
+--- a/src/taimma/training/multimodal_trainer.py
++++ b/src/taimma/training/multimodal_trainer.py
+@@ -28,6 +28,22 @@ from ..models.late_fusion import ResidualLateFusionModel
+ from .trainer import TrainingHistory, set_seed
+ 
+ 
++def gather_source_sequences(item_seqs, catalog_source_attrs, catalog_availability_masks):
++    """Gather identical item metadata for an entire batch on its execution device."""
++    result = {}
++    for source, attrs in catalog_source_attrs.items():
++        if attrs.size(0) < 1:
++            raise ValueError('Cannot gather from an empty metadata catalog')
++        indices = (item_seqs - 1).clamp(0, attrs.size(0) - 1)
++        active = (item_seqs > 0) & (item_seqs <= attrs.size(0))
++        active = active & (catalog_availability_masks[source][indices] > 0)
++        values = attrs[indices]
++        if attrs.ndim > 1:
++            active = active.unsqueeze(-1)
++        result[source] = values * active
++    return result
++
++
+ class MultimodalSequenceDataset(Dataset):
+     """
+     Multimodal Sequence Dataset.
+@@ -39,7 +55,9 @@ class MultimodalSequenceDataset(Dataset):
+         samples: List[SequenceSample],
+         catalog_source_attrs: Dict[str, torch.Tensor],
+         catalog_availability_masks: Dict[str, torch.Tensor],
++        defer_features: bool = False,
+     ):
++        self.defer_features = defer_features
+         self.samples = samples
+         if set(catalog_source_attrs) != set(catalog_availability_masks):
+             raise ValueError('Every source requires an explicit availability mask')
+@@ -61,26 +79,17 @@ class MultimodalSequenceDataset(Dataset):
+ 
+         # 2. Source sequence tensors
+         source_seqs: Dict[str, torch.Tensor] = {}
+-        for src_name in self.sources:
++        for src_name in ([] if self.defer_features else self.sources):
+             attrs = self.catalog_source_attrs[src_name]
+             avail = self.catalog_availability_masks.get(src_name)
+-            # If attrs has shape (N,) -> 1D attribute (e.g. categorical index)
+-            # If attrs has shape (N, D) -> 2D attribute (e.g. dense title embedding)
+-            if attrs.dim() == 1:
+-                src_seq = torch.zeros(len(history_items), dtype=attrs.dtype)
+-                for t, itm in enumerate(history_items):
+-                    if itm > 0 and itm <= attrs.size(0):
+-                        if avail is not None and not bool(avail[itm - 1].item() > 0):
+-                            continue
+-                        src_seq[t] = attrs[itm - 1]
+-            else:
+-                feature_dim = attrs.size(1)
+-                src_seq = torch.zeros(len(history_items), feature_dim, dtype=attrs.dtype)
+-                for t, itm in enumerate(history_items):
+-                    if itm > 0 and itm <= attrs.size(0):
+-                        if avail is not None and not bool(avail[itm - 1].item() > 0):
+-                            continue
+-                        src_seq[t] = attrs[itm - 1]
++            # Gather a whole history at once; retain identical padding/missing semantics.
++            valid = (item_seq > 0) & (item_seq <= attrs.size(0))
++            src_seq = torch.zeros((len(history_items), *attrs.shape[1:]), dtype=attrs.dtype)
++            positions = torch.flatnonzero(valid) if hasattr(torch, 'flatnonzero') else torch.nonzero(valid, as_tuple=True)[0]
++            if len(positions):
++                indices = item_seq[positions] - 1
++                active = avail[indices] > 0
++                src_seq[positions[active]] = attrs[indices[active]]
+ 
+             source_seqs[src_name] = src_seq
+ 
+@@ -169,7 +178,7 @@ class ResidualLateFusionTrainer:
+         for batch in dataloader:
+             item_seqs = batch["item_seqs"].to(self.device)
+             targets = batch["targets"].to(self.device)
+-            source_seqs = {k: v.to(self.device) for k, v in batch["source_seqs"].items()}
++            source_seqs = gather_source_sequences(item_seqs, self.catalog_source_attrs, self.catalog_availability_masks)
+ 
+             self.optimizer.zero_grad()
+             loss = self.model.compute_loss(
+@@ -196,7 +205,7 @@ class ResidualLateFusionTrainer:
+         """Full-catalog evaluation across validation or test samples."""
+         self.model.eval()
+         dataset = MultimodalSequenceDataset(
+-            samples, self.catalog_source_attrs, self.catalog_availability_masks
++            samples, self.catalog_source_attrs, self.catalog_availability_masks, defer_features=True
+         )
+         dataloader = DataLoader(
+             dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_multimodal_batch
+@@ -207,11 +216,11 @@ class ResidualLateFusionTrainer:
+             for batch in dataloader:
+                 scores = self.model.predict_all(
+                     item_id_seqs=batch['item_seqs'].to(self.device),
+-                    source_seqs={k: v.to(self.device) for k, v in batch['source_seqs'].items()},
++                    source_seqs=gather_source_sequences(batch['item_seqs'].to(self.device), self.catalog_source_attrs, self.catalog_availability_masks),
+                     catalog_source_attrs=self.catalog_source_attrs,
+                     catalog_availability_masks=self.catalog_availability_masks,
+                 )
+-                result = self.evaluator.evaluate_ranks(scores, batch['targets'].tolist(), batch['user_indices'], seen_items)
++                result = self.evaluator.evaluate_ranks(scores, batch['targets'].tolist(), batch['user_indices'], seen_items, histories=batch['item_seqs'].tolist())
+                 records.extend(result.per_user_records)
+         return self.evaluator.result_from_records(records)
+ 
+@@ -227,7 +236,7 @@ class ResidualLateFusionTrainer:
+         set_seed(self.seed)
+ 
+         train_dataset = MultimodalSequenceDataset(
+-            train_samples, self.catalog_source_attrs, self.catalog_availability_masks
++            train_samples, self.catalog_source_attrs, self.catalog_availability_masks, defer_features=True
+         )
+         train_loader = DataLoader(
+             train_dataset,
+@@ -238,8 +247,15 @@ class ResidualLateFusionTrainer:
+         )
+ 
+         history = TrainingHistory()
+-        best_val_ndcg = -1.0
+-        best_weights = None
++        initial = self.evaluate(val_samples, seen_items=seen_train_items, batch_size=self.batch_size)
++        best_val_ndcg = initial.ndcg_10
++        history.best_val_ndcg = best_val_ndcg
++        best_weights = copy.deepcopy(self.model.state_dict())
++        if checkpoint_path:
++            PathFolder = os.path.dirname(checkpoint_path)
++            os.makedirs(PathFolder, exist_ok=True)
++            torch.save(dict(epoch=0,model_state_dict=best_weights,val_ndcg_10=initial.ndcg_10,
++                            val_recall_10=initial.recall_10,seed=self.seed,sources_enabled=self.model.sources_enabled),checkpoint_path)
+         patience_counter = 0
+         if self.device.type == 'cuda':
+             torch.cuda.synchronize(self.device)
+diff --git a/src/taimma/training/trainer.py b/src/taimma/training/trainer.py
+index d30824b..772e250 100644
+--- a/src/taimma/training/trainer.py
++++ b/src/taimma/training/trainer.py
+@@ -158,7 +158,7 @@ class SASRecTrainer:
+                 seqs = torch.tensor([s.history for s in batch], dtype=torch.long, device=self.device)
+                 result = self.evaluator.evaluate_ranks(
+                     self.model.predict_all(seqs), [s.target for s in batch],
+-                    [s.user_idx for s in batch], seen_items,
++                    [s.user_idx for s in batch], seen_items, histories=[s.history for s in batch],
+                 )
+                 records.extend(result.per_user_records)
+         return self.evaluator.result_from_records(records)

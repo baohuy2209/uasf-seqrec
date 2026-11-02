@@ -1,0 +1,13 @@
+{
+  "dataset": "Beauty",
+  "protocol": "four_segment",
+  "seed": 42,
+  "embedding_dim": 64,
+  "sources": [],
+  "mask_policy": "input_history_strict",
+  "epochs": 100,
+  "patience": 10,
+  "batch_size": 256,
+  "learning_rate": 0.001,
+  "device": "cuda"
+}

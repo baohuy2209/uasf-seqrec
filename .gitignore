@@ -1,22 +1,24 @@
 # Local Python environments and caches
 .venv/
 .venv-wsl/
+.venv-cuda/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 
 # Datasets and generated experiment outputs
 data/
-results/
-runs/
 .tmp/
-NotPush/
+
+# Large arrays and model scores (>100MB)
+*.npy
+*.npz
+!artifacts/**/*.npy
 
 # Editable-install and package build metadata
 *.egg-info/
 build/
 dist/
 docs/
-.venv-cuda/
 .agents
 skills-lock.json

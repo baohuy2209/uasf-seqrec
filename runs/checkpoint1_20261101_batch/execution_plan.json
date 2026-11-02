@@ -1,0 +1,22 @@
+{
+  "data_mode": "real",
+  "execution": "PREPARED_ONLY_NO_TRAINING_OR_EVALUATION",
+  "device_target": "cuda",
+  "completed_stages": [
+    "loo_d64",
+    "id_seed42",
+    "condition_3",
+    "backbone_dim",
+    "audit"
+  ],
+  "next_steps": [
+    "audit/LOO if not reused",
+    "throughput benchmark",
+    "independent ID and 7 late subsets x3 seeds",
+    "early CBT timing",
+    "reproducibility",
+    "robustness",
+    "two-reference utility and E0/E1"
+  ],
+  "resume_command": "python scripts/run_checkpoint1.py --output runs/checkpoint1_20261101_batch --device cuda --stage all --workers 2"
+}
