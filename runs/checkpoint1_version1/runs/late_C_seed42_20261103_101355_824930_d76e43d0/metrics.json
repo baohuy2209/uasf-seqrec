@@ -1,0 +1,35 @@
+{
+  "run_id": "late_C_seed42_20261103_101355_824930_d76e43d0",
+  "best_epoch": 5,
+  "total_epochs": 25,
+  "train_time_sec": 134.33,
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.05729,
+    "Recall@10": 0.094308,
+    "NDCG@20": 0.065742,
+    "Recall@20": 0.127845
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.0449,
+    "Recall@10": 0.073604,
+    "NDCG@20": 0.051974,
+    "Recall@20": 0.101775
+  },
+  "selection": {
+    "metric": "validation/NDCG@10",
+    "mode": "max",
+    "scope": "trained_epochs_only",
+    "first_training_epoch": 1,
+    "selected_epoch": 5,
+    "selected_value": 0.05728973976328981,
+    "initial_validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.05971115195516364,
+      "Recall@10": 0.09815319948128605,
+      "NDCG@20": 0.06819452478005174,
+      "Recall@20": 0.13191432276528195
+    }
+  }
+}

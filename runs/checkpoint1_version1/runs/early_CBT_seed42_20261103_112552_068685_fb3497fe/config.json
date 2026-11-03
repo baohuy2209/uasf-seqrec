@@ -1,0 +1,14 @@
+{
+  "dataset": "Beauty",
+  "mechanism": "early_fusion",
+  "sources": [
+    "category",
+    "brand",
+    "title"
+  ],
+  "seed": 42,
+  "embedding_dim": 64,
+  "mask_policy": "input_history_strict",
+  "device": "cuda",
+  "checkpoint_selection": "trained_epochs_only"
+}

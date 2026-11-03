@@ -1,0 +1,29 @@
+{
+  "folder": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/late_B_seed43_20261103_104548_781372_7604bb54",
+  "checkpoint": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/late_B_seed43_20261103_104548_781372_7604bb54/checkpoint.pt",
+  "seed": 43,
+  "dim": 64,
+  "sources": [
+    "brand"
+  ],
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.056538,
+    "Recall@10": 0.094576,
+    "NDCG@20": 0.064726,
+    "Recall@20": 0.127174
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.045617,
+    "Recall@10": 0.075929,
+    "NDCG@20": 0.052265,
+    "Recall@20": 0.102178
+  },
+  "test_metrics_exact": {
+    "recall_10": 0.07592898984930466,
+    "ndcg_10": 0.04561699085309961
+  },
+  "checkpoint_sha256": "c9252662da695afc638451db6dbae0718877ffee2ad1e9c497d08672a6a4f3d6",
+  "training_sec": 135.0797530599957
+}

@@ -1,0 +1,26 @@
+{
+  "train_meta": {
+    "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_train_meta.npy",
+    "sha256": "71ccd40f0d9a81b23547a21e1b32d0537dd89e6d4e1e2a5f04e3d52dc01598a5",
+    "checkpoint_sha256": "16207ad73cddc234ec6c2cc09178f38a96ad3553acfd7b9356680e9ae2c910d0",
+    "rows": 22363,
+    "dtype": "float32",
+    "data_mode": "real"
+  },
+  "validation": {
+    "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_validation.npy",
+    "sha256": "e1074958eec4accecf80bddf9d2ac35e15690ea71f9ac69f488cd166aea52e6c",
+    "checkpoint_sha256": "16207ad73cddc234ec6c2cc09178f38a96ad3553acfd7b9356680e9ae2c910d0",
+    "rows": 22363,
+    "dtype": "float32",
+    "data_mode": "real"
+  },
+  "test": {
+    "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_test.npy",
+    "sha256": "a327611332c20c03b0d2763582f1ba6446b0d056612dbeae17a3e6f651d049a2",
+    "checkpoint_sha256": "16207ad73cddc234ec6c2cc09178f38a96ad3553acfd7b9356680e9ae2c910d0",
+    "rows": 22363,
+    "dtype": "float32",
+    "data_mode": "real"
+  }
+}

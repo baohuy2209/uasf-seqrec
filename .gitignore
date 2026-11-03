@@ -23,4 +23,3 @@ docs/
 .agents
 skills-lock.json
 *.pt
-runs/

@@ -1,0 +1,33 @@
+[late_B_seed43] training late_B_seed43_20261103_104548_781372_7604bb54
+Initial validation (before training; excluded from selection): NDCG@10=0.05974511
+Epoch 001 | Residual Loss: 5.1369 | Val NDCG@10: 0.05597257 | Val Recall@10: 0.09327908 | Time: 3.25s
+Epoch 002 | Residual Loss: 5.1148 | Val NDCG@10: 0.05574374 | Val Recall@10: 0.09287663 | Time: 3.23s
+Epoch 003 | Residual Loss: 5.1046 | Val NDCG@10: 0.05600815 | Val Recall@10: 0.09368153 | Time: 3.22s
+Epoch 004 | Residual Loss: 5.0983 | Val NDCG@10: 0.05580373 | Val Recall@10: 0.09350266 | Time: 3.45s
+Epoch 005 | Residual Loss: 5.0942 | Val NDCG@10: 0.05576796 | Val Recall@10: 0.09341323 | Time: 3.21s
+Epoch 006 | Residual Loss: 5.0895 | Val NDCG@10: 0.05602324 | Val Recall@10: 0.09408398 | Time: 3.22s
+Epoch 007 | Residual Loss: 5.0862 | Val NDCG@10: 0.05597544 | Val Recall@10: 0.09336851 | Time: 3.22s
+Epoch 008 | Residual Loss: 5.0841 | Val NDCG@10: 0.05637097 | Val Recall@10: 0.09448643 | Time: 3.22s
+Epoch 009 | Residual Loss: 5.0797 | Val NDCG@10: 0.05642940 | Val Recall@10: 0.09444171 | Time: 3.22s
+Epoch 010 | Residual Loss: 5.0757 | Val NDCG@10: 0.05653800 | Val Recall@10: 0.09457586 | Time: 3.21s
+Epoch 011 | Residual Loss: 5.0775 | Val NDCG@10: 0.05597752 | Val Recall@10: 0.09354738 | Time: 3.22s
+Epoch 012 | Residual Loss: 5.0698 | Val NDCG@10: 0.05586096 | Val Recall@10: 0.09287663 | Time: 3.25s
+Epoch 013 | Residual Loss: 5.0663 | Val NDCG@10: 0.05599938 | Val Recall@10: 0.09354738 | Time: 3.25s
+Epoch 014 | Residual Loss: 5.0620 | Val NDCG@10: 0.05549323 | Val Recall@10: 0.09305549 | Time: 3.26s
+Epoch 015 | Residual Loss: 5.0581 | Val NDCG@10: 0.05617151 | Val Recall@10: 0.09341323 | Time: 3.26s
+Epoch 016 | Residual Loss: 5.0578 | Val NDCG@10: 0.05592017 | Val Recall@10: 0.09332379 | Time: 3.32s
+Epoch 017 | Residual Loss: 5.0554 | Val NDCG@10: 0.05570707 | Val Recall@10: 0.09323436 | Time: 3.26s
+Epoch 018 | Residual Loss: 5.0517 | Val NDCG@10: 0.05608157 | Val Recall@10: 0.09408398 | Time: 3.21s
+Epoch 019 | Residual Loss: 5.0459 | Val NDCG@10: 0.05573011 | Val Recall@10: 0.09323436 | Time: 3.19s
+Epoch 020 | Residual Loss: 5.0454 | Val NDCG@10: 0.05595499 | Val Recall@10: 0.09350266 | Time: 3.20s
+Epoch 021 | Residual Loss: 5.0420 | Val NDCG@10: 0.05578873 | Val Recall@10: 0.09359209 | Time: 3.19s
+Epoch 022 | Residual Loss: 5.0339 | Val NDCG@10: 0.05570628 | Val Recall@10: 0.09332379 | Time: 3.19s
+Epoch 023 | Residual Loss: 5.0365 | Val NDCG@10: 0.05596101 | Val Recall@10: 0.09363681 | Time: 3.44s
+Epoch 024 | Residual Loss: 5.0295 | Val NDCG@10: 0.05558923 | Val Recall@10: 0.09269776 | Time: 3.19s
+Epoch 025 | Residual Loss: 5.0260 | Val NDCG@10: 0.05569714 | Val Recall@10: 0.09278719 | Time: 3.19s
+Epoch 026 | Residual Loss: 5.0250 | Val NDCG@10: 0.05560858 | Val Recall@10: 0.09274248 | Time: 3.20s
+Epoch 027 | Residual Loss: 5.0208 | Val NDCG@10: 0.05566338 | Val Recall@10: 0.09332379 | Time: 3.20s
+Epoch 028 | Residual Loss: 5.0122 | Val NDCG@10: 0.05561564 | Val Recall@10: 0.09327908 | Time: 3.43s
+Epoch 029 | Residual Loss: 5.0124 | Val NDCG@10: 0.05568054 | Val Recall@10: 0.09283191 | Time: 3.25s
+Epoch 030 | Residual Loss: 5.0145 | Val NDCG@10: 0.05541954 | Val Recall@10: 0.09323436 | Time: 3.21s
+Early stopping triggered at epoch 30. Best epoch: 10

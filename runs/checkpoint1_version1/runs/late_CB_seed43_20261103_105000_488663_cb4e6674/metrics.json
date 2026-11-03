@@ -1,0 +1,35 @@
+{
+  "run_id": "late_CB_seed43_20261103_105000_488663_cb4e6674",
+  "best_epoch": 15,
+  "total_epochs": 35,
+  "train_time_sec": 244.91,
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.056831,
+    "Recall@10": 0.094263,
+    "NDCG@20": 0.065212,
+    "Recall@20": 0.127711
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.045407,
+    "Recall@10": 0.075482,
+    "NDCG@20": 0.052258,
+    "Recall@20": 0.102804
+  },
+  "selection": {
+    "metric": "validation/NDCG@10",
+    "mode": "max",
+    "scope": "trained_epochs_only",
+    "first_training_epoch": 1,
+    "selected_epoch": 15,
+    "selected_value": 0.056830687669909584,
+    "initial_validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.059745108837981335,
+      "Recall@10": 0.09734829852881993,
+      "NDCG@20": 0.06849658157854185,
+      "Recall@20": 0.13209318964360775
+    }
+  }
+}

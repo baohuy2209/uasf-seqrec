@@ -1,0 +1,5 @@
+{
+  "scope": "Parallel benchmark skipped; sequential execution requested",
+  "measurements": [],
+  "best_workers": 1
+}

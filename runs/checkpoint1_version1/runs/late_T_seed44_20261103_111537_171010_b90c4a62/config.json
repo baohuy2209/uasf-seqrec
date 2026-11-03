@@ -1,0 +1,19 @@
+{
+  "dataset": "Beauty",
+  "data_mode": "real",
+  "protocol": "four_segment",
+  "seed": 44,
+  "embedding_dim": 64,
+  "sources": [
+    "title"
+  ],
+  "mask_policy": "input_history_strict",
+  "epochs": 100,
+  "patience": 20,
+  "batch_size": 256,
+  "learning_rate": 0.001,
+  "device": "cuda",
+  "deterministic_algorithms": true,
+  "checkpoint_selection": "trained_epochs_only",
+  "cublas_workspace_config": ":4096:8"
+}

@@ -1,0 +1,1194 @@
+diff --git a/configs/experiments/pilot_beauty.yaml b/configs/experiments/pilot_beauty.yaml
+index 84e4aeb..0517cc3 100644
+--- a/configs/experiments/pilot_beauty.yaml
++++ b/configs/experiments/pilot_beauty.yaml
+@@ -9,7 +9,7 @@ batch_size: 256
+ learning_rate: 0.001
+ weight_decay: 0.0
+ max_epochs: 100
+-patience: 10
++patience: 20
+ device: "cpu"  # "cuda" if GPU is available, else "cpu"
+ 
+ # Evaluation parameters
+diff --git a/scripts/benchmark_checkpoint1.py b/scripts/benchmark_checkpoint1.py
+index 411365f..071313f 100644
+--- a/scripts/benchmark_checkpoint1.py
++++ b/scripts/benchmark_checkpoint1.py
+@@ -1,8 +1,9 @@
+-"""Measure one real Beauty Train-base epoch with 1, 2 and 3 CUDA processes."""
++"""Measure one Beauty epoch up to the requested CUDA worker and RAM limits."""
+ import argparse
+ import multiprocessing as mp
+ import os
+ os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG',':4096:8')
++import queue
+ import sys
+ import time
+ import traceback
+@@ -13,6 +14,7 @@ sys.path.insert(0,str(ROOT/'src'))
+ 
+ 
+ def worker(ready,results,start,dim,seed,batch_size,threads):
++    initialized=False
+     try:
+         import torch
+         from torch.utils.data import DataLoader
+@@ -29,47 +31,143 @@ def worker(ready,results,start,dim,seed,batch_size,threads):
+         trainer=SASRecTrainer(model,IndependentEvaluator(split.num_items),device='cuda',seed=seed)
+         loader=DataLoader(SequenceDataset(split.train_base_samples),batch_size=batch_size,shuffle=True,
+                           generator=torch.Generator().manual_seed(seed))
+-        ready.put(True)
++        ready.put(dict(pid=os.getpid()))
++        initialized=True
+         start.wait()
+         torch.cuda.reset_peak_memory_stats()
+         then=time.perf_counter()
+         loss=trainer.train_epoch(loader)
+         torch.cuda.synchronize()
+-        results.put(dict(samples=len(split.train_base_samples),train_sec=time.perf_counter()-then,loss=loss,
+-                         peak_gpu_allocated_bytes=torch.cuda.max_memory_allocated()))
++        import psutil
++        memory=psutil.Process().memory_info()
++        peak_rss=getattr(memory,'peak_wset',memory.rss)
++        try:
++            import resource
++            peak_rss=max(peak_rss,resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform=='darwin' else 1024))
++        except ImportError:
++            pass
++        results.put(dict(pid=os.getpid(),samples=len(split.train_base_samples),train_sec=time.perf_counter()-then,loss=loss,
++                         peak_gpu_allocated_bytes=torch.cuda.max_memory_allocated(),peak_host_rss_bytes=peak_rss))
+     except BaseException:
+-        ready.put(False)
+-        results.put(dict(error=traceback.format_exc()))
++        error=dict(pid=os.getpid(),error=traceback.format_exc())
++        if not initialized:
++            ready.put(error)
++        results.put(error)
+ 
+ 
+-def main():
++def available_memory_bytes(cgroup=Path('/sys/fs/cgroup')):
++    import psutil
++    available=psutil.virtual_memory().available
++    try:
++        limit=(cgroup/'memory.max').read_text().strip()
++        if limit != 'max':
++            used=int((cgroup/'memory.current').read_text())
++            stats=dict(line.split() for line in (cgroup/'memory.stat').read_text().splitlines())
++            # Inactive file cache can be reclaimed without killing a process.
++            available=min(available,max(0,int(limit)-used+int(stats.get('inactive_file',0))))
++    except (OSError,ValueError):
++        pass
++    return available
++
++
++def collect_messages(channel,processes,timeout,phase,parent_pid=None):
++    deadline=time.monotonic()+timeout
++    messages=[]
++    while len(messages)<len(processes):
++        if parent_pid is not None and os.getppid()!=parent_pid:
++            raise RuntimeError('Training parent exited; stopping benchmark workers')
++        remaining=deadline-time.monotonic()
++        if remaining<=0:
++            raise RuntimeError(f'Benchmark {phase} timed out after {timeout}s')
++        try:
++            message=channel.get(timeout=min(.2,remaining))
++        except queue.Empty:
++            failed=[(p.pid,p.exitcode) for p in processes if p.exitcode not in (None,0)]
++            if failed:
++                raise RuntimeError(f'Benchmark worker exited during {phase}: {failed}; check RAM/VRAM limits')
++            if all(p.exitcode is not None for p in processes):
++                raise RuntimeError(f'Benchmark workers exited without all {phase} results')
++            continue
++        if message.get('error'):
++            raise RuntimeError(message['error'])
++        messages.append(message)
++    return messages
++
++
++def measure(context,count,args):
++    ready,results=context.Queue(),context.Queue()
++    start=context.Event()
++    processes=[context.Process(target=worker,args=(ready,results,start,args.dim,42+i,args.batch_size,args.threads))
++               for i in range(count)]
++    begin=time.perf_counter()
++    try:
++        for process in processes:process.start()
++        collect_messages(ready,processes,300,'initialization',args.parent_pid)
++        begin=time.perf_counter()
++        start.set()
++        samples=collect_messages(results,processes,600,'training',args.parent_pid)
++        elapsed=time.perf_counter()-begin
++        return dict(processes=count,status='COMPLETED',elapsed_training_sec=elapsed,workers=samples,errors=[],
++                    examples_per_sec=sum(row['samples'] for row in samples)/elapsed)
++    except RuntimeError as error:
++        return dict(processes=count,status='FAILED',elapsed_training_sec=time.perf_counter()-begin,
++                    workers=[],errors=[str(error)],examples_per_sec=0)
++    finally:
++        for process in processes:
++            if process.pid is not None and process.is_alive():process.terminate()
++        for process in processes:
++            if process.pid is not None:
++                process.join(timeout=5)
++                if process.is_alive():
++                    process.kill();process.join(timeout=5)
++        for channel in [ready,results]:
++            channel.close()
++            channel.join_thread()
++
++
++def benchmark(args,context=None):
+     from metadata_pipeline.contracts import write_json
++    context=context or mp.get_context('spawn')
++    rows=[]
++    worker_bytes=1024**3
++    for count in range(1,args.workers+1):
++        if args.parent_pid is not None and os.getppid()!=args.parent_pid:
++            raise RuntimeError('Training parent exited; stopping benchmark')
++        available=available_memory_bytes()
++        required=int(worker_bytes*count*1.25)+512*1024**2
++        if available<required:
++            row=dict(processes=count,status='SKIPPED_INSUFFICIENT_RAM',workers=[],errors=[],
++                     available_host_bytes=available,required_host_bytes=required,examples_per_sec=0)
++        else:
++            row=measure(context,count,args)
++            if row['status']=='COMPLETED':
++                worker_bytes=max(worker_bytes,max(sample['peak_host_rss_bytes'] for sample in row['workers']))
++        rows.append(row)
++        successful=[row for row in rows if row['status']=='COMPLETED']
++        report=dict(scope='one full real Beauty ID Train-base epoch; excludes loading and validation',
++                    dimension=args.dim,requested_max_workers=args.workers,measurements=rows,
++                    best_workers=max(successful,key=lambda row:row['examples_per_sec'])['processes'] if successful else None)
++        print(row,flush=True)
++        output=Path(args.output)
++        output.parent.mkdir(parents=True,exist_ok=True)
++        temp=output.with_suffix('.tmp.json')
++        write_json(temp,report);temp.replace(output)
++        if row['status']!='COMPLETED':break
++    if report['best_workers'] is None:
++        raise RuntimeError('No safe successful CUDA benchmark; free RAM or run the driver with --workers 1 to skip it')
++    return report
++
++
++def main():
+     parser=argparse.ArgumentParser(description=__doc__)
+     parser.add_argument('--dim',type=int,default=64)
+     parser.add_argument('--output',required=True)
+     parser.add_argument('--batch_size',type=int,default=256)
+     parser.add_argument('--threads',type=int,default=2)
++    parser.add_argument('--workers',type=int,choices=[1,2,3],default=1)
++    parser.add_argument('--parent-pid',type=int,help='Stop if the invoking training process exits')
+     args=parser.parse_args()
+-    context=mp.get_context('spawn')
+-    rows=[]
+-    for count in [1,2,3]:
+-        ready,results=context.Queue(),context.Queue()
+-        start=context.Event()
+-        processes=[context.Process(target=worker,args=(ready,results,start,args.dim,42+i,args.batch_size,args.threads)) for i in range(count)]
+-        for p in processes:p.start()
+-        initialized=[ready.get(timeout=300) for _ in processes]
+-        begin=time.perf_counter()
+-        start.set()
+-        samples=[results.get(timeout=600) for _ in processes]
+-        for p in processes:p.join(timeout=30)
+-        elapsed=time.perf_counter()-begin
+-        errors=[r['error'] for r in samples if 'error' in r]
+-        row=dict(processes=count,elapsed_training_sec=elapsed,workers=samples,errors=errors,
+-                 examples_per_sec=sum(r.get('samples',0) for r in samples)/elapsed if not errors else 0)
+-        rows.append(row)
+-        print(row,flush=True)
+-        write_json(Path(args.output),dict(scope='one full real Beauty ID Train-base training epoch, excludes loading and validation',
+-                    dimension=args.dim,measurements=rows,best_workers=max(rows,key=lambda r:r['examples_per_sec'])['processes']))
++    benchmark(args)
+ 
+ 
+ if __name__=='__main__':main()
+diff --git a/scripts/checkpoint1_early.py b/scripts/checkpoint1_early.py
+index e44b16b..8530548 100644
+--- a/scripts/checkpoint1_early.py
++++ b/scripts/checkpoint1_early.py
+@@ -11,13 +11,16 @@ from metadata_pipeline.contracts import write_json
+ from taimma.models.early_fusion import EarlyFusionSASRec
+ from taimma.training.trainer import TrainingHistory,set_seed
+ from taimma.training.multimodal_trainer import MultimodalSequenceDataset,collate_multimodal_batch,gather_source_sequences
+-from taimma.experiments.reporting import runtime_snapshot
++from taimma.experiments.reporting import (runtime_snapshot, exact_validation_metrics,
++                                         write_epoch_log, save_checkpoint_atomic)
+ from taimma.evaluation.evaluator import IndependentEvaluator
+ 
+ 
+ def run_early(runner):
+     key='early_CBT_seed42'
+     if key in runner.progress:return runner.progress[key]
++    if runner.args.epochs < 1:
++        raise ValueError('Training requires at least one epoch')
+     set_seed(42)
+     model=EarlyFusionSASRec(runner.model(runner.split,42,runner.backbone_dim),
+           num_categories=int(runner.attrs['category'].max()),num_brands=int(runner.attrs['brand'].max()),
+@@ -50,11 +53,19 @@ def run_early(runner):
+     run_id,folder=runner.logger.create_run_dir(key)
+     folder=Path(folder)
+     history=TrainingHistory()
++    history.stop_reason='running'
+     optimizer=torch.optim.Adam(model.parameters(),lr=.001)
+     best=-1;weights=None;stale=0
+     config=dict(dataset='Beauty',mechanism='early_fusion',sources=['category','brand','title'],seed=42,
+-                embedding_dim=runner.backbone_dim,mask_policy='input_history_strict',device=str(runner.device))
++                embedding_dim=runner.backbone_dim,mask_policy='input_history_strict',device=str(runner.device),
++                checkpoint_selection='trained_epochs_only')
+     with runner.logger.capture_output(str(folder)):
++        initial_start=time.perf_counter()
++        initial=evaluate(runner.split.val_samples)
++        history.initial_validation_metrics=exact_validation_metrics(initial)
++        history.initial_validation_duration=time.perf_counter()-initial_start
++        print(f'Initial validation (before training; excluded from selection): NDCG@10={initial.ndcg_10:.8f}',flush=True)
++        write_epoch_log(folder,history)
+         if runner.device.type=='cuda':torch.cuda.reset_peak_memory_stats()
+         begin=time.perf_counter()
+         for epoch in range(1,runner.args.epochs+1):
+@@ -68,28 +79,30 @@ def run_early(runner):
+             val=evaluate(runner.split.val_samples)
+             history.train_losses.append(float(np.mean(losses)));history.val_ndcg_10.append(val.ndcg_10)
+             history.val_recall_10.append(val.recall_10);history.epoch_durations.append(train_sec)
+-            history.epoch_wall_durations.append(time.perf_counter()-then)
+-            print(f'Early CBT epoch {epoch}: loss={np.mean(losses):.5f}; val NDCG@10={val.ndcg_10:.6f}; train_sec={train_sec:.2f}',flush=True)
++            history.val_metrics_by_epoch.append(exact_validation_metrics(val))
++            print(f'Early CBT epoch {epoch}: loss={np.mean(losses):.5f}; val NDCG@10={val.ndcg_10:.8f}; train_sec={train_sec:.2f}',flush=True)
+             if val.ndcg_10>best:
+                 best=val.ndcg_10;weights=copy.deepcopy(model.state_dict());stale=0
+                 history.best_epoch=epoch;history.best_val_ndcg=best
+-                torch.save(dict(model_state_dict=weights,epoch=epoch,seed=42),folder/'checkpoint.pt')
++                save_checkpoint_atomic(folder/'checkpoint.pt',dict(model_state_dict=weights,epoch=epoch,seed=42,
++                    val_ndcg_10=val.ndcg_10,val_recall_10=val.recall_10,selection_scope=history.selection_scope))
+             else:stale+=1
++            history.epoch_wall_durations.append(time.perf_counter()-then)
+             if stale>=runner.args.patience:
+-                history.stop_reason='early_stopping';break
++                history.stop_reason='early_stopping'
++            write_epoch_log(folder,history)
++            if stale>=runner.args.patience:break
+         history.total_training_time=time.perf_counter()-begin
++        if history.stop_reason=='running':history.stop_reason='max_epochs'
+         history.resource_usage=runtime_snapshot(runner.device)
+         model.load_state_dict(weights)
+         val=evaluate(runner.split.val_samples);test=evaluate(runner.split.test_samples)
+         runner.logger.save_run_artifacts(str(folder),run_id,config,val,test,history.total_training_time,
+-                        history.best_epoch,len(history.train_losses),actual_device=str(runner.device))
+-        write_json(folder/'history.json',asdict(history))
++                        history.best_epoch,len(history.train_losses),actual_device=str(runner.device),history=history)
++        write_epoch_log(folder,history)
+         write_json(folder/'report_data.json',dict(data_mode='real',costs=dict(
+                     mean_epoch_train_sec=float(np.mean(history.epoch_durations)),mean_epoch_wall_sec=float(np.mean(history.epoch_wall_durations)),
+                     stop_reason=history.stop_reason,training_resources=history.resource_usage)))
+-        pd.DataFrame(dict(epoch=range(1,len(history.train_losses)+1),loss=history.train_losses,
+-                   train_sec=history.epoch_durations,wall_sec=history.epoch_wall_durations,
+-                   val_ndcg_10=history.val_ndcg_10)).to_csv(folder/'epochs.csv',index=False)
+         runner.logger.register_result(run_id,'Beauty','EarlyFusion_CBT',42,len(history.train_losses),history.best_epoch,
+                   val,test,history.total_training_time,str(folder/'checkpoint.pt'))
+     entry=dict(folder=str(folder),checkpoint=str(folder/'checkpoint.pt'),training_sec=history.total_training_time,
+diff --git a/scripts/run_checkpoint1.py b/scripts/run_checkpoint1.py
+index d23e6b8..ef58d7d 100644
+--- a/scripts/run_checkpoint1.py
++++ b/scripts/run_checkpoint1.py
+@@ -80,7 +80,7 @@ class Checkpoint:
+         signature={str(p.relative_to(ROOT)):compute_file_sha256(str(p)) for folder in ['src','scripts','configs']
+                    for p in sorted((ROOT/folder).rglob('*')) if p.suffix in ('.py','.yaml') and '__pycache__' not in p.parts}
+         lock=dict(code_sha256=signature,seeds=args.seeds,max_epochs=args.epochs,patience=args.patience,
+-                  learning_rate=0.001,batch_size=args.batch_size,main_mask_policy='input_history_strict',
++                  learning_rate=0.001,batch_size=args.batch_size,checkpoint_selection='trained_epochs_only',main_mask_policy='input_history_strict',
+                   loo_reference_mask_policy='none',source_dropout=0.2,device=args.device,
+                   metadata_manifest_sha256={key:compute_file_sha256(str(ROOT/f'artifacts/metadata/{key}/manifest.json')) for key in ['beauty','sports','toys']})
+         lock_path=self.root/'protocol.lock.json'
+@@ -130,7 +130,10 @@ class Checkpoint:
+         folder=Path(folder)
+         config=dict(dataset='Beauty' if self.data_mode=='real' else 'SyntheticFixture',data_mode=self.data_mode,protocol='loo' if split is not self.split else 'four_segment',seed=seed,
+                     embedding_dim=dim,sources=list(sources),mask_policy=policy,epochs=self.args.epochs,
+-                    patience=self.args.patience,batch_size=self.args.batch_size,learning_rate=.001,device=str(self.device))
++                    patience=self.args.patience,batch_size=self.args.batch_size,learning_rate=.001,device=str(self.device),
++                    deterministic_algorithms=torch.are_deterministic_algorithms_enabled(),
++                    checkpoint_selection='trained_epochs_only',
++                    cublas_workspace_config=os.environ.get('CUBLAS_WORKSPACE_CONFIG'))
+         with self.logger.capture_output(str(folder)):
+             print(f'[{key}] training {run_id}',flush=True)
+             ev=evaluator(split.num_items,policy)
+@@ -154,11 +157,7 @@ class Checkpoint:
+             val=trainer.evaluate(split.val_samples,split.seen_train_items_per_user)
+             test=trainer.evaluate(split.test_samples,split.seen_train_items_per_user)
+             self.logger.save_run_artifacts(str(folder),run_id,config,val,test,history.total_training_time,
+-                  history.best_epoch,len(history.train_losses),actual_device=str(self.device))
+-            pd.DataFrame([dict(epoch=i+1,train_loss=loss,val_ndcg_10=history.val_ndcg_10[i],
+-                         train_sec=history.epoch_durations[i],wall_sec=history.epoch_wall_durations[i])
+-                         for i,loss in enumerate(history.train_losses)]).to_csv(folder/'epochs.csv',index=False)
+-            write_json(folder/'history.json',asdict(history))
++                  history.best_epoch,len(history.train_losses),actual_device=str(self.device),history=history)
+             write_json(folder/'report_data.json',dict(data_mode=self.data_mode,costs=dict(
+                   mean_epoch_train_sec=float(np.mean(history.epoch_durations)),
+                   mean_epoch_wall_sec=float(np.mean(history.epoch_wall_durations)),
+@@ -208,6 +207,35 @@ class Checkpoint:
+         ids=torch.tensor([sample.history for sample in batch],device=self.device)
+         return model.predict_all(ids,gather_source_sequences(ids,selected_attrs,selected_masks),selected_attrs,selected_masks)
+ 
++    def reproducibility(self):
++        set_seed(42)
++        first=self.train('id_seed42',self.split,42,self.backbone_dim)
++        repeated=self.train('id_seed42_repeat',self.split,42,self.backbone_dim)
++        report=dict(status='PASS',seed=42,first=first['checkpoint'],repeat=repeated['checkpoint'],
++                    deterministic_algorithms=torch.are_deterministic_algorithms_enabled(),comparisons={})
++        for name in ['per_user_val.csv','per_user_test.csv']:
++            try:
++                pd.testing.assert_frame_equal(pd.read_csv(Path(first['folder'])/name),
++                                              pd.read_csv(Path(repeated['folder'])/name),check_exact=True)
++                report['comparisons'][name]='PASS'
++            except AssertionError as error:
++                report['status']='FAIL'
++                report['comparisons'][name]=str(error)
++        original=torch.load(first['checkpoint'],map_location='cpu',weights_only=True)
++        repeat=torch.load(repeated['checkpoint'],map_location='cpu',weights_only=True)
++        original_weights=original['model_state_dict']
++        repeat_weights=repeat['model_state_dict']
++        weights_equal=original_weights.keys()==repeat_weights.keys() and all(
++            torch.equal(value,repeat_weights[name]) for name,value in original_weights.items())
++        report['comparisons']['model_weights']='PASS' if weights_equal else 'FAIL'
++        report['comparisons']['best_epoch']='PASS' if original['epoch']==repeat['epoch'] else 'FAIL'
++        if not weights_equal or original['epoch']!=repeat['epoch']:
++            report['status']='FAIL'
++        atomic_json(self.root/'reproducibility.json',report)
++        require(report['status']=='PASS',
++                f'Reproducibility failed; details saved to {self.root / "reproducibility.json"}. '
++                'Checkpoints trained before deterministic CUDA was enabled require a fresh --output.')
++
+     def audit(self):
+         summary={}
+         for dataset in ['beauty','sports','toys']:
+@@ -396,6 +424,32 @@ class Checkpoint:
+         self.save_progress()
+ 
+     def utility(self):
++        # CE labels are defined only for targets in the Train-base catalog.
++        # Keep evaluation cohorts unchanged and select once for both references.
++        samples=self.split.train_meta_samples
++        require(all(0 <= s.target <= self.split.num_items for s in samples),
++                'Invalid Train-meta target ID; expected OOV 0 or an in-catalog ID')
++        eligible=[s for s in samples if s.target > 0]
++        audit=pd.DataFrame([dict(user_idx=s.user_idx,target_idx=s.target,raw_target_asin=s.raw_target_asin,
++                                included=s.target > 0,exclusion_reason='' if s.target > 0 else 'target_oov')
++                            for s in samples],columns=['user_idx','target_idx','raw_target_asin','included','exclusion_reason'])
++        audit_path=self.root/'utility_cohort.csv'
++        if audit_path.exists():
++            pd.testing.assert_frame_equal(pd.read_csv(audit_path,keep_default_na=False),audit,check_exact=True)
++        else:
++            audit.to_csv(audit_path,index=False)
++        cohort=dict(policy='train_meta_in_catalog_targets_only',total_contexts=len(samples),
++                    included_contexts=len(eligible),excluded_oov_contexts=len(samples)-len(eligible),
++                    reference_seeds=self.args.seeds[:2],catalog_items=self.split.num_items,
++                    audit_file=audit_path.name,audit_sha256=compute_file_sha256(str(audit_path)))
++        cohort_path=self.root/'utility_cohort.json'
++        if cohort_path.exists():
++            require(read_json(cohort_path)==cohort,'Utility cohort changed')
++        else:
++            atomic_json(cohort_path,cohort)
++        require(bool(eligible),'No in-catalog Train-meta targets available for utility computation')
++        print(f'Utility cohort: {len(eligible)}/{len(samples)} contexts; '
++              f'excluded {len(samples)-len(eligible)} OOV targets',flush=True)
+         destination=self.root/'utility.csv'
+         sidecar=destination.with_suffix('.csv.manifest.json')
+         staging=destination.with_name('utility.partial.csv')
+@@ -406,6 +460,8 @@ class Checkpoint:
+             staging_sidecar.rename(sidecar)
+         if destination.exists() and sidecar.exists():
+             lineage=read_json(sidecar)
++            require(lineage.get('cohort_sha256')==compute_file_sha256(str(cohort_path)),
++                    'Utility cohort provenance changed or missing')
+             require(lineage['file_sha256']==compute_file_sha256(str(destination)),'Utility artifact checksum changed')
+             require(lineage['dataset_manifest_sha256']==compute_file_sha256(str(ROOT/'artifacts/metadata/beauty/manifest.json')),
+                     'Utility metadata provenance changed')
+@@ -429,16 +485,20 @@ class Checkpoint:
+             entry=self.progress[f'late_CBT_seed{seed}']
+             checkpoints[seed]=entry['checkpoint']
+             model=self.load_residual(entry)
+-            loader=DataLoader(MultimodalSequenceDataset(self.split.train_meta_samples,self.attrs,self.masks,defer_features=True),
++            loader=DataLoader(MultimodalSequenceDataset(eligible,self.attrs,self.masks,defer_features=True),
+                              batch_size=self.args.batch_size,shuffle=False,collate_fn=collate_multimodal_batch)
+             attrs={s:v.to(self.device) for s,v in self.attrs.items()}
+             masks={s:v.to(self.device) for s,v in self.masks.items()}
++            print(f'Utility reference seed {seed}: {len(eligible)} contexts',flush=True)
+             for batch in loader:
+                 _,items=compute_leave_one_source_out_deltas(model,batch['item_seqs'].to(self.device),
+                     gather_source_sequences(batch['item_seqs'].to(self.device),attrs,masks),attrs,masks,
+                     batch['targets'].to(self.device),batch['user_indices'],reference_seed=seed)
+                 records.extend(items)
+         save_utility_artifact(staging,records,ROOT/'artifacts/metadata/beauty/manifest.json',checkpoints)
++        lineage=read_json(staging_sidecar)
++        lineage.update(cohort_file=cohort_path.name,cohort_sha256=compute_file_sha256(str(cohort_path)))
++        atomic_json(staging_sidecar,lineage)
+         staging.rename(destination)
+         staging_sidecar.rename(sidecar)
+         frame=pd.read_csv(destination)
+@@ -463,6 +523,28 @@ class Checkpoint:
+                 rows.append(dict(model=name,control=control,**metrics(result)))
+         pd.DataFrame(rows).to_csv(self.root/'baseline_and_shuffle.csv',index=False)
+ 
++    def configure_workers(self):
++        throughput=self.root/'throughput.json'
++        if self.device.type != 'cuda' or self.args.workers == 1:
++            self.args.workers=1
++            if not throughput.exists():
++                atomic_json(throughput,dict(scope='Parallel benchmark skipped; sequential execution requested',
++                            measurements=[],best_workers=1))
++            return
++        requested=self.args.workers
++        previous=read_json(throughput) if throughput.exists() else {}
++        measured={row['processes'] for row in previous.get('measurements',[])}
++        if not set(range(1,requested+1)).issubset(measured):
++            subprocess.run([sys.executable,str(ROOT/'scripts/benchmark_checkpoint1.py'),'--dim',str(self.backbone_dim),
++                            '--output',str(throughput),'--batch_size',str(self.args.batch_size),
++                            '--threads',str(self.args.threads),'--workers',str(requested),
++                            '--parent-pid',str(os.getpid())],check=True,cwd=ROOT)
++        benchmark=read_json(throughput)
++        candidates=[row for row in benchmark.get('measurements',[]) if row['processes']<=requested
++                    and not row.get('errors') and row.get('examples_per_sec',0)>0]
++        require(bool(candidates),'No successful benchmark within requested worker limit')
++        self.args.workers=max(candidates,key=lambda row:row['examples_per_sec'])['processes']
++
+     def run(self):
+         if not self.args.prepare_only:
+             for key,entry in self.progress.items():
+@@ -491,25 +573,13 @@ class Checkpoint:
+             print('Both LOO configurations failed condition (3). Diagnostic grid STOPPED as required.',flush=True)
+             return 2
+         if self.args.stage=='loo':return 0
+-        throughput=self.root/'throughput.json'
+-        if self.device.type != 'cuda':
+-            self.args.workers=1
+-            if not throughput.exists():
+-                write_json(throughput,dict(scope='CUDA concurrency not measured in CPU mode',measurements=[],best_workers=1))
+-        elif not throughput.exists() or {row['processes'] for row in read_json(throughput).get('measurements',[])} != {1,2,3}:
+-            subprocess.run([sys.executable,str(ROOT/'scripts/benchmark_checkpoint1.py'),'--dim',str(self.backbone_dim),
+-                            '--output',str(throughput),'--batch_size',str(self.args.batch_size),'--threads',str(self.args.threads)],check=True,cwd=ROOT)
+-        self.args.workers=min(self.args.workers,read_json(throughput)['best_workers'])
++        self.configure_workers()
++        # Check repeatability before spending time on the residual/early grid.
++        self.reproducibility()
+         self.grid()
+         from checkpoint1_early import run_early
+         run_early(self)
+         self.baselines()
+-        repeated=self.train('id_seed42_repeat',self.split,42,self.backbone_dim)
+-        first=self.progress['id_seed42']
+-        import pandas.testing
+-        for name in ['per_user_val.csv','per_user_test.csv']:
+-            pandas.testing.assert_frame_equal(pd.read_csv(Path(first['folder'])/name),pd.read_csv(Path(repeated['folder'])/name))
+-        write_json(self.root/'reproducibility.json',dict(status='PASS',seed=42,first=first['checkpoint'],repeat=repeated['checkpoint']))
+         if self.args.stage=='grid':return 0
+         self.diagnostics()
+         destination=self.utility()
+@@ -528,7 +598,7 @@ def main():
+     parser.add_argument('--device',choices=['cpu','cuda'],default='cuda')
+     parser.add_argument('--stage',choices=['loo','grid','all'],default='all')
+     parser.add_argument('--epochs',type=int,default=100)
+-    parser.add_argument('--patience',type=int,default=10)
++    parser.add_argument('--patience',type=int,default=20)
+     parser.add_argument('--batch_size',type=int,default=256)
+     parser.add_argument('--seeds',type=int,nargs='+',default=[42,43,44])
+     parser.add_argument('--threads',type=int,default=2)
+diff --git a/scripts/run_pilot.py b/scripts/run_pilot.py
+index c38ebda..7f728ca 100644
+--- a/scripts/run_pilot.py
++++ b/scripts/run_pilot.py
+@@ -517,6 +517,7 @@ def main():
+ 
+         # Save artifacts
+         config_dict = {
++            "checkpoint_selection": "trained_epochs_only",
+             "experiment_name": exp_prefix,
+             "is_real_data": is_real,
+             "seed": args.seed,
+@@ -571,6 +572,7 @@ def main():
+             actual_device=trainer.device,
+             context_tables=contexts,
+             rank_format=args.rank_format,
++            history=history,
+         )
+ 
+         save_training_history(run_path, history)
+@@ -582,7 +584,7 @@ def main():
+             logger.save_run_artifacts(repeat_path, run_id + "_repeat", repeat_config,
+                 repeat_val_res, repeat_test_res, repeat_history.total_training_time,
+                 repeat_history.best_epoch, len(repeat_history.train_losses), actual_device=str(trainer_rep.device),
+-                context_tables=contexts, rank_format=args.rank_format)
++                context_tables=contexts, rank_format=args.rank_format, history=repeat_history)
+             save_training_history(repeat_path, repeat_history)
+             repeated_baselines = {key: value for key, value in baseline_results.items() if key != 'SASRec_shuffled'}
+             repeated_baselines['SASRec_ID'] = {'validation': repeat_val_res, 'test': repeat_test_res}
+diff --git a/src/taimma/data/__init__.py b/src/taimma/data/__init__.py
+new file mode 100644
+index 0000000..40d3bed
+--- /dev/null
++++ b/src/taimma/data/__init__.py
+@@ -0,0 +1,12 @@
++"""Data ingestion and chronological splitting for TAIMMA."""
++
++from .ingestion import Amazon2014Ingestor, InteractionSequence
++from .split import SequenceSample, SequenceSplitter, SplitData
++
++__all__ = [
++    "Amazon2014Ingestor",
++    "InteractionSequence",
++    "SequenceSample",
++    "SequenceSplitter",
++    "SplitData",
++]
+diff --git a/src/taimma/data/ingestion.py b/src/taimma/data/ingestion.py
+new file mode 100644
+index 0000000..b9f43aa
+--- /dev/null
++++ b/src/taimma/data/ingestion.py
+@@ -0,0 +1,133 @@
++"""Amazon 2014 review ingestion with explicit, repository-relative paths."""
++
++import ast
++import gzip
++import json
++import re
++from dataclasses import dataclass
++from pathlib import Path
++from typing import Dict, List, Optional, Tuple
++
++from ..paths import resolve_project_path
++
++
++@dataclass
++class InteractionSequence:
++    user_id: str
++    items: List[str]
++    timestamps: List[float]
++
++
++class Amazon2014Ingestor:
++    def __init__(self, raw_data_dir: str = "data/raw", dataset_key: str = "Beauty"):
++        self.raw_data_dir = resolve_project_path(raw_data_dir)
++        self.dataset_key = dataset_key
++        self.reviews_path: Optional[str] = None
++        self.meta_path: Optional[str] = None
++        self.ratings_path: Optional[str] = None
++
++    def resolve_paths(self) -> Tuple[str, Optional[str]]:
++        directories = list(dict.fromkeys([
++            self.raw_data_dir,
++            self.raw_data_dir / self.dataset_key,
++            self.raw_data_dir / self.dataset_key.replace("_", " "),
++        ]))
++
++        def locate(names):
++            for directory in directories:
++                for name in names:
++                    for suffix in ("", ".gz"):
++                        path = directory / (name + suffix)
++                        if path.is_file():
++                            return str(path)
++            return None
++
++        reviews = locate([f"reviews_{self.dataset_key}_5.json", f"{self.dataset_key}_5.json"])
++        if reviews is None:
++            raise FileNotFoundError(
++                f"[TAIMMA Data Error] Missing raw reviews file for "
++                f"{self.dataset_key} under {self.raw_data_dir}"
++            )
++        metadata = locate([f"meta_{self.dataset_key}.json"])
++        self.ratings_path = locate([f"ratings_{self.dataset_key}.csv"])
++        self.reviews_path = reviews
++        self.meta_path = metadata
++        return reviews, metadata
++
++    @staticmethod
++    def _records(path: str):
++        opener = gzip.open if str(path).endswith(".gz") else open
++        with opener(path, "rt", encoding="utf-8") as handle:
++            for line in handle:
++                line = line.strip()
++                if line:
++                    try:
++                        yield json.loads(line)
++                    except json.JSONDecodeError:
++                        # Original Amazon 2014 metadata uses Python literals.
++                        yield ast.literal_eval(line)
++
++    @staticmethod
++    def _clean_brand(value) -> Optional[str]:
++        if not isinstance(value, str):
++            return None
++        value = re.sub(r"\s+", " ", value).strip()
++        return value.casefold() if value and value.casefold() != "unknown" else None
++
++    @staticmethod
++    def _clean_categories(value) -> List[str]:
++        values = []
++        for group in value or []:
++            if isinstance(group, str):
++                group = [group]
++            if isinstance(group, (list, tuple)):
++                values.extend(str(x).strip() for x in group if str(x).strip())
++        if values:
++            root = values[0]
++            values = [x for x in values if x != root]
++        return list(dict.fromkeys(values))
++
++    def build_interaction_sequences(
++        self, min_interactions: int = 5, include_metadata: bool = True
++    ):
++        reviews_path, metadata_path = self.resolve_paths()
++        by_user: Dict[str, List[Tuple[float, int, str]]] = {}
++        for order, record in enumerate(self._records(reviews_path)):
++            user = record.get("reviewerID")
++            item = record.get("asin")
++            if user is None or item is None:
++                continue
++            timestamp = record.get("unixReviewTime", record.get("reviewTime", order))
++            try:
++                timestamp = float(timestamp)
++            except (TypeError, ValueError):
++                timestamp = float(order)
++            by_user.setdefault(str(user), []).append((timestamp, order, str(item)))
++
++        sequences = []
++        for user, rows in by_user.items():
++            rows.sort(key=lambda row: (row[0], row[1]))
++            if len(rows) >= min_interactions:
++                sequences.append(
++                    InteractionSequence(
++                        user_id=user,
++                        items=[row[2] for row in rows],
++                        timestamps=[row[0] for row in rows],
++                    )
++                )
++
++        metadata = self.parse_metadata(metadata_path) if include_metadata and metadata_path else {}
++        return sequences, metadata
++
++    def parse_metadata(self, path: str) -> Dict[str, Dict]:
++        metadata: Dict[str, Dict] = {}
++        for record in self._records(path):
++            item = record.get("asin")
++            if item is None:
++                continue
++            metadata[str(item)] = {
++                "categories": self._clean_categories(record.get("categories")),
++                "brand": self._clean_brand(record.get("brand")),
++                "title": record.get("title") if isinstance(record.get("title"), str) else None,
++            }
++        return metadata
+diff --git a/src/taimma/data/split.py b/src/taimma/data/split.py
+new file mode 100644
+index 0000000..85cfdae
+--- /dev/null
++++ b/src/taimma/data/split.py
+@@ -0,0 +1,144 @@
++"""Chronological Train-base/metadata/validation/test splitting."""
++
++import hashlib
++import json
++from dataclasses import asdict, dataclass
++from pathlib import Path
++from typing import Dict, List, Set
++
++from .ingestion import InteractionSequence
++from ..paths import resolve_project_path
++
++
++@dataclass
++class SequenceSample:
++    user_idx: int
++    history: List[int]
++    target: int
++    history_len: int
++    raw_target_asin: str = ""
++
++
++@dataclass
++class SplitData:
++    train_base_samples: List[SequenceSample]
++    train_meta_samples: List[SequenceSample]
++    val_samples: List[SequenceSample]
++    test_samples: List[SequenceSample]
++    item2idx: Dict[str, int]
++    idx2item: Dict[int, str]
++    user2idx: Dict[str, int]
++    num_items: int
++    num_users: int
++    oov_counts: Dict[str, int]
++    seen_train_items_per_user: Dict[int, Set[int]]
++    train_base_events: List[int] = None
++
++    def __post_init__(self):
++        if self.train_base_events is None:
++            self.train_base_events = [
++                sample.target for sample in self.train_base_samples
++            ]
++
++
++class SequenceSplitter:
++    def __init__(
++        self, max_seq_len: int = 50, min_seq_len: int = 5,
++        include_oov_in_eval: bool = True, protocol: str = "four_segment"
++    ):
++        if protocol not in ("four_segment", "loo"):
++            raise ValueError(f"Unknown split protocol: {protocol}")
++        self.max_seq_len = max_seq_len
++        self.min_seq_len = min_seq_len
++        self.include_oov_in_eval = include_oov_in_eval
++        self.protocol = protocol
++
++    def split(self, sequences: List[InteractionSequence]) -> SplitData:
++        eligible = [s for s in sequences if len(s.items) >= self.min_seq_len]
++        user2idx = {s.user_id: i for i, s in enumerate(eligible)}
++        catalog_items = []
++        for sequence in eligible:
++            n = len(sequence.items)
++            catalog_end = n - 3 if self.protocol == "four_segment" else n - 2
++            catalog_items.extend(sequence.items[:catalog_end])
++        # Metadata rows and embeddings use sorted raw IDs. Keep model IDs
++        # independent of the order in which users/items occur in the input.
++        item2idx = {item: idx for idx, item in enumerate(sorted(set(catalog_items)), 1)}
++        idx2item = {idx: item for item, idx in item2idx.items()}
++        result = {
++            "train_base_samples": [], "train_meta_samples": [],
++            "val_samples": [], "test_samples": [],
++        }
++        oov_counts = {"train_meta": 0, "val": 0, "test": 0}
++        seen: Dict[int, Set[int]] = {i: set() for i in user2idx.values()}
++
++        def make_sample(user_idx, items, target):
++            mapped = [item2idx.get(item, 0) for item in items[-self.max_seq_len:]]
++            history_len = sum(item > 0 for item in mapped)
++            history = [0] * (self.max_seq_len - len(mapped)) + mapped
++            target_idx = item2idx.get(target, 0)
++            return SequenceSample(user_idx, history, target_idx, history_len, target)
++
++        for sequence in eligible:
++            user_idx = user2idx[sequence.user_id]
++            items = sequence.items
++            n = len(items)
++            train_end = n - 3 if self.protocol == "four_segment" else n - 2
++            for target_pos in range(1, train_end):
++                sample = make_sample(user_idx, items[:target_pos], items[target_pos])
++                result["train_base_samples"].append(sample)
++                if sample.target:
++                    seen[user_idx].add(sample.target)
++            if self.protocol == "four_segment":
++                meta_pos = n - 3
++                meta = make_sample(user_idx, items[:meta_pos], items[meta_pos])
++                result["train_meta_samples"].append(meta)
++                if not meta.target:
++                    oov_counts["train_meta"] += 1
++            for name, pos in (("val", n - 2), ("test", n - 1)):
++                sample = make_sample(user_idx, items[:pos], items[pos])
++                if sample.target or self.include_oov_in_eval:
++                    result[f"{name}_samples"].append(sample)
++                if not sample.target:
++                    oov_counts[name] += 1
++        return SplitData(
++            **result, item2idx=item2idx, idx2item=idx2item, user2idx=user2idx,
++            num_items=len(item2idx), num_users=len(eligible),
++            oov_counts=oov_counts, seen_train_items_per_user=seen,
++            train_base_events=[
++                sample.target for sample in result["train_base_samples"] if sample.target
++            ],
++        )
++
++
++def compute_file_sha256(path: str) -> str:
++    digest = hashlib.sha256()
++    with open(path, "rb") as handle:
++        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
++            digest.update(chunk)
++    return digest.hexdigest()
++
++
++def save_processed_data(processed_dir, split_data: SplitData, raw_reviews_path: str, config: Dict):
++    output = resolve_project_path(processed_dir)
++    output.mkdir(parents=True, exist_ok=True)
++    item2idx_path = output / "item2idx.json"
++    user2idx_path = output / "user2idx.json"
++    stats_path = output / "stats.json"
++    manifest_path = output / "manifest.json"
++    item2idx_path.write_text(json.dumps(split_data.item2idx, indent=2), encoding="utf-8")
++    user2idx_path.write_text(json.dumps(split_data.user2idx, indent=2), encoding="utf-8")
++    stats_path.write_text(json.dumps({
++        "num_items": split_data.num_items, "num_users": split_data.num_users,
++        "oov_counts": split_data.oov_counts,
++    }, indent=2), encoding="utf-8")
++    manifest_path.write_text(json.dumps({
++        "raw_reviews_file": str(resolve_project_path(raw_reviews_path)),
++        "raw_reviews_sha256": compute_file_sha256(raw_reviews_path),
++        "config": config,
++        "stats": {"num_items": split_data.num_items, "num_users": split_data.num_users},
++    }, indent=2), encoding="utf-8")
++    return {
++        "item2idx": str(item2idx_path), "user2idx": str(user2idx_path),
++        "stats": str(stats_path), "manifest": str(manifest_path),
++    }
+diff --git a/src/taimma/experiments/logger.py b/src/taimma/experiments/logger.py
+index 5f89d81..ae0e034 100644
+--- a/src/taimma/experiments/logger.py
++++ b/src/taimma/experiments/logger.py
+@@ -65,9 +65,13 @@ class ExperimentLogger:
+         actual_device: Optional[str] = None,
+         context_tables: Optional[Dict[str, pd.DataFrame]] = None,
+         rank_format: str = 'csv',
++        history=None,
+     ) -> Dict[str, Any]:
+         """Save config, manifest, metrics, and per-user evaluation records."""
+         validate_rank_format(rank_format)
++        if history is not None and (history.best_epoch != best_epoch or len(history.train_losses) != total_epochs
++                                    or not 1 <= best_epoch <= total_epochs):
++            raise ValueError('Checkpoint selection must match the completed training epochs')
+         context_tables = context_tables or {}
+         config = dict(config)
+         if "device" in config:
+@@ -89,6 +93,11 @@ class ExperimentLogger:
+             "validation": val_result.to_dict(),
+             "test": test_result.to_dict() if test_result else None,
+         }
++        if history is not None:
++            metrics['selection'] = dict(metric='validation/NDCG@10', mode='max', scope=history.selection_scope,
++                                        first_training_epoch=1, selected_epoch=history.best_epoch,
++                                        selected_value=history.best_val_ndcg,
++                                        initial_validation=history.initial_validation_metrics)
+         metrics_file = os.path.join(run_path, "metrics.json")
+         with open(metrics_file, "w", encoding="utf-8") as f:
+             json.dump(metrics, f, indent=2)
+diff --git a/src/taimma/experiments/reporting.py b/src/taimma/experiments/reporting.py
+index 25c1c42..6c2df84 100644
+--- a/src/taimma/experiments/reporting.py
++++ b/src/taimma/experiments/reporting.py
+@@ -152,18 +152,63 @@ def context_table(samples, split, metadata, metadata_available):
+     return pd.DataFrame(rows)
+ 
+ 
++def exact_validation_metrics(result):
++    """Keep full precision for selection and epoch logs; rounding is for display."""
++    metrics = result.to_dict()
++    for attribute, name in [('ndcg_10', 'NDCG@10'), ('recall_10', 'Recall@10'),
++                            ('ndcg_20', 'NDCG@20'), ('recall_20', 'Recall@20')]:
++        if hasattr(result, attribute):
++            metrics[name] = float(getattr(result, attribute))
++    return metrics
++
++
++def epoch_log_rows(history):
++    """Baseline is evaluation only; trained epoch numbers always start at one."""
++    rows = []
++    def row(epoch, phase, loss, metrics, train_sec, wall_sec):
++        return dict(epoch=epoch, phase=phase, trained=epoch > 0, train_loss=loss,
++                    selected_checkpoint=epoch > 0 and epoch == history.best_epoch,
++                    val_ndcg_10=metrics.get('NDCG@10'), val_recall_10=metrics.get('Recall@10'),
++                    val_ndcg_20=metrics.get('NDCG@20'), val_recall_20=metrics.get('Recall@20'),
++                    train_sec=train_sec, wall_sec=wall_sec, epoch_wall_sec=wall_sec,
++                    **{key.replace('@', '_at_'): value for key, value in metrics.items()})
++    initial = getattr(history, 'initial_validation_metrics', None)
++    if initial is not None:
++        rows.append(row(0, 'initial_validation', None, initial, None,
++                        history.initial_validation_duration))
++    for i, loss in enumerate(history.train_losses):
++        metrics = dict(history.val_metrics_by_epoch[i]) if i < len(history.val_metrics_by_epoch) else {}
++        metrics.update({'NDCG@10': history.val_ndcg_10[i], 'Recall@10': history.val_recall_10[i]})
++        rows.append(row(i + 1, 'train', loss, metrics, history.epoch_durations[i],
++                        history.epoch_wall_durations[i] if i < len(history.epoch_wall_durations) else None))
++    return rows
++
++
++def write_epoch_log(folder, history):
++    """Persist every completed epoch atomically, including during interrupted runs."""
++    folder = Path(folder)
++    folder.mkdir(parents=True, exist_ok=True)
++    temp = folder / 'epochs.tmp.csv'
++    pd.DataFrame(epoch_log_rows(history)).to_csv(temp, index=False)
++    temp.replace(folder / 'epochs.csv')
++    temp = folder / 'history.tmp.json'
++    with temp.open('w', encoding='utf-8') as stream:
++        json.dump(asdict(history), stream, indent=2, allow_nan=False)
++    temp.replace(folder / 'history.json')
++
++
++def save_checkpoint_atomic(path, state):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    temp = path.with_suffix(path.suffix + '.tmp')
++    torch.save(state, temp)
++    temp.replace(path)
++
++
+ def save_training_history(folder, history):
+     folder = Path(folder)
+     write_json(folder / 'training_history.json', asdict(history))
+-    rows = []
+-    for i, loss in enumerate(history.train_losses):
+-        metrics = history.val_metrics_by_epoch[i] if i < len(history.val_metrics_by_epoch) else {}
+-        rows.append(dict(epoch=i + 1, train_loss=loss, selected_checkpoint=(i + 1 == history.best_epoch),
+-                         train_sec=history.epoch_durations[i],
+-                         epoch_wall_sec=history.epoch_wall_durations[i] if i < len(history.epoch_wall_durations) else None,
+-                         **{k.replace('@', '_at_'): v for k, v in metrics.items()}))
+-    with (folder / 'epochs.csv').open('x', newline='', encoding='utf-8') as f:
+-        pd.DataFrame(rows).to_csv(f, index=False)
++    write_epoch_log(folder, history)
+ 
+ 
+ def save_pilot_report(folder, config, stats, history, baseline_results, contexts,
+diff --git a/src/taimma/training/multimodal_trainer.py b/src/taimma/training/multimodal_trainer.py
+index 9345863..03c0131 100644
+--- a/src/taimma/training/multimodal_trainer.py
++++ b/src/taimma/training/multimodal_trainer.py
+@@ -15,6 +15,7 @@ import os
+ import random
+ import time
+ from dataclasses import dataclass, field
++from pathlib import Path
+ from typing import Any, Dict, List, Optional, Set, Tuple, Union
+ import numpy as np
+ import torch
+@@ -23,7 +24,8 @@ from torch.utils.data import DataLoader, Dataset
+ 
+ from ..data.split import SequenceSample
+ from ..evaluation.evaluator import IndependentEvaluator, EvaluationResult
+-from ..experiments.reporting import runtime_snapshot
++from ..experiments.reporting import (runtime_snapshot, exact_validation_metrics,
++                                     write_epoch_log, save_checkpoint_atomic)
+ from ..models.late_fusion import ResidualLateFusionModel
+ from .trainer import TrainingHistory, set_seed
+ 
+@@ -233,6 +235,8 @@ class ResidualLateFusionTrainer:
+         checkpoint_path: Optional[str] = None,
+         verbose: bool = True,
+     ) -> Tuple[TrainingHistory, ResidualLateFusionModel]:
++        if max_epochs < 1:
++            raise ValueError('Training requires at least one epoch')
+         set_seed(self.seed)
+ 
+         train_dataset = MultimodalSequenceDataset(
+@@ -247,15 +251,18 @@ class ResidualLateFusionTrainer:
+         )
+ 
+         history = TrainingHistory()
++        history.stop_reason = 'running'
++        log_folder = Path(checkpoint_path).parent if checkpoint_path else None
++        initial_start = time.perf_counter()
+         initial = self.evaluate(val_samples, seen_items=seen_train_items, batch_size=self.batch_size)
+-        best_val_ndcg = initial.ndcg_10
+-        history.best_val_ndcg = best_val_ndcg
+-        best_weights = copy.deepcopy(self.model.state_dict())
+-        if checkpoint_path:
+-            PathFolder = os.path.dirname(checkpoint_path)
+-            os.makedirs(PathFolder, exist_ok=True)
+-            torch.save(dict(epoch=0,model_state_dict=best_weights,val_ndcg_10=initial.ndcg_10,
+-                            val_recall_10=initial.recall_10,seed=self.seed,sources_enabled=self.model.sources_enabled),checkpoint_path)
++        history.initial_validation_metrics = exact_validation_metrics(initial)
++        history.initial_validation_duration = time.perf_counter() - initial_start
++        if verbose:
++            print(f'Initial validation (before training; excluded from selection): NDCG@10={initial.ndcg_10:.8f}', flush=True)
++        if log_folder is not None:
++            write_epoch_log(log_folder, history)
++        best_val_ndcg = -1.0
++        best_weights = None
+         patience_counter = 0
+         if self.device.type == 'cuda':
+             torch.cuda.synchronize(self.device)
+@@ -275,17 +282,17 @@ class ResidualLateFusionTrainer:
+ 
+             if self.device.type == 'cuda':
+                 torch.cuda.synchronize(self.device)
+-            history.val_metrics_by_epoch.append(val_res.to_dict())
++            history.val_metrics_by_epoch.append(exact_validation_metrics(val_res))
+             history.train_losses.append(loss)
+             history.val_ndcg_10.append(val_ndcg)
+             history.val_recall_10.append(val_rec)
+             history.epoch_durations.append(ep_duration)
+ 
+-            if verbose and (epoch % 5 == 0 or epoch == 1 or val_ndcg > best_val_ndcg):
++            if verbose:
+                 print(
+                     f"Epoch {epoch:03d} | Residual Loss: {loss:.4f} | "
+-                    f"Val NDCG@10: {val_ndcg:.4f} | Val Recall@10: {val_rec:.4f} | "
+-                    f"Time: {ep_duration:.2f}s"
++                    f"Val NDCG@10: {val_ndcg:.8f} | Val Recall@10: {val_rec:.8f} | "
++                    f"Time: {ep_duration:.2f}s", flush=True,
+                 )
+ 
+             # Early stopping check on Val NDCG@10
+@@ -297,8 +304,8 @@ class ResidualLateFusionTrainer:
+                 patience_counter = 0
+ 
+                 if checkpoint_path:
+-                    os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+-                    torch.save(
++                    save_checkpoint_atomic(
++                        checkpoint_path,
+                         {
+                             "epoch": epoch,
+                             "model_state_dict": best_weights,
+@@ -306,8 +313,8 @@ class ResidualLateFusionTrainer:
+                             "val_recall_10": val_rec,
+                             "seed": self.seed,
+                             "sources_enabled": self.model.sources_enabled,
++                            "selection_scope": history.selection_scope,
+                         },
+-                        checkpoint_path,
+                     )
+             else:
+                 patience_counter += 1
+@@ -316,11 +323,17 @@ class ResidualLateFusionTrainer:
+                         print(f"Early stopping triggered at epoch {epoch}. Best epoch: {history.best_epoch}")
+                     history.stop_reason = 'early_stopping'
+             history.epoch_wall_durations.append(time.perf_counter() - ep_start)
++            if log_folder is not None:
++                write_epoch_log(log_folder, history)
+             if patience_counter >= self.patience:
+                 break
+ 
+         history.total_training_time = time.perf_counter() - start_time
++        if history.stop_reason == 'running':
++            history.stop_reason = 'max_epochs'
+         history.resource_usage = runtime_snapshot(self.device)
++        if log_folder is not None:
++            write_epoch_log(log_folder, history)
+ 
+         if best_weights is not None:
+             self.model.load_state_dict(best_weights)
+diff --git a/src/taimma/training/trainer.py b/src/taimma/training/trainer.py
+index 772e250..aaeafec 100644
+--- a/src/taimma/training/trainer.py
++++ b/src/taimma/training/trainer.py
+@@ -10,21 +10,27 @@ Protocol:
+ 
+ import copy
+ import os
++os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+ import random
+ import time
+ from dataclasses import dataclass, field
++from pathlib import Path
+ from typing import Dict, List, Optional, Set, Tuple
+ import numpy as np
+ import torch
+ from torch.utils.data import DataLoader, Dataset
+ from ..data.split import SequenceSample
+ from ..evaluation.evaluator import IndependentEvaluator, EvaluationResult
+-from ..experiments.reporting import runtime_snapshot
++from ..experiments.reporting import (runtime_snapshot, exact_validation_metrics,
++                                     write_epoch_log, save_checkpoint_atomic)
+ from ..models.sasrec import SASRecModel
+ 
+ 
+ def set_seed(seed: int = 42):
+     """Enforce strict seed determinism across libraries."""
++    # Seeds alone do not make CUDA reductions (including embedding gradients)
++    # repeatable. Use deterministic kernels and fail if none is available.
++    torch.use_deterministic_algorithms(True)
+     random.seed(seed)
+     np.random.seed(seed)
+     torch.manual_seed(seed)
+@@ -59,13 +65,16 @@ class TrainingHistory:
+     val_ndcg_10: List[float] = field(default_factory=list)
+     val_recall_10: List[float] = field(default_factory=list)
+     epoch_durations: List[float] = field(default_factory=list)
+-    best_epoch: int = 0
+-    best_val_ndcg: float = 0.0
++    best_epoch: Optional[int] = None
++    best_val_ndcg: Optional[float] = None
+     total_training_time: float = 0.0
+     epoch_wall_durations: List[float] = field(default_factory=list)
+     val_metrics_by_epoch: List[Dict[str, float]] = field(default_factory=list)
+     stop_reason: str = 'max_epochs'
+     resource_usage: Dict = field(default_factory=dict)
++    selection_scope: str = 'trained_epochs_only'
++    initial_validation_metrics: Optional[Dict[str, float]] = None
++    initial_validation_duration: Optional[float] = None
+ 
+ 
+ class SASRecTrainer:
+@@ -172,6 +181,8 @@ class SASRecTrainer:
+         checkpoint_path: Optional[str] = None,
+         verbose: bool = True,
+     ) -> Tuple[TrainingHistory, SASRecModel]:
++        if max_epochs < 1:
++            raise ValueError('Training requires at least one epoch')
+         set_seed(self.seed)
+ 
+         train_dataset = SequenceDataset(train_samples)
+@@ -183,6 +194,16 @@ class SASRecTrainer:
+         )
+ 
+         history = TrainingHistory()
++        history.stop_reason = 'running'
++        log_folder = Path(checkpoint_path).parent if checkpoint_path else None
++        initial_start = time.perf_counter()
++        initial = self.evaluate(val_samples, seen_items=seen_train_items, batch_size=self.batch_size)
++        history.initial_validation_metrics = exact_validation_metrics(initial)
++        history.initial_validation_duration = time.perf_counter() - initial_start
++        if verbose:
++            print(f'Initial validation (before training; excluded from selection): NDCG@10={initial.ndcg_10:.8f}', flush=True)
++        if log_folder is not None:
++            write_epoch_log(log_folder, history)
+         best_val_ndcg = -1.0
+         best_weights = None
+         patience_counter = 0
+@@ -204,17 +225,17 @@ class SASRecTrainer:
+ 
+             if self.device.type == 'cuda':
+                 torch.cuda.synchronize(self.device)
+-            history.val_metrics_by_epoch.append(val_res.to_dict())
++            history.val_metrics_by_epoch.append(exact_validation_metrics(val_res))
+             history.train_losses.append(loss)
+             history.val_ndcg_10.append(val_ndcg)
+             history.val_recall_10.append(val_rec)
+             history.epoch_durations.append(ep_duration)
+ 
+-            if verbose and (epoch % 5 == 0 or epoch == 1 or val_ndcg > best_val_ndcg):
++            if verbose:
+                 print(
+                     f"Epoch {epoch:03d} | Train Loss: {loss:.4f} | "
+-                    f"Val NDCG@10: {val_ndcg:.4f} | Val Recall@10: {val_rec:.4f} | "
+-                    f"Time: {ep_duration:.2f}s"
++                    f"Val NDCG@10: {val_ndcg:.8f} | Val Recall@10: {val_rec:.8f} | "
++                    f"Time: {ep_duration:.2f}s", flush=True,
+                 )
+ 
+             # Early stopping check
+@@ -226,16 +247,16 @@ class SASRecTrainer:
+                 patience_counter = 0
+ 
+                 if checkpoint_path:
+-                    os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+-                    torch.save(
++                    save_checkpoint_atomic(
++                        checkpoint_path,
+                         {
+                             "epoch": epoch,
+                             "model_state_dict": best_weights,
+                             "val_ndcg_10": val_ndcg,
+                             "val_recall_10": val_rec,
+                             "seed": self.seed,
++                            "selection_scope": history.selection_scope,
+                         },
+-                        checkpoint_path,
+                     )
+             else:
+                 patience_counter += 1
+@@ -244,11 +265,17 @@ class SASRecTrainer:
+                         print(f"Early stopping triggered at epoch {epoch}. Best epoch: {history.best_epoch}")
+                     history.stop_reason = 'early_stopping'
+             history.epoch_wall_durations.append(time.perf_counter() - ep_start)
++            if log_folder is not None:
++                write_epoch_log(log_folder, history)
+             if patience_counter >= self.patience:
+                 break
+ 
+         history.total_training_time = time.perf_counter() - start_time
++        if history.stop_reason == 'running':
++            history.stop_reason = 'max_epochs'
+         history.resource_usage = runtime_snapshot(self.device)
++        if log_folder is not None:
++            write_epoch_log(log_folder, history)
+ 
+         # Load best weights into model
+         if best_weights is not None:

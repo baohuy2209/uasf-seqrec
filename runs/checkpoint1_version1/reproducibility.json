@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "seed": 42,
+  "first": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/checkpoint.pt",
+  "repeat": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_version1/runs/id_seed42_repeat_20261103_100701_777700_9ede44bc/checkpoint.pt",
+  "deterministic_algorithms": true,
+  "comparisons": {
+    "per_user_val.csv": "PASS",
+    "per_user_test.csv": "PASS",
+    "model_weights": "PASS",
+    "best_epoch": "PASS"
+  }
+}

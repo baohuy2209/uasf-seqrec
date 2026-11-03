@@ -1,0 +1,9 @@
+split,policy,num_evaluated_users,NDCG@10,Recall@10,NDCG@20,Recall@20
+validation,none,22363,0.046996,0.087913,0.055156,0.120199
+validation,train_base_exclude_target,22363,0.049019,0.090999,0.056981,0.122434
+validation,input_history_exclude_target,22363,0.059122,0.095649,0.066647,0.125475
+validation,input_history_strict,22363,0.059122,0.095649,0.066647,0.125475
+test,none,22363,0.036597,0.069266,0.04409,0.099003
+test,train_base_exclude_target,22363,0.03785,0.071323,0.045349,0.101105
+test,input_history_exclude_target,22363,0.046147,0.076331,0.053102,0.104011
+test,input_history_strict,22363,0.046147,0.076331,0.053102,0.104011

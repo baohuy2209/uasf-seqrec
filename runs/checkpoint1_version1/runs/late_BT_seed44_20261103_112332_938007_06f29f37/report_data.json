@@ -1,0 +1,25 @@
+{
+  "data_mode": "real",
+  "costs": {
+    "mean_epoch_train_sec": 4.964838778381125,
+    "mean_epoch_wall_sec": 6.412377420143457,
+    "stop_reason": "early_stopping",
+    "training_resources": {
+      "device": "cuda",
+      "cpu_name": "x86_64",
+      "host_ram_bytes": 10737418240,
+      "process_rss_bytes": 1369313280,
+      "process_peak_rss_bytes": 2648211456,
+      "ram_measurement_scope": "process_lifetime_peak",
+      "ram_status": "measured",
+      "gpu_name": "NVIDIA GeForce RTX 4060",
+      "gpu_total_bytes": 8175550464,
+      "gpu_peak_allocated_bytes": 346366976,
+      "gpu_peak_reserved_bytes": 503316480,
+      "gpu_status": "measured",
+      "cuda_version": "13.0",
+      "gpu_measurement_scope": "PyTorch allocator since last peak reset; excludes other processes and non-PyTorch allocations",
+      "psutil_version": "7.2.2"
+    }
+  }
+}

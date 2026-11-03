@@ -1,0 +1,32 @@
+[id_seed42_repeat] training id_seed42_repeat_20261103_100701_777700_9ede44bc
+Initial validation (before training; excluded from selection): NDCG@10=0.00031123
+Epoch 001 | Train Loss: 8.6046 | Val NDCG@10: 0.02024458 | Val Recall@10: 0.03917185 | Time: 3.42s
+Epoch 002 | Train Loss: 7.7509 | Val NDCG@10: 0.03804679 | Val Recall@10: 0.06756696 | Time: 3.16s
+Epoch 003 | Train Loss: 7.1609 | Val NDCG@10: 0.05081465 | Val Recall@10: 0.08621384 | Time: 3.15s
+Epoch 004 | Train Loss: 6.7198 | Val NDCG@10: 0.05467195 | Val Recall@10: 0.09166928 | Time: 3.14s
+Epoch 005 | Train Loss: 6.4219 | Val NDCG@10: 0.05696011 | Val Recall@10: 0.09538076 | Time: 3.20s
+Epoch 006 | Train Loss: 6.2272 | Val NDCG@10: 0.05741923 | Val Recall@10: 0.09520190 | Time: 3.16s
+Epoch 007 | Train Loss: 6.0950 | Val NDCG@10: 0.05825184 | Val Recall@10: 0.09667755 | Time: 3.15s
+Epoch 008 | Train Loss: 5.9908 | Val NDCG@10: 0.05902181 | Val Recall@10: 0.09645396 | Time: 3.15s
+Epoch 009 | Train Loss: 5.9051 | Val NDCG@10: 0.05971115 | Val Recall@10: 0.09815320 | Time: 3.15s
+Epoch 010 | Train Loss: 5.8394 | Val NDCG@10: 0.05860272 | Val Recall@10: 0.09658811 | Time: 3.15s
+Epoch 011 | Train Loss: 5.7757 | Val NDCG@10: 0.05923650 | Val Recall@10: 0.09797433 | Time: 3.15s
+Epoch 012 | Train Loss: 5.7222 | Val NDCG@10: 0.05862910 | Val Recall@10: 0.09752717 | Time: 3.37s
+Epoch 013 | Train Loss: 5.6721 | Val NDCG@10: 0.05949306 | Val Recall@10: 0.09654340 | Time: 3.16s
+Epoch 014 | Train Loss: 5.6266 | Val NDCG@10: 0.05873469 | Val Recall@10: 0.09614095 | Time: 3.17s
+Epoch 015 | Train Loss: 5.5790 | Val NDCG@10: 0.05855653 | Val Recall@10: 0.09667755 | Time: 3.16s
+Epoch 016 | Train Loss: 5.5417 | Val NDCG@10: 0.05843218 | Val Recall@10: 0.09560435 | Time: 3.37s
+Epoch 017 | Train Loss: 5.5046 | Val NDCG@10: 0.05776220 | Val Recall@10: 0.09390511 | Time: 3.15s
+Epoch 018 | Train Loss: 5.4722 | Val NDCG@10: 0.05735345 | Val Recall@10: 0.09390511 | Time: 3.15s
+Epoch 019 | Train Loss: 5.4339 | Val NDCG@10: 0.05733254 | Val Recall@10: 0.09466530 | Time: 3.16s
+Epoch 020 | Train Loss: 5.3959 | Val NDCG@10: 0.05562958 | Val Recall@10: 0.09126682 | Time: 3.15s
+Epoch 021 | Train Loss: 5.3713 | Val NDCG@10: 0.05672501 | Val Recall@10: 0.09234003 | Time: 3.15s
+Epoch 022 | Train Loss: 5.3431 | Val NDCG@10: 0.05639581 | Val Recall@10: 0.09292134 | Time: 3.15s
+Epoch 023 | Train Loss: 5.3111 | Val NDCG@10: 0.05623537 | Val Recall@10: 0.09211644 | Time: 3.15s
+Epoch 024 | Train Loss: 5.2849 | Val NDCG@10: 0.05521989 | Val Recall@10: 0.08912042 | Time: 3.15s
+Epoch 025 | Train Loss: 5.2627 | Val NDCG@10: 0.05530567 | Val Recall@10: 0.09059607 | Time: 3.15s
+Epoch 026 | Train Loss: 5.2398 | Val NDCG@10: 0.05410798 | Val Recall@10: 0.08827080 | Time: 3.15s
+Epoch 027 | Train Loss: 5.2037 | Val NDCG@10: 0.05515478 | Val Recall@10: 0.09077494 | Time: 3.38s
+Epoch 028 | Train Loss: 5.1854 | Val NDCG@10: 0.05537098 | Val Recall@10: 0.09010419 | Time: 3.16s
+Epoch 029 | Train Loss: 5.1647 | Val NDCG@10: 0.05413499 | Val Recall@10: 0.08827080 | Time: 3.17s
+Early stopping triggered at epoch 29. Best epoch: 9
