@@ -2,7 +2,9 @@
 
 Standalone TAIMMA research code for sequential recommendation with Category, Brand, and Title information. The Python package is `taimma`; the repository is `uasf-seqrec`.
 
-The experiment entry points currently run a **Beauty SASRec ID-only pilot**, collect statistics for three Amazon 2014 datasets, and evaluate E0/E1 from an existing utility-delta file. Early fusion, residual late fusion, and UASF implementations are included; their presence does not imply that those experiments have been executed.
+The repository includes the Beauty pilot, a resumable **Checkpoint 1** pipeline, three-dataset metadata preparation, residual late fusion, early fusion, and E0/E1 evaluation. The completed result bundle `runs/checkpoint1_version1` records the 3 November 2026 Beauty experiments. **UASF S3 training, group-gate evaluation, full early-fusion diagnostics, and training-time controls are not completed in that bundle.**
+
+For the recorded results, file guide, and storage/reproduction limits, see [Checkpoint 1 recorded results](#checkpoint-1-recorded-results-3-november-2026). For a new experiment, follow [Checkpoint 1 prerequisites and a fresh run](#checkpoint-1-prerequisites-and-a-fresh-run).
 
 ## 1. Requirements
 
@@ -12,7 +14,7 @@ The experiment entry points currently run a **Beauty SASRec ID-only pilot**, col
 
 Create an environment in this checkout. Do not copy one from another repository or share an environment between Windows and WSL. See the [Python venv documentation](https://docs.python.org/3.12/library/venv.html).
 
-`requirements.txt` was distilled from the original repository's dependency files, actual imports, and installed versions. It lists the runtime libraries needed here. PyTorch is selected separately for CPU/CUDA; the other direct dependencies are pinned. This is not a complete transitive lockfile. Browser automation, graph-learning packages, Jupyter, `torchvision`, and `torchaudio` are unnecessary for the supplied scripts.
+`requirements.txt` was distilled from the original repository's dependency files, actual imports, and installed versions. It lists the runtime libraries needed here. PyTorch is selected separately for CPU/CUDA; the other direct dependencies are pinned. This is not a complete transitive lockfile. Metadata preparation additionally uses `sentence-transformers` and `tabulate`, both listed in the current requirements. Browser automation, graph-learning packages, Jupyter, `torchvision`, and `torchaudio` are unnecessary for the supplied command-line scripts. Install the optional `analysis` extra for the supplied plotting/PDF scripts.
 
 ## 2. Windows CPU installation
 
@@ -67,7 +69,7 @@ python3.12 -m venv .venv-wsl
 
 On Ubuntu, if environment creation reports missing `ensurepip`, install the matching `python3.12-venv` package and retry. Resolve GPU/driver availability before requesting CUDA. The runner fails explicitly if CUDA is unavailable.
 
-**2.6.0+cu124** matches the recorded GPU pilot environment. **2.13.0+cpu** is the observed Windows reference build. These are two documented configurations, not a claim that every intermediate version has been tested. Installation commands follow the [official PyTorch archive](https://pytorch.org/get-started/previous-versions/). For another GPU platform, choose its official PyTorch build before installing `requirements.txt`.
+**2.6.0+cu124** matches the historical 28 October GPU pilot. **2.13.0+cpu** is the observed Windows reference build. The later `checkpoint1_version1` was recorded on **Python 3.12.16, PyTorch 2.13.0+cu130, CUDA runtime 13.0, and an RTX 4060**. The commands above describe a historical setup, not exact reproduction of that later run; use its recorded library/hardware versions when checking determinism. These are documented configurations, not a claim that every intermediate version has been tested. Installation commands follow the [official PyTorch archive](https://pytorch.org/get-started/previous-versions/). For another GPU platform, choose its official PyTorch build before installing `requirements.txt`.
 
 For Linux CPU execution, install `torch==2.13.0` from the CPU index in a Linux environment, then install `requirements.txt` and choose `--device cpu`.
 
@@ -110,7 +112,7 @@ Use **Amazon Reviews 2014 / 5-core**. Common local filenames are:
 
 The loader also accepts official `reviews_<category>_5.json.gz` files directly under `data/raw/` or an appropriate category directory. Compressed files do not need extraction. Do not add an `amazon_reviews/2014/` directory layer.
 
-Data and generated results are ignored by Git, so a fresh clone needs a local data copy or download. If reviews already exist, skip downloading them again. For a fresh data directory:
+Raw `data/`, model weights (`*.pt`), and large score arrays (`*.npy`, `*.npz`) are ignored by Git; metadata arrays under `artifacts/` have an explicit exception. Text logs and result tables can be versioned. A fresh clone needs a local raw-data copy or download and does not include ignored checkpoints/cache files. If reviews already exist, skip downloading them again. For a fresh data directory:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/download_amazon2014.py --dataset Beauty --output_dir data/raw
@@ -314,11 +316,18 @@ protocol lock, and performs no training. `--utility-only` stops after saving lab
 After all stages succeed, create the measured tables and provisional budget:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[analysis]"
-.\.venv-cuda\Scripts\python.exe analysis/checkpoint1_postprocess.py
-.\.venv\Scripts\python.exe analysis/plot_checkpoint1.py
-.\.venv\Scripts\python.exe analysis/build_checkpoint1_report.py
+# Run in the original execution environment, with checkpoint/cache files present.
+# Replace the interpreter if the original run used Linux instead of Windows.
+.\.venv-cuda\Scripts\python.exe -m pip install -e ".[analysis]"
+.\.venv-cuda\Scripts\python.exe analysis/checkpoint1_postprocess.py --run runs/checkpoint1_version1
+.\.venv-cuda\Scripts\python.exe analysis/plot_checkpoint1.py --run runs/checkpoint1_version1 --output .tmp/checkpoint1_version1_figures
+.\.venv-cuda\Scripts\python.exe analysis/build_checkpoint1_report.py --run runs/checkpoint1_version1 --output reports/checkpoint1_version1 --figures .tmp/checkpoint1_version1_figures
 ```
+
+`checkpoint1_postprocess.py` loads model weights and follows the original paths in
+`progress.json`; it is **not a log-only analysis command**. A Windows clone of the
+text result bundle alone is insufficient. Do not rewrite historical paths or
+checksums just to make this command pass.
 
 The last command needs reportlab/pypdf and Unicode fonts. The report enforces the
 two-page limit. Scientific acceptance is separate from execution completion:
@@ -356,3 +365,154 @@ For a fresh experiment, choose a new output directory and omit
 at saved measurement boundaries and utility writes are promoted atomically.
 The first interrupted CBT profiling attempt remains in the old run directory
 and is not a completed experimental result.
+
+
+## Checkpoint 1 prerequisites and a fresh run
+
+Use the same prepared environment for dependency installation and execution.
+The examples below assume `python` is that environment's interpreter and the
+working directory is the repository root.
+
+1. Install the appropriate PyTorch build first, then `requirements.txt` and `pip install -e .`.
+2. Obtain all three real Amazon 2014/5-core review files and metadata files.
+3. Prepare the metadata and deterministic item-level perturbations. Title encoding may download the sentence encoder on first use; this is not a synthetic fallback.
+
+```bash
+python -m metadata_pipeline.prepare --config configs/metadata.yaml --dataset all
+python -m metadata_pipeline.build_perturbations --config configs/metadata.yaml --dataset all
+python -m metadata_pipeline.report --output reports/table_1_metadata.csv
+```
+
+Metadata preparation protects an existing output directory unless `--overwrite`
+is explicitly supplied. Do not overwrite metadata already referenced by a
+completed run. Review the manifests before regenerating perturbations as well.
+
+4. Choose a **new** output directory. A memory-conservative complete run is:
+
+```bash
+python -u scripts/run_checkpoint1.py --device cuda --output runs/checkpoint1_NEW_RUN --stage all --workers 1 --epochs 100 --patience 20 --batch_size 256 --seeds 42 43 44 --threads 2
+```
+
+Replace `checkpoint1_NEW_RUN` with a unique name. `--workers 1` explicitly skips
+the parallel throughput benchmark. `--stage loo` stops after the LOO comparison;
+`--stage grid` stops after the training grid and baseline sanity checks, before
+robustness/utility/E0/E1. Both are partial runs. Default `all` also generates
+utility and runs E0/E1. The same unchanged command can resume completed stages
+only if their checkpoint/cache dependencies remain available and the locked
+source/config/metadata/environment checks pass.
+
+**Do not target `runs/checkpoint1_version1` with the current checkout to resume the
+archived run.** The archived source snapshot differs from the current checkout
+in `src/taimma/data/__init__.py`, `ingestion.py`, and `split.py`, in addition to
+Windows line-ending differences. Use a separate checkout restored to the recorded
+snapshot and the original execution environment for exact historical reproduction.
+For a new run, preserve the archive and use a new output name.
+
+## Checkpoint 1 recorded results 3 November 2026
+
+Source: [`runs/checkpoint1_version1`](runs/checkpoint1_version1), with the
+scientific decision stored in [`e0_e1.json`](runs/checkpoint1_version1/e0_e1.json).
+These values describe existing real experiments, not a new training run performed
+while updating this README. Metrics use the [0,1] scale.
+
+| Recorded result | Value and scope |
+| --- | --- |
+| LOO pilot condition 3 | PASS: test Recall@10 0.078880; NDCG@10 0.042269; seed 42, d=64, no history masking |
+| Main Beauty protocol | Four segments; 109,050 train pairs; 11,998 catalog items; strict input-history masking; 22,363 validation/test users including OOV misses |
+| ID-only test NDCG@10 | 0.047851 ± 0.000756, sample SD across seeds 42/43/44 |
+| Late all-fixed CBT test NDCG@10 | 0.044826 ± 0.000909, 6.32% below ID; all seven late subsets are below ID in their three-seed mean |
+| Early CBT test NDCG@10 | 0.053815, seed 42 only; 14.26% above same-seed ID, not a completed multi-seed early grid |
+| Robustness | 90 inference measurements: 9 missing rates × 3 individual sources × 3 seeds, plus 3 permutations × 3 seeds |
+| Utility | 22,240 matched Train-meta contexts × 3 sources × 2 independent reference seeds = 133,440 rows; 123 OOV targets excluded from CE utility with an explicit audit |
+| E0 | All three sources pass the locked positive/negative fraction criterion |
+| E1 | Brand only: LR OOF AUC 0.551050, 95% CI [0.541205, 0.561112], length-only AUC 0.487927; averaged labels because stability rho=0.204658 |
+| Decision | CONDITIONAL; not GO for contextual UASF. Group-level gate performance and S3 recommendation gains are not demonstrated yet |
+| Cost | 27 fits total 5,252.18 seconds = 1.45894 GPU job-hours for train + validation; excludes complete inference/cache/utility/E0/E1 overhead |
+| Execution environment | RTX 4060, Python 3.12.16, PyTorch 2.13.0+cu130, CUDA runtime 13.0; sequential execution, no parallel throughput measurement |
+
+All 21 residual fits selected a trained epoch whose validation NDCG@10 was below
+the initial ID-equivalent evaluation. The recorded policy is
+`trained_epochs_only`; epoch 0 is logged but cannot be selected. This is an
+observed limitation to investigate, not evidence that residual training improved
+ID. Do not retrospectively change checkpoint selection after reading test results.
+
+The Brand E1 result is marginally above the AUC threshold and uses averaged
+contextual labels. `gating_regime=group_level` in the decision is the prescribed
+next step; it is not proof that a group gate has been trained or evaluated.
+Category/Title did not pass E1 with the current feature set.
+
+### Where each result can be checked
+
+| Question | Evidence within `runs/checkpoint1_version1` |
+| --- | --- |
+| All 27 training runs and metrics | `results.csv`; `runs/*/metrics.json` |
+| Every epoch and checkpoint choice | `runs/*/epochs.csv`, `history.json`, `run.log`, and `decision_log_snapshot.md` |
+| Recompute ranking metrics | `runs/*/per_user_val.csv` and `per_user_test.csv`; average the `ndcg@10` column |
+| Full late subset matrix | `diagnostic_B_per_seed.csv`, `diagnostic_B_summary.csv` |
+| Add/drop between separately trained subsets | `marginal_utility_seed42.csv`, `marginal_utility_seed43.csv`, `marginal_utility_seed44.csv` |
+| Inference robustness | `robustness.csv`; perturbations in `artifacts/metadata/beauty/perturbations/` |
+| Utility eligibility and OOV exclusions | `utility_cohort.csv`, `utility_cohort.json` |
+| Frozen-reference CE deltas | `utility.csv`, `utility.csv.manifest.json`, `delta_distribution.csv` |
+| Label stability, E0/E1 and decision | `e0_e1.json` |
+| Reproducibility and cached-score lineage | `reproducibility.json`, `score_cache_integrity/` |
+| Historical source version | `protocol.lock.json`; `runs/*/source_snapshot.zip`, `source_snapshot.json`, `working_tree.diff` |
+| Dataset statistics and coverage | `artifacts/metadata/{beauty,sports,toys}/{statistics.json,coverage.json,manifest.json}` |
+
+The historical `same_checkpoint_mask_sensitivity.csv` uses the October 28 pilot
+checkpoint, not the newly trained ID seed 42. Never label it as a same-checkpoint
+comparison of LOO versus four-segment training. Diagnostic B add/drop compares
+separately trained subset models; utility delta turns a source off on the **same
+frozen all-source reference** without retraining.
+
+### Large files intentionally kept outside Git
+
+The group deliberately ignores **checkpoint weights (`*.pt`) and raw ID-score
+caches (`*.npy`/`*.npz`) because they are large**. This is a storage decision;
+their absence from Git does not mean that training was not executed. The shared
+`checkpoint1_version1` directory contains the text logs/results and manifests,
+not its 27 model checkpoint files or nine raw ID-score matrices.
+
+Per-user ranks permit metric recomputation and many statistical analyses without
+the weights. Weight-level reproducibility, frozen-ID integrity checks, cached-score
+checks, recovery, and new inference **require the corresponding files from the
+original execution environment or a separate archive**. Their expected SHA256
+values are recorded in manifests. Do not create dummy files or claim that these
+checks were independently rerun from the Git clone alone. No external archive
+download location is currently declared here.
+
+Original run manifests record Linux absolute paths and `git_dirty=true`, together
+with the base commit `5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f`, source snapshots,
+and diffs. The commit alone is insufficient to reproduce the exact source.
+Text artifacts may have CRLF line endings after a Windows Git checkout, changing
+their byte SHA256 relative to the original LF files. Preserve historical hashes;
+recover original bytes or explicitly document line-ending normalization when
+auditing them, rather than silently replacing checksums.
+
+### Implementation file guide for supervisor review
+
+| File or module | Role and outputs to inspect |
+| --- | --- |
+| `scripts/run_checkpoint1.py` | Main orchestration, protocol lock, LOO gate, independent ID/residual seeds, subset grid, robustness, utility and E0/E1 |
+| `scripts/checkpoint1_early.py` | First jointly trained early-fusion CBT run and timing |
+| `scripts/benchmark_checkpoint1.py` | Optional CUDA worker benchmark; skipped when workers=1 |
+| `scripts/resume_checkpoint1_utility.py` | Checkpoint-dependent recovery of utility/E0/E1, no retraining |
+| `scripts/run_e0_e1_evaluation.py` | Validate paired contexts, compute E0/E1 and serialize the decision |
+| `src/taimma/data/ingestion.py`, `split.py` | Chronological user sequences, catalog and four-segment/LOO splits; inspect the archived source for this historical run |
+| `src/metadata_pipeline/prepare.py`, `contracts.py` | Metadata, Train-base vocabularies, real frozen Title encoding and input contracts |
+| `src/metadata_pipeline/loader.py`, `build_perturbations.py` | Item-aligned metadata, common history/candidate masks and fixed-missingness permutations |
+| `src/metadata_pipeline/report.py`, `validate.py` | Three-dataset Table 1, coverage and artifact validation |
+| `src/taimma/models/sasrec.py` | Causal ID backbone and full-catalog scores |
+| `src/taimma/models/late_fusion.py` | Frozen ID plus source-only residual encoders, zero final projection and source dropout |
+| `src/taimma/models/early_fusion.py` | Metadata addition to sequence and candidate embeddings, joint optimization |
+| `src/taimma/training/trainer.py`, `multimodal_trainer.py` | Training, trained-epoch validation selection, atomic history/checkpoint writes |
+| `src/taimma/evaluation/evaluator.py` | Shared full ranking, strict input masking, deterministic ties and OOV misses |
+| `src/taimma/evaluation/utility.py`, `e0_e1_protocol.py` | Frozen-reference CE delta, history-only features, epsilon/stability, grouped OOF and bootstrap decision logic |
+| `src/taimma/experiments/logger.py`, `reporting.py`, `checkpoint_state.py` | Registry, provenance, resource scopes and verified completed-stage reuse |
+| `analysis/checkpoint1_postprocess.py` | Weight-dependent frozen-ID audit, registry consolidation and provisional budget |
+| `analysis/plot_checkpoint1.py`, `build_checkpoint1_report.py` | Figures and the existing two-page PDF report generator; pass the correct --run explicitly |
+| `analysis/audit_checkpoint_selection.py` | Checkpoint-dependent validation selection audit |
+
+This guide identifies files involved in Checkpoint 1; it does not assert that all
+of them were first created in one commit or that every implemented model has
+been experimentally evaluated. For this run's actual changes relative to its
+base commit, read `working_tree.diff` and the complete source snapshot.
