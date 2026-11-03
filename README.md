@@ -247,18 +247,69 @@ no history mask; the main four-segment experiments use `input_history_strict`.
 Validation selection, test, baselines and multimodal evaluation share the named
 main policy. Masking affects ranking scores, not the model's input sequence.
 
-After the gate passes, the driver measures one real epoch with 1/2/3 CUDA
-processes; fits independent ID backbones and seven late-fusion subsets for seeds
+After the gate passes, the driver measures one real epoch with CUDA process counts
+up to `--workers`; trains and verifies two ID seed 42 runs; fits independent ID backbones
+and seven late-fusion subsets for seeds
 42/43/44; stores unmasked float32 ID scores for Train-meta/validation/test; fits
-the first early-fusion CBT model; repeats ID seed 42; evaluates inference
+the first early-fusion CBT model; evaluates inference
 missingness/permutation; creates paired utility labels and runs real E0/E1.
 Residual final projections start at zero and ID parameters stay frozen.
+
+For new runs, every model trains from epoch 1 and selects `checkpoint.pt` using
+the highest full-precision validation NDCG@10 among trained epochs only. The
+pre-training evaluation is recorded in `initial_validation_metrics` and as a
+separate `epochs.csv` row with `phase=initial_validation`, `epoch=0`,
+`trained=False`, and no training loss. It is never eligible for selection.
+`total_epochs` counts training epochs only. Ties keep the earlier trained epoch.
+
+Console output includes every training epoch. `epochs.csv` and `history.json`
+are updated atomically after each completed epoch, including non-improving
+epochs, so completed epoch logs remain available if a later epoch fails.
+The CSV marks the selected checkpoint; `metrics.json` records the selection
+scope, exact selected score, selected epoch, and separate initial validation.
+Checkpoint writes also use a temporary file before replacing the previous best.
+Existing runs retain their historical checkpoints and selection policy; use a
+fresh output directory for this trained-epoch-only policy.
+
+Seeding enables deterministic PyTorch algorithms and configures the cuBLAS
+workspace before CUDA initialization. Checkpoint 1 compares exact validation/test
+ranks, model weights and best epoch before starting the residual grid, saving
+`reproducibility.json` on both success and failure. Runs trained before this
+determinism fix require a fresh `--output`; their existing checkpoints cannot
+be made reproducible retroactively.
 
 Default output: `runs/checkpoint1_20261101_batch`. Repeating the same command resumes
 completed stages; changed experiment code/config/metadata requires a new
 `--output`. Failed attempts retain their logs. Use `--stage loo` to stop after
 the comparison or `--stage grid` after the training grid. Diagnostic robustness
 results currently vary one metadata source at a time, preserving the others.
+
+For limited host RAM, use `--workers 1`. This runs training in the main process
+and skips the parallel throughput benchmark. Higher worker counts are benchmarked
+only within the requested limit and available host RAM. Failed workers stop the
+current measurement, all child processes are cleaned up, and a previously
+successful lower count is used if available.
+
+```bash
+python3 -u scripts/run_checkpoint1.py --device cuda --output runs/checkpoint1_memorysafe --stage all --workers 1
+```
+
+Utility labels use only Train-meta contexts whose target is in the Train-base
+catalog. Both reference seeds use the same selected contexts. The full selection
+and OOV exclusions are recorded in `utility_cohort.csv` and `utility_cohort.json`;
+validation/test still retain OOV targets as misses.
+
+If a completed training run stopped at utility because of an OOV target, resume
+utility and E0/E1 using its existing checkpoints:
+
+```bash
+python scripts/resume_checkpoint1_utility.py --device cuda --output runs/checkpoint1_20261103_deterministic
+```
+
+This recovery command checks the locked source, metadata and reference checkpoint
+hashes. Only the driver's utility method may differ from the original source.
+It saves its source snapshot under `utility_recovery/`, keeps the original
+protocol lock, and performs no training. `--utility-only` stops after saving labels.
 
 After all stages succeed, create the measured tables and provisional budget:
 

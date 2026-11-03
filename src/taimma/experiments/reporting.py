@@ -152,18 +152,63 @@ def context_table(samples, split, metadata, metadata_available):
     return pd.DataFrame(rows)
 
 
+def exact_validation_metrics(result):
+    """Keep full precision for selection and epoch logs; rounding is for display."""
+    metrics = result.to_dict()
+    for attribute, name in [('ndcg_10', 'NDCG@10'), ('recall_10', 'Recall@10'),
+                            ('ndcg_20', 'NDCG@20'), ('recall_20', 'Recall@20')]:
+        if hasattr(result, attribute):
+            metrics[name] = float(getattr(result, attribute))
+    return metrics
+
+
+def epoch_log_rows(history):
+    """Baseline is evaluation only; trained epoch numbers always start at one."""
+    rows = []
+    def row(epoch, phase, loss, metrics, train_sec, wall_sec):
+        return dict(epoch=epoch, phase=phase, trained=epoch > 0, train_loss=loss,
+                    selected_checkpoint=epoch > 0 and epoch == history.best_epoch,
+                    val_ndcg_10=metrics.get('NDCG@10'), val_recall_10=metrics.get('Recall@10'),
+                    val_ndcg_20=metrics.get('NDCG@20'), val_recall_20=metrics.get('Recall@20'),
+                    train_sec=train_sec, wall_sec=wall_sec, epoch_wall_sec=wall_sec,
+                    **{key.replace('@', '_at_'): value for key, value in metrics.items()})
+    initial = getattr(history, 'initial_validation_metrics', None)
+    if initial is not None:
+        rows.append(row(0, 'initial_validation', None, initial, None,
+                        history.initial_validation_duration))
+    for i, loss in enumerate(history.train_losses):
+        metrics = dict(history.val_metrics_by_epoch[i]) if i < len(history.val_metrics_by_epoch) else {}
+        metrics.update({'NDCG@10': history.val_ndcg_10[i], 'Recall@10': history.val_recall_10[i]})
+        rows.append(row(i + 1, 'train', loss, metrics, history.epoch_durations[i],
+                        history.epoch_wall_durations[i] if i < len(history.epoch_wall_durations) else None))
+    return rows
+
+
+def write_epoch_log(folder, history):
+    """Persist every completed epoch atomically, including during interrupted runs."""
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    temp = folder / 'epochs.tmp.csv'
+    pd.DataFrame(epoch_log_rows(history)).to_csv(temp, index=False)
+    temp.replace(folder / 'epochs.csv')
+    temp = folder / 'history.tmp.json'
+    with temp.open('w', encoding='utf-8') as stream:
+        json.dump(asdict(history), stream, indent=2, allow_nan=False)
+    temp.replace(folder / 'history.json')
+
+
+def save_checkpoint_atomic(path, state):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(path.suffix + '.tmp')
+    torch.save(state, temp)
+    temp.replace(path)
+
+
 def save_training_history(folder, history):
     folder = Path(folder)
     write_json(folder / 'training_history.json', asdict(history))
-    rows = []
-    for i, loss in enumerate(history.train_losses):
-        metrics = history.val_metrics_by_epoch[i] if i < len(history.val_metrics_by_epoch) else {}
-        rows.append(dict(epoch=i + 1, train_loss=loss, selected_checkpoint=(i + 1 == history.best_epoch),
-                         train_sec=history.epoch_durations[i],
-                         epoch_wall_sec=history.epoch_wall_durations[i] if i < len(history.epoch_wall_durations) else None,
-                         **{k.replace('@', '_at_'): v for k, v in metrics.items()}))
-    with (folder / 'epochs.csv').open('x', newline='', encoding='utf-8') as f:
-        pd.DataFrame(rows).to_csv(f, index=False)
+    write_epoch_log(folder, history)
 
 
 def save_pilot_report(folder, config, stats, history, baseline_results, contexts,

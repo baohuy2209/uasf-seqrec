@@ -517,6 +517,7 @@ def main():
 
         # Save artifacts
         config_dict = {
+            "checkpoint_selection": "trained_epochs_only",
             "experiment_name": exp_prefix,
             "is_real_data": is_real,
             "seed": args.seed,
@@ -571,6 +572,7 @@ def main():
             actual_device=trainer.device,
             context_tables=contexts,
             rank_format=args.rank_format,
+            history=history,
         )
 
         save_training_history(run_path, history)
@@ -582,7 +584,7 @@ def main():
             logger.save_run_artifacts(repeat_path, run_id + "_repeat", repeat_config,
                 repeat_val_res, repeat_test_res, repeat_history.total_training_time,
                 repeat_history.best_epoch, len(repeat_history.train_losses), actual_device=str(trainer_rep.device),
-                context_tables=contexts, rank_format=args.rank_format)
+                context_tables=contexts, rank_format=args.rank_format, history=repeat_history)
             save_training_history(repeat_path, repeat_history)
             repeated_baselines = {key: value for key, value in baseline_results.items() if key != 'SASRec_shuffled'}
             repeated_baselines['SASRec_ID'] = {'validation': repeat_val_res, 'test': repeat_test_res}

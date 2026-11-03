@@ -1,6 +1,0 @@
-{
-  "execution_status": "INTERRUPTED_FOR_INPUT_PIPELINE_OPTIMIZATION",
-  "started_at_utc": "2026-11-01T15:00:35.823575+00:00",
-  "reason": "Measured first epoch exposed CPU per-sample metadata assembly overhead; no result from this incomplete attempt is reused",
-  "ended_at_utc": "2026-11-01T15:11:07.507705+00:00"
-}

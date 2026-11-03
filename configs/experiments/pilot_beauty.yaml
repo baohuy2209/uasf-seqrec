@@ -9,7 +9,7 @@ batch_size: 256
 learning_rate: 0.001
 weight_decay: 0.0
 max_epochs: 100
-patience: 10
+patience: 20
 device: "cpu"  # "cuda" if GPU is available, else "cpu"
 
 # Evaluation parameters

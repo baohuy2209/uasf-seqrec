@@ -15,6 +15,7 @@ import os
 import random
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 import torch
@@ -23,7 +24,8 @@ from torch.utils.data import DataLoader, Dataset
 
 from ..data.split import SequenceSample
 from ..evaluation.evaluator import IndependentEvaluator, EvaluationResult
-from ..experiments.reporting import runtime_snapshot
+from ..experiments.reporting import (runtime_snapshot, exact_validation_metrics,
+                                     write_epoch_log, save_checkpoint_atomic)
 from ..models.late_fusion import ResidualLateFusionModel
 from .trainer import TrainingHistory, set_seed
 
@@ -233,6 +235,8 @@ class ResidualLateFusionTrainer:
         checkpoint_path: Optional[str] = None,
         verbose: bool = True,
     ) -> Tuple[TrainingHistory, ResidualLateFusionModel]:
+        if max_epochs < 1:
+            raise ValueError('Training requires at least one epoch')
         set_seed(self.seed)
 
         train_dataset = MultimodalSequenceDataset(
@@ -247,15 +251,18 @@ class ResidualLateFusionTrainer:
         )
 
         history = TrainingHistory()
+        history.stop_reason = 'running'
+        log_folder = Path(checkpoint_path).parent if checkpoint_path else None
+        initial_start = time.perf_counter()
         initial = self.evaluate(val_samples, seen_items=seen_train_items, batch_size=self.batch_size)
-        best_val_ndcg = initial.ndcg_10
-        history.best_val_ndcg = best_val_ndcg
-        best_weights = copy.deepcopy(self.model.state_dict())
-        if checkpoint_path:
-            PathFolder = os.path.dirname(checkpoint_path)
-            os.makedirs(PathFolder, exist_ok=True)
-            torch.save(dict(epoch=0,model_state_dict=best_weights,val_ndcg_10=initial.ndcg_10,
-                            val_recall_10=initial.recall_10,seed=self.seed,sources_enabled=self.model.sources_enabled),checkpoint_path)
+        history.initial_validation_metrics = exact_validation_metrics(initial)
+        history.initial_validation_duration = time.perf_counter() - initial_start
+        if verbose:
+            print(f'Initial validation (before training; excluded from selection): NDCG@10={initial.ndcg_10:.8f}', flush=True)
+        if log_folder is not None:
+            write_epoch_log(log_folder, history)
+        best_val_ndcg = -1.0
+        best_weights = None
         patience_counter = 0
         if self.device.type == 'cuda':
             torch.cuda.synchronize(self.device)
@@ -275,17 +282,17 @@ class ResidualLateFusionTrainer:
 
             if self.device.type == 'cuda':
                 torch.cuda.synchronize(self.device)
-            history.val_metrics_by_epoch.append(val_res.to_dict())
+            history.val_metrics_by_epoch.append(exact_validation_metrics(val_res))
             history.train_losses.append(loss)
             history.val_ndcg_10.append(val_ndcg)
             history.val_recall_10.append(val_rec)
             history.epoch_durations.append(ep_duration)
 
-            if verbose and (epoch % 5 == 0 or epoch == 1 or val_ndcg > best_val_ndcg):
+            if verbose:
                 print(
                     f"Epoch {epoch:03d} | Residual Loss: {loss:.4f} | "
-                    f"Val NDCG@10: {val_ndcg:.4f} | Val Recall@10: {val_rec:.4f} | "
-                    f"Time: {ep_duration:.2f}s"
+                    f"Val NDCG@10: {val_ndcg:.8f} | Val Recall@10: {val_rec:.8f} | "
+                    f"Time: {ep_duration:.2f}s", flush=True,
                 )
 
             # Early stopping check on Val NDCG@10
@@ -297,8 +304,8 @@ class ResidualLateFusionTrainer:
                 patience_counter = 0
 
                 if checkpoint_path:
-                    os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
-                    torch.save(
+                    save_checkpoint_atomic(
+                        checkpoint_path,
                         {
                             "epoch": epoch,
                             "model_state_dict": best_weights,
@@ -306,8 +313,8 @@ class ResidualLateFusionTrainer:
                             "val_recall_10": val_rec,
                             "seed": self.seed,
                             "sources_enabled": self.model.sources_enabled,
+                            "selection_scope": history.selection_scope,
                         },
-                        checkpoint_path,
                     )
             else:
                 patience_counter += 1
@@ -316,11 +323,17 @@ class ResidualLateFusionTrainer:
                         print(f"Early stopping triggered at epoch {epoch}. Best epoch: {history.best_epoch}")
                     history.stop_reason = 'early_stopping'
             history.epoch_wall_durations.append(time.perf_counter() - ep_start)
+            if log_folder is not None:
+                write_epoch_log(log_folder, history)
             if patience_counter >= self.patience:
                 break
 
         history.total_training_time = time.perf_counter() - start_time
+        if history.stop_reason == 'running':
+            history.stop_reason = 'max_epochs'
         history.resource_usage = runtime_snapshot(self.device)
+        if log_folder is not None:
+            write_epoch_log(log_folder, history)
 
         if best_weights is not None:
             self.model.load_state_dict(best_weights)

@@ -80,6 +80,16 @@ def test_real_driver_train_cache_and_resume_on_cpu_fixture(tmp_path):
     runner.masks={s:torch.tensor([float(i%3!=1) for i in range(n)]) for s in runner.attrs}
     runner.logger=ExperimentLogger(str(tmp_path/'runs'),str(tmp_path/'results.csv'))
     entry=runner.train('id_seed42',runner.split,42,dim=8)
+    import pandas as pd
+    for filename in ['epochs.csv', 'history.json', 'metrics.json']:
+        assert (Path(entry['folder'])/filename).is_file()
+    epoch_log=pd.read_csv(Path(entry['folder'])/'epochs.csv')
+    assert epoch_log.epoch.tolist()==[0,1]
+    assert epoch_log.loc[epoch_log.selected_checkpoint,'epoch'].tolist()==[1]
+    metadata=json.loads((Path(entry['folder'])/'metrics.json').read_text())
+    assert metadata['selection']['scope']=='trained_epochs_only'
+    assert metadata['selection']['selected_epoch']==metadata['best_epoch']==1
+    assert metadata['selection']['initial_validation'] is not None
     assert runner.train('id_seed42',runner.split,42,dim=8)==entry
     runner.id_scores(entry)
     assert (tmp_path/'score_cache_integrity/seed42.json').is_file()

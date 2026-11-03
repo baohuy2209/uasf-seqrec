@@ -107,5 +107,36 @@ def test_compute_file_sha256_and_save_processed():
 
         with open(paths["manifest"], "r", encoding="utf-8") as f:
             manifest = json.load(f)
+        assert manifest["raw_reviews_file"] == dummy_file
         assert manifest["raw_reviews_sha256"] == sha
         assert manifest["stats"]["num_items"] == 1
+
+
+@pytest.mark.parametrize("folder", ["", "Sports_and_Outdoors", "Sports and Outdoors"])
+@pytest.mark.parametrize("compressed", [False, True])
+@pytest.mark.parametrize("with_ratings", [False, True])
+def test_resolve_dataset_layouts_and_parse_metadata(tmp_path, folder, compressed, with_ratings):
+    import gzip
+
+    directory = tmp_path / folder
+    directory.mkdir(exist_ok=True)
+    suffix = ".gz" if compressed else ""
+    reviews = directory / ("Sports_and_Outdoors_5.json" + suffix)
+    metadata = directory / ("meta_Sports_and_Outdoors.json" + suffix)
+    ratings = directory / ("ratings_Sports_and_Outdoors.csv" + suffix)
+    if with_ratings:
+        ratings.write_bytes(b"optional ratings fixture")
+    opener = gzip.open if compressed else open
+    with opener(reviews, "wt", encoding="utf-8") as handle:
+        handle.write(json.dumps(dict(reviewerID="u", asin="a", unixReviewTime=1)) + "\n")
+    with opener(metadata, "wt", encoding="utf-8") as handle:
+        handle.write(repr(dict(asin="a", brand=" ACME  Corp ", categories=[["Sports", "Ball"]])) + "\n")
+    ingestor = Amazon2014Ingestor(str(tmp_path), "Sports_and_Outdoors")
+    assert ingestor.ratings_path is None
+    assert ingestor.resolve_paths() == (str(reviews), str(metadata))
+    assert ingestor.ratings_path == (str(ratings) if with_ratings else None)
+    sequences, records = ingestor.build_interaction_sequences(min_interactions=1)
+    assert sequences[0].items == ["a"]
+    assert records["a"]["brand"] == "acme corp"
+    assert records["a"]["categories"] == ["Ball"]
+    assert ingestor.meta_path == str(metadata)

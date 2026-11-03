@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "scope": "Three real Beauty category-only training epochs; logging and selection verification",
+  "reference_id_checkpoint": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint1_memorysafe/runs/id_seed43_20261103_092431_815811_c00918bc/checkpoint.pt",
+  "reference_sha256": "4cefe3d455024519a5c0bba25db930ad320bd287c186410ae7dcc9144f7101f3",
+  "baseline_ndcg": 0.059745108837981335,
+  "selected_epoch": 3,
+  "selected_ndcg": 0.057063191061363074,
+  "original_checkpoint_unchanged": true
+}

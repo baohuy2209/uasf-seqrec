@@ -99,3 +99,38 @@ def test_longer_sequence_and_no_leakage():
     # Ensure test target at position 7 was NOT used in prediction of earlier positions
     val_sample = data.val_samples[0]
     assert val_sample.target == data.item2idx["B"]
+
+
+def test_raw_target_identity_is_preserved_for_oov_reporting():
+    sequence = InteractionSequence("u", ["a", "b", "c", "d", "e"], list(range(5)))
+    split = SequenceSplitter().split([sequence])
+    assert split.train_base_samples[0].raw_target_asin == "b"
+    for samples, raw in [(split.train_meta_samples, "c"), (split.val_samples, "d"), (split.test_samples, "e")]:
+        assert samples[0].target == 0
+        assert samples[0].raw_target_asin == raw
+
+
+@pytest.mark.parametrize("protocol", ["four_segment", "loo"])
+def test_catalog_ids_are_sorted_and_independent_of_user_order(protocol):
+    sequences = [
+        InteractionSequence("U1", ["Z", "B", "C", "B", "A"], list(range(5))),
+        InteractionSequence("U2", ["B", "A", "D", "Z", "X"], list(range(5))),
+        InteractionSequence("short", ["0", "1", "2", "3"], list(range(4))),
+    ]
+    splitter = SequenceSplitter(max_seq_len=5, protocol=protocol)
+    split = splitter.split(sequences)
+    reversed_split = splitter.split(list(reversed(sequences)))
+
+    expected_items = ["A", "B", "Z"] if protocol == "four_segment" else ["A", "B", "C", "D", "Z"]
+    expected_mapping = {item: idx for idx, item in enumerate(expected_items, 1)}
+    assert split.item2idx == reversed_split.item2idx == expected_mapping
+    assert [split.idx2item[i] for i in range(1, split.num_items + 1)] == expected_items
+
+    # The IDs in histories and labels must still refer to the same raw items.
+    first = split.train_base_samples[0]
+    assert first.history == [0, 0, 0, 0, expected_mapping["Z"]]
+    assert first.target == expected_mapping["B"]
+    assert split.val_samples[0].target == expected_mapping["B"]
+    assert split.test_samples[0].target == expected_mapping["A"]
+    assert split.test_samples[1].target == 0
+    assert split.test_samples[1].raw_target_asin == "X"

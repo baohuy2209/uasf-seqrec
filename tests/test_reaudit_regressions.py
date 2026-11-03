@@ -234,7 +234,9 @@ def test_pilot_entrypoint_complete_repeat(tmp_path):
     frame = pd.read_csv(folder / 'per_user_test.csv')
     assert {'history_len', 'target_train_base_frequency', 'analysis_length_quintile', 'target_is_oov'}.issubset(frame)
     assert len(frame) == 100
-    assert len(pd.read_csv(folder / 'epochs.csv')) == 1
+    epoch_log = pd.read_csv(folder / 'epochs.csv')
+    assert epoch_log.epoch.tolist() == [0, 1]
+    assert epoch_log.phase.tolist() == ['initial_validation', 'train']
     assert pd.read_csv(folder / 'compute_budget.csv')['estimated_gpu_hours'].isna().all()
     assert json.loads((folder / 'run_state.json').read_text())['execution_status'] == 'COMPLETED'
     assert 'Training SASRec model' in (folder / 'run.log').read_text(encoding='utf-8')
@@ -292,3 +294,36 @@ def test_config_is_effective_and_explicit_cli_takes_precedence(tmp_path):
     assert saved['epochs'] == 1 and saved['seed'] == 7
     assert saved['weight_decay'] == .01 and saved['eval_batch_size'] == 33
     assert saved['mask_seen_policy'] == 'none'
+
+
+@pytest.mark.parametrize('with_ratings', [False, True])
+def test_pilot_real_data_branch_on_fixture(tmp_path, with_ratings):
+    """Exercise --real_data with fixture files; never write research artifacts."""
+    import yaml
+
+    raw = tmp_path / 'raw' / 'Beauty'
+    raw.mkdir(parents=True)
+    rows = [dict(reviewerID=f'u{u}', asin=f'i{(u + i) % 12}', unixReviewTime=i)
+            for u in range(12) for i in range(8)]
+    (raw / 'Beauty_5.json').write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    if with_ratings:
+        (raw / 'ratings_Beauty.csv').write_text('i0,u0,5,0\n', encoding='utf-8')
+    dataset = yaml.safe_load((ROOT / 'configs/datasets/beauty_2014.yaml').read_text())
+    dataset.update(raw_data_dir=str(raw.parent), processed_dir=str(tmp_path / 'processed'),
+                   expected_stats=dict(users=12, items=12, interactions=96, catalog_train_base_items=12))
+    dataset_path = tmp_path / 'dataset.yaml'
+    dataset_path.write_text(yaml.safe_dump(dataset), encoding='utf-8')
+    config = tmp_path / 'experiment.yaml'
+    config.write_text(yaml.safe_dump(dict(dataset_config=str(dataset_path))), encoding='utf-8')
+    env = dict(os.environ, PYTHONUTF8='1', PYTHONDONTWRITEBYTECODE='1', OMP_NUM_THREADS='2', MKL_NUM_THREADS='2')
+    proc = subprocess.run([sys.executable, '-B', str(ROOT / 'scripts/run_pilot.py'), '--real_data',
+                           '--config', str(config), '--device', 'cpu', '--epochs', '1', '--batch_size', '100',
+                           '--runs_dir', str(tmp_path / 'runs'), '--results_csv', str(tmp_path / 'registry.csv')],
+                          capture_output=True, text=True, encoding='utf-8', env=env, timeout=120)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert ('Raw ratings dump:' in proc.stdout) == with_ratings
+    folder = next((tmp_path / 'runs').iterdir())
+    assert (folder / 'checkpoint.pt').is_file()
+    assert (folder / 'per_user_test.csv').is_file()
+    saved = json.loads((folder / 'config.json').read_text())
+    assert saved['data_provenance']['raw_reviews_file'] == str(raw / 'Beauty_5.json')

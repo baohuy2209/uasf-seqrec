@@ -65,9 +65,13 @@ class ExperimentLogger:
         actual_device: Optional[str] = None,
         context_tables: Optional[Dict[str, pd.DataFrame]] = None,
         rank_format: str = 'csv',
+        history=None,
     ) -> Dict[str, Any]:
         """Save config, manifest, metrics, and per-user evaluation records."""
         validate_rank_format(rank_format)
+        if history is not None and (history.best_epoch != best_epoch or len(history.train_losses) != total_epochs
+                                    or not 1 <= best_epoch <= total_epochs):
+            raise ValueError('Checkpoint selection must match the completed training epochs')
         context_tables = context_tables or {}
         config = dict(config)
         if "device" in config:
@@ -89,6 +93,11 @@ class ExperimentLogger:
             "validation": val_result.to_dict(),
             "test": test_result.to_dict() if test_result else None,
         }
+        if history is not None:
+            metrics['selection'] = dict(metric='validation/NDCG@10', mode='max', scope=history.selection_scope,
+                                        first_training_epoch=1, selected_epoch=history.best_epoch,
+                                        selected_value=history.best_val_ndcg,
+                                        initial_validation=history.initial_validation_metrics)
         metrics_file = os.path.join(run_path, "metrics.json")
         with open(metrics_file, "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2)

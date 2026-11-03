@@ -80,7 +80,7 @@ class Checkpoint:
         signature={str(p.relative_to(ROOT)):compute_file_sha256(str(p)) for folder in ['src','scripts','configs']
                    for p in sorted((ROOT/folder).rglob('*')) if p.suffix in ('.py','.yaml') and '__pycache__' not in p.parts}
         lock=dict(code_sha256=signature,seeds=args.seeds,max_epochs=args.epochs,patience=args.patience,
-                  learning_rate=0.001,batch_size=args.batch_size,main_mask_policy='input_history_strict',
+                  learning_rate=0.001,batch_size=args.batch_size,checkpoint_selection='trained_epochs_only',main_mask_policy='input_history_strict',
                   loo_reference_mask_policy='none',source_dropout=0.2,device=args.device,
                   metadata_manifest_sha256={key:compute_file_sha256(str(ROOT/f'artifacts/metadata/{key}/manifest.json')) for key in ['beauty','sports','toys']})
         lock_path=self.root/'protocol.lock.json'
@@ -130,7 +130,10 @@ class Checkpoint:
         folder=Path(folder)
         config=dict(dataset='Beauty' if self.data_mode=='real' else 'SyntheticFixture',data_mode=self.data_mode,protocol='loo' if split is not self.split else 'four_segment',seed=seed,
                     embedding_dim=dim,sources=list(sources),mask_policy=policy,epochs=self.args.epochs,
-                    patience=self.args.patience,batch_size=self.args.batch_size,learning_rate=.001,device=str(self.device))
+                    patience=self.args.patience,batch_size=self.args.batch_size,learning_rate=.001,device=str(self.device),
+                    deterministic_algorithms=torch.are_deterministic_algorithms_enabled(),
+                    checkpoint_selection='trained_epochs_only',
+                    cublas_workspace_config=os.environ.get('CUBLAS_WORKSPACE_CONFIG'))
         with self.logger.capture_output(str(folder)):
             print(f'[{key}] training {run_id}',flush=True)
             ev=evaluator(split.num_items,policy)
@@ -154,11 +157,7 @@ class Checkpoint:
             val=trainer.evaluate(split.val_samples,split.seen_train_items_per_user)
             test=trainer.evaluate(split.test_samples,split.seen_train_items_per_user)
             self.logger.save_run_artifacts(str(folder),run_id,config,val,test,history.total_training_time,
-                  history.best_epoch,len(history.train_losses),actual_device=str(self.device))
-            pd.DataFrame([dict(epoch=i+1,train_loss=loss,val_ndcg_10=history.val_ndcg_10[i],
-                         train_sec=history.epoch_durations[i],wall_sec=history.epoch_wall_durations[i])
-                         for i,loss in enumerate(history.train_losses)]).to_csv(folder/'epochs.csv',index=False)
-            write_json(folder/'history.json',asdict(history))
+                  history.best_epoch,len(history.train_losses),actual_device=str(self.device),history=history)
             write_json(folder/'report_data.json',dict(data_mode=self.data_mode,costs=dict(
                   mean_epoch_train_sec=float(np.mean(history.epoch_durations)),
                   mean_epoch_wall_sec=float(np.mean(history.epoch_wall_durations)),
@@ -207,6 +206,35 @@ class Checkpoint:
         selected_masks={s:masks_gpu[s] for s in model.source_encoders}
         ids=torch.tensor([sample.history for sample in batch],device=self.device)
         return model.predict_all(ids,gather_source_sequences(ids,selected_attrs,selected_masks),selected_attrs,selected_masks)
+
+    def reproducibility(self):
+        set_seed(42)
+        first=self.train('id_seed42',self.split,42,self.backbone_dim)
+        repeated=self.train('id_seed42_repeat',self.split,42,self.backbone_dim)
+        report=dict(status='PASS',seed=42,first=first['checkpoint'],repeat=repeated['checkpoint'],
+                    deterministic_algorithms=torch.are_deterministic_algorithms_enabled(),comparisons={})
+        for name in ['per_user_val.csv','per_user_test.csv']:
+            try:
+                pd.testing.assert_frame_equal(pd.read_csv(Path(first['folder'])/name),
+                                              pd.read_csv(Path(repeated['folder'])/name),check_exact=True)
+                report['comparisons'][name]='PASS'
+            except AssertionError as error:
+                report['status']='FAIL'
+                report['comparisons'][name]=str(error)
+        original=torch.load(first['checkpoint'],map_location='cpu',weights_only=True)
+        repeat=torch.load(repeated['checkpoint'],map_location='cpu',weights_only=True)
+        original_weights=original['model_state_dict']
+        repeat_weights=repeat['model_state_dict']
+        weights_equal=original_weights.keys()==repeat_weights.keys() and all(
+            torch.equal(value,repeat_weights[name]) for name,value in original_weights.items())
+        report['comparisons']['model_weights']='PASS' if weights_equal else 'FAIL'
+        report['comparisons']['best_epoch']='PASS' if original['epoch']==repeat['epoch'] else 'FAIL'
+        if not weights_equal or original['epoch']!=repeat['epoch']:
+            report['status']='FAIL'
+        atomic_json(self.root/'reproducibility.json',report)
+        require(report['status']=='PASS',
+                f'Reproducibility failed; details saved to {self.root / "reproducibility.json"}. '
+                'Checkpoints trained before deterministic CUDA was enabled require a fresh --output.')
 
     def audit(self):
         summary={}
@@ -396,6 +424,32 @@ class Checkpoint:
         self.save_progress()
 
     def utility(self):
+        # CE labels are defined only for targets in the Train-base catalog.
+        # Keep evaluation cohorts unchanged and select once for both references.
+        samples=self.split.train_meta_samples
+        require(all(0 <= s.target <= self.split.num_items for s in samples),
+                'Invalid Train-meta target ID; expected OOV 0 or an in-catalog ID')
+        eligible=[s for s in samples if s.target > 0]
+        audit=pd.DataFrame([dict(user_idx=s.user_idx,target_idx=s.target,raw_target_asin=s.raw_target_asin,
+                                included=s.target > 0,exclusion_reason='' if s.target > 0 else 'target_oov')
+                            for s in samples],columns=['user_idx','target_idx','raw_target_asin','included','exclusion_reason'])
+        audit_path=self.root/'utility_cohort.csv'
+        if audit_path.exists():
+            pd.testing.assert_frame_equal(pd.read_csv(audit_path,keep_default_na=False),audit,check_exact=True)
+        else:
+            audit.to_csv(audit_path,index=False)
+        cohort=dict(policy='train_meta_in_catalog_targets_only',total_contexts=len(samples),
+                    included_contexts=len(eligible),excluded_oov_contexts=len(samples)-len(eligible),
+                    reference_seeds=self.args.seeds[:2],catalog_items=self.split.num_items,
+                    audit_file=audit_path.name,audit_sha256=compute_file_sha256(str(audit_path)))
+        cohort_path=self.root/'utility_cohort.json'
+        if cohort_path.exists():
+            require(read_json(cohort_path)==cohort,'Utility cohort changed')
+        else:
+            atomic_json(cohort_path,cohort)
+        require(bool(eligible),'No in-catalog Train-meta targets available for utility computation')
+        print(f'Utility cohort: {len(eligible)}/{len(samples)} contexts; '
+              f'excluded {len(samples)-len(eligible)} OOV targets',flush=True)
         destination=self.root/'utility.csv'
         sidecar=destination.with_suffix('.csv.manifest.json')
         staging=destination.with_name('utility.partial.csv')
@@ -406,6 +460,8 @@ class Checkpoint:
             staging_sidecar.rename(sidecar)
         if destination.exists() and sidecar.exists():
             lineage=read_json(sidecar)
+            require(lineage.get('cohort_sha256')==compute_file_sha256(str(cohort_path)),
+                    'Utility cohort provenance changed or missing')
             require(lineage['file_sha256']==compute_file_sha256(str(destination)),'Utility artifact checksum changed')
             require(lineage['dataset_manifest_sha256']==compute_file_sha256(str(ROOT/'artifacts/metadata/beauty/manifest.json')),
                     'Utility metadata provenance changed')
@@ -429,16 +485,20 @@ class Checkpoint:
             entry=self.progress[f'late_CBT_seed{seed}']
             checkpoints[seed]=entry['checkpoint']
             model=self.load_residual(entry)
-            loader=DataLoader(MultimodalSequenceDataset(self.split.train_meta_samples,self.attrs,self.masks,defer_features=True),
+            loader=DataLoader(MultimodalSequenceDataset(eligible,self.attrs,self.masks,defer_features=True),
                              batch_size=self.args.batch_size,shuffle=False,collate_fn=collate_multimodal_batch)
             attrs={s:v.to(self.device) for s,v in self.attrs.items()}
             masks={s:v.to(self.device) for s,v in self.masks.items()}
+            print(f'Utility reference seed {seed}: {len(eligible)} contexts',flush=True)
             for batch in loader:
                 _,items=compute_leave_one_source_out_deltas(model,batch['item_seqs'].to(self.device),
                     gather_source_sequences(batch['item_seqs'].to(self.device),attrs,masks),attrs,masks,
                     batch['targets'].to(self.device),batch['user_indices'],reference_seed=seed)
                 records.extend(items)
         save_utility_artifact(staging,records,ROOT/'artifacts/metadata/beauty/manifest.json',checkpoints)
+        lineage=read_json(staging_sidecar)
+        lineage.update(cohort_file=cohort_path.name,cohort_sha256=compute_file_sha256(str(cohort_path)))
+        atomic_json(staging_sidecar,lineage)
         staging.rename(destination)
         staging_sidecar.rename(sidecar)
         frame=pd.read_csv(destination)
@@ -462,6 +522,28 @@ class Checkpoint:
                 result=evaluate_predictor(predict,samples,self.split.num_items,self.split.seen_train_items_per_user,targets=labels)
                 rows.append(dict(model=name,control=control,**metrics(result)))
         pd.DataFrame(rows).to_csv(self.root/'baseline_and_shuffle.csv',index=False)
+
+    def configure_workers(self):
+        throughput=self.root/'throughput.json'
+        if self.device.type != 'cuda' or self.args.workers == 1:
+            self.args.workers=1
+            if not throughput.exists():
+                atomic_json(throughput,dict(scope='Parallel benchmark skipped; sequential execution requested',
+                            measurements=[],best_workers=1))
+            return
+        requested=self.args.workers
+        previous=read_json(throughput) if throughput.exists() else {}
+        measured={row['processes'] for row in previous.get('measurements',[])}
+        if not set(range(1,requested+1)).issubset(measured):
+            subprocess.run([sys.executable,str(ROOT/'scripts/benchmark_checkpoint1.py'),'--dim',str(self.backbone_dim),
+                            '--output',str(throughput),'--batch_size',str(self.args.batch_size),
+                            '--threads',str(self.args.threads),'--workers',str(requested),
+                            '--parent-pid',str(os.getpid())],check=True,cwd=ROOT)
+        benchmark=read_json(throughput)
+        candidates=[row for row in benchmark.get('measurements',[]) if row['processes']<=requested
+                    and not row.get('errors') and row.get('examples_per_sec',0)>0]
+        require(bool(candidates),'No successful benchmark within requested worker limit')
+        self.args.workers=max(candidates,key=lambda row:row['examples_per_sec'])['processes']
 
     def run(self):
         if not self.args.prepare_only:
@@ -491,25 +573,13 @@ class Checkpoint:
             print('Both LOO configurations failed condition (3). Diagnostic grid STOPPED as required.',flush=True)
             return 2
         if self.args.stage=='loo':return 0
-        throughput=self.root/'throughput.json'
-        if self.device.type != 'cuda':
-            self.args.workers=1
-            if not throughput.exists():
-                write_json(throughput,dict(scope='CUDA concurrency not measured in CPU mode',measurements=[],best_workers=1))
-        elif not throughput.exists() or {row['processes'] for row in read_json(throughput).get('measurements',[])} != {1,2,3}:
-            subprocess.run([sys.executable,str(ROOT/'scripts/benchmark_checkpoint1.py'),'--dim',str(self.backbone_dim),
-                            '--output',str(throughput),'--batch_size',str(self.args.batch_size),'--threads',str(self.args.threads)],check=True,cwd=ROOT)
-        self.args.workers=min(self.args.workers,read_json(throughput)['best_workers'])
+        self.configure_workers()
+        # Check repeatability before spending time on the residual/early grid.
+        self.reproducibility()
         self.grid()
         from checkpoint1_early import run_early
         run_early(self)
         self.baselines()
-        repeated=self.train('id_seed42_repeat',self.split,42,self.backbone_dim)
-        first=self.progress['id_seed42']
-        import pandas.testing
-        for name in ['per_user_val.csv','per_user_test.csv']:
-            pandas.testing.assert_frame_equal(pd.read_csv(Path(first['folder'])/name),pd.read_csv(Path(repeated['folder'])/name))
-        write_json(self.root/'reproducibility.json',dict(status='PASS',seed=42,first=first['checkpoint'],repeat=repeated['checkpoint']))
         if self.args.stage=='grid':return 0
         self.diagnostics()
         destination=self.utility()
@@ -528,7 +598,7 @@ def main():
     parser.add_argument('--device',choices=['cpu','cuda'],default='cuda')
     parser.add_argument('--stage',choices=['loo','grid','all'],default='all')
     parser.add_argument('--epochs',type=int,default=100)
-    parser.add_argument('--patience',type=int,default=10)
+    parser.add_argument('--patience',type=int,default=20)
     parser.add_argument('--batch_size',type=int,default=256)
     parser.add_argument('--seeds',type=int,nargs='+',default=[42,43,44])
     parser.add_argument('--threads',type=int,default=2)
