@@ -218,3 +218,55 @@ def test_saved_perturbations_disable_candidate_scores(handoff,source,ratio):
     torch.testing.assert_close(joint-base,residual[source]*masks[source].unsqueeze(0),atol=1e-6,rtol=1e-6)
     assert torch.equal(joint[:,masks[source] == 0],base[:,masks[source] == 0])
     if ratio == "0.00": assert torch.count_nonzero(joint-base)>0
+
+
+
+from metadata_pipeline.build_training_contrasts import build_training_contrasts_for_dataset
+from metadata_pipeline.user_grouping import compute_head_tail_partition, assign_quantile_and_median_bins
+
+
+def test_training_contrasts_and_loader(handoff):
+    path, _ = handoff
+    base_dir = path.parent
+    manifest = build_training_contrasts_for_dataset("beauty", base_metadata_dir=str(base_dir), seeds=[42])
+    contrasts_dir = path / "training_contrasts"
+    assert contrasts_dir.exists()
+    assert (contrasts_dir / "manifest.json").exists()
+    assert "category_seed_42" in manifest["shuffled"]
+    assert "brand_seed_42" in manifest["random"]
+    assert "title_seed_42" in manifest["random"]
+
+    # Test load_catalog with random contrasts
+    rand_files = {
+        "category": contrasts_dir / "random" / "random_category_seed_42.csv",
+        "brand": contrasts_dir / "random" / "random_brand_seed_42.csv",
+        "title": contrasts_dir / "random" / "random_title_seed_42.npy",
+    }
+    attrs_r, masks_r = load_catalog(path, random_files=rand_files)
+    assert attrs_r["category"].shape[0] == 3
+    assert attrs_r["brand"].shape[0] == 3
+    assert attrs_r["title"].shape[0] == 3
+    # Check item B (index 1) has missing brand and category in fixture
+    assert attrs_r["category"][1].sum() == 0
+    assert attrs_r["brand"][1] == 0
+    # Check item C (index 2) has missing title in fixture
+    assert attrs_r["title"][2].sum() == 0
+
+
+def test_user_grouping_logic():
+    # 10 catalog items, events with skewed distribution
+    events = [1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5]
+    is_tail, stats = compute_head_tail_partition(events, num_catalog_items=10)
+    # Head is top 20% = 2 items (items 1 and 2)
+    assert stats["num_head_items"] == 2
+    assert stats["num_tail_items"] == 8
+    assert not is_tail[1] and not is_tail[2]
+    assert is_tail[3] and is_tail[10]
+
+    # Test binning into 10 groups
+    lengths = np.array([5, 6, 7, 8, 9, 10, 12, 15, 20, 25])
+    tail_ratios = np.array([0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.4, 0.6, 0.2, 0.8])
+    l_q, t_bin, g_id, summary = assign_quantile_and_median_bins(lengths, tail_ratios)
+    assert len(np.unique(l_q)) == 5
+    assert len(g_id) == 10
+    assert (g_id >= 0).all() and (g_id <= 9).all()
