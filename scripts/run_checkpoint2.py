@@ -9,7 +9,7 @@ os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG',':4096:8')
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 
-STAGES=['plan','prepare','early-grid','controls','diagnostics','source-dropout',
+STAGES=['plan','check-data','prepare','early-grid','controls','diagnostics','source-dropout',
         'groups','utility-alignment','choose','s2-e1','s3','transfer-late','transfer',
         'report','archive','all']
 
@@ -50,6 +50,8 @@ def main():
         if not args.archive_dir:parser.error('--archive-dir is required')
         print(runner.archive(args.archive_dir));return 0
     for dataset in args.datasets:
+        if args.stage=='check-data':
+            print(json.dumps(runner.check_data(dataset),indent=2));continue
         if args.stage=='report':
             from taimma.experiments.mini_checkpoint_report import write_mini_report
             path=runner.output/dataset/'mini_checkpoint'

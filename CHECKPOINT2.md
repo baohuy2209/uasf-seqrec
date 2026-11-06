@@ -20,6 +20,10 @@ Các ví dụ dưới dùng môi trường đang có của máy Lab. Thay `pytho
 # Chỉ in kế hoạch; không đọc dữ liệu thật hay tạo model.
 python scripts/run_checkpoint2.py
 
+# Đọc reviews/metadata và kiểm tra catalog/checksum trước khi huấn luyện.
+# Không tạo model, không dùng GPU và không ghi output; không cần cờ thực thi.
+python scripts/run_checkpoint2.py --stage check-data --datasets beauty sports toys
+
 # Sau khi review và commit code: chuẩn bị artifact và khóa quy tắc utility.
 python scripts/run_checkpoint2.py --stage prepare --datasets beauty --execute-inference
 
@@ -42,6 +46,10 @@ python scripts/run_checkpoint2.py --stage report
 ```
 
 Grid mới sử dụng cùng training loop và quy tắc shuffle cho các cấu hình. Vì vòng lặp đã được chuẩn hóa, không âm thầm coi early CBT seed42 lịch sử là một job hoàn tất của giao thức mới. Kết quả cũ vẫn là tham chiếu riêng; các job mới hoàn tất sẽ được dùng lại khi chạy tiếp. Initial validation luôn đứng riêng; các epoch đã cập nhật bắt đầu từ 1, và chỉ những epoch này được xét chọn.
+
+Catalog kiểm tra từ `metadata.csv` và phần Train-base của `item_map.csv`; các hàng OOV trong mapping có model ID 0 được giữ đúng thiết kế. Kích thước embedding của đối chứng ngẫu nhiên lấy từ catalog gốc, tránh đổi kiến trúc khi một ID không được lấy mẫu. So dấu utility dùng cùng tập reference trên Train-meta và validation, giữ target OOV ở mẫu số NDCG validation (CE của OOV để trống).
+
+Sau cập nhật code, nếu output cũ đã có `protocol.lock.json`, giữ nguyên thư mục đó và dùng một output mới như `--output runs/checkpoint2_20261106_audit`. Không xóa khóa để ghép kết quả khác phiên bản code. Lượt lỗi catalog dừng trước khi tạo protocol lock; kiểm tra trạng thái thư mục trước khi chọn output.
 
 ## Các đối chứng nguyên nhân
 
@@ -87,7 +95,7 @@ S3 không chạy nếu GO/CONDITIONAL chưa đủ điều kiện. Soft-supervisi
 
 Baseline lồng nhau dùng cùng S1: all-fixed, subset toàn cục, subset theo nhóm, trọng số global, gate không giám sát và UASF; thêm ID-only riêng và early không source dropout. Tắt hết nguồn là chế độ của S1 đã học, không khẳng định bằng checkpoint ID độc lập. Bảy so sánh dùng paired-user bootstrap, Holm và TOST với biên tương đối 1% đã khóa. Phần S3 hiện báo điều kiện theo seed42, không nhận là bằng chứng độ bền qua ba seed huấn luyện S3.
 
-Trong S2/S3 và các baseline lồng nhau, availability của nguồn là có ít nhất một item lịch sử có metadata nguồn đó. Cùng mask này áp dụng cho mọi phương pháp: all-fixed có beta=1 và alpha=availability; subset đặt thêm beta của nguồn bị tắt bằng 0. Cache ở `gate_ablations/` tách khỏi bảng kiểm tra source dropout thông thường ở `ablations/` (alpha=1 cho nguồn được bật). Psi lấy từ reference cố định có cùng availability, không lấy từ encoder đã nhận đầu ra của gate. Giữ nguyên quy ước này khi diễn giải các bảng.
+Trong S2/S3 và các baseline lồng nhau, all-fixed dùng alpha=1 cho mọi nguồn được cấu hình, đúng feedback. Subset đặt alpha của nguồn bị tắt bằng 0. Missingness tự nhiên vẫn được mask theo từng item ở cả lịch sử và ứng viên; coverage lịch sử bằng 0 không tự tắt metadata của toàn bộ ứng viên. Psi lấy từ reference cố định alpha=1, không lấy từ encoder đã nhận đầu ra của gate. Các baseline này dùng cùng cache `ablations/` của S1.
 
 ## Sports và Toys ở tiến trình thứ hai
 

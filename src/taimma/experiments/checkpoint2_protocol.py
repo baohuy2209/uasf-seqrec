@@ -11,11 +11,33 @@ import numpy as np
 import pandas as pd
 
 from metadata_pipeline.user_grouping import fit_group_rules, apply_group_rules, compute_head_tail_partition
+from metadata_pipeline.contracts import flags
 
 SEEDS=(42,43,44)
 SOURCE_ORDER=('category','brand','title')
 SUBSETS=((),('category',),('brand',),('title',),('category','brand'),
          ('category','title'),('brand','title'),SOURCE_ORDER)
+
+
+def validate_catalog_mapping(catalog,mapping,split):
+    """The cohort map includes OOV rows; embeddings contain Train-base rows only."""
+    for name,frame in [('metadata.csv',catalog),('item_map.csv',mapping)]:
+        if not {'model_item_id','raw_item_id'}.issubset(frame):
+            raise ValueError(f'{name}: required model_item_id/raw_item_id columns are missing')
+        if frame.raw_item_id.duplicated().any():raise ValueError(f'{name}: duplicate raw item IDs')
+    if 'in_train_base' not in mapping:raise ValueError('item_map.csv: missing in_train_base')
+    active=flags(mapping.in_train_base)
+    if not (mapping.loc[~active,'model_item_id']==0).all():raise ValueError('OOV mapping IDs must be zero')
+    train=mapping.loc[active].sort_values('model_item_id')
+    expected=[split.idx2item[i] for i in range(1,split.num_items+1)]
+    if not np.array_equal(catalog.model_item_id,np.arange(1,split.num_items+1)):
+        raise ValueError(f'Catalog model IDs must be 1..{split.num_items}; metadata rows={len(catalog)}')
+    if catalog.raw_item_id.astype(str).tolist()!=expected:
+        mismatch=next((i+1 for i,(a,b) in enumerate(zip(catalog.raw_item_id.astype(str),expected)) if a!=b),None)
+        raise ValueError(f'Raw reviews/catalog mismatch: split={split.num_items}, metadata={len(catalog)}, first differing model ID={mismatch}')
+    if not np.array_equal(train.model_item_id,catalog.model_item_id) or train.raw_item_id.astype(str).tolist()!=expected:
+        raise ValueError('Train-base rows in item_map.csv differ from metadata.csv')
+    return dict(cohort_items=len(mapping),catalog_items=len(catalog),oov_items=int((~active).sum()))
 
 
 def sha(path):

@@ -56,7 +56,10 @@ def gate_evaluate(adapter,gate,samples,features,columns,mean,scale,batch_size=25
         for batch in batches(samples,adapter.attrs,adapter.masks,batch_size):
             rows=f.loc[batch['user_indices']]
             x=feature_matrix(rows,columns,mean,scale)[0]
-            available=np.column_stack([(rows[f'feat_{s}_coverage'].to_numpy()>0) for s in SOURCES]).astype(np.float32)
+            # All-fixed is alpha=1 for each configured source. Missingness is
+            # already masked per item in the encoder/candidate representations;
+            # zero history coverage must not disable available candidate data.
+            available=adapter.weights(len(rows)).cpu().numpy()
             alpha,_=gate(torch.tensor(x,device=adapter.device),
                 torch.tensor(rows.group_idx.to_numpy(),device=adapter.device,dtype=torch.long),
                 torch.tensor(available,device=adapter.device),threshold=True)
@@ -82,7 +85,7 @@ def train_gate(adapter,gate,train_samples,val_samples,train_features,val_feature
     feature_index={int(u):i for i,u in enumerate(train_features.user_idx)}
     y=labels.set_index('user_idx').loc[train_features.user_idx,list(SOURCES)].to_numpy(np.float32)
     if not np.isfinite(y).all() or np.any((y<0)|(y>1)):raise ValueError('Gate labels must be in [0,1]')
-    availability=np.column_stack([(train_features[f'feat_{s}_coverage'].to_numpy()>0) for s in SOURCES]).astype(np.float32)
+    availability=adapter.weights(len(train_features)).cpu().numpy()
     supervised=np.asarray([s in qualified_sources for s in SOURCES],dtype=np.float32)
     optimizer=torch.optim.Adam(gate.parameters(),lr=lr)
     best=-1.;state=None;stale=0;history=[]

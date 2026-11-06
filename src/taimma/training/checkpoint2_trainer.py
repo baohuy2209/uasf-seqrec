@@ -137,6 +137,9 @@ def fit(adapter,train_samples,val_samples,folder,epochs=100,patience=20,batch_si
     if (folder/'checkpoint.pt').exists():
         raise FileExistsError('Refuse to overwrite a model checkpoint; resume verified completed jobs instead')
     set_seed(adapter.spec.seed)
+    if adapter.device.type=='cuda':
+        torch.cuda.synchronize(adapter.device)
+        torch.cuda.reset_peak_memory_stats(adapter.device)
     optimizer=torch.optim.Adam([p for p in adapter.model.parameters() if p.requires_grad],
         lr=adapter.spec.learning_rate,weight_decay=adapter.spec.weight_decay)
     history=TrainingHistory();history.stop_reason='running'

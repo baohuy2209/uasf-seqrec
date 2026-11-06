@@ -86,6 +86,7 @@ def report_tables(state):
     groups=[]
     for mech,label in [('late_legacy','Late fusion'),('early','Early fusion')]:
         rows=state.get('groups',{}).get(mech,[])
+        if mech=='late_legacy' and not rows:rows=state.get('groups',{}).get('late',[])
         def gsummary(field):return summary([dict(seed=r['seed'],value=r[field]) for r in rows])
         subsets=', '.join(sorted({r['global_subset'] for r in rows}))
         groups.append([label,gsummary('id_test'),(subsets+'; ' if subsets else '')+gsummary('global_test'),

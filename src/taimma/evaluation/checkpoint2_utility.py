@@ -52,14 +52,17 @@ def _masked_for_features(scores,histories):
     return arr
 
 
-def collect_ablations(adapter,samples,split,batch_size=256,include_features=True,availability_aware=False):
+def collect_ablations(adapter,samples,split,batch_size=256,include_features=True,availability_aware=False,allow_oov=False):
     """No optimizer. All alpha=1 versus alpha_m=0 at BOTH early-fusion sides.
 
     Features are obtained from ungated reference predictions, never from target
     ranks, losses, labels or a gated encoder. Each reference's utility labels can
     subsequently be paired with the SAME seed42 feature table.
     """
-    if any(s.target<=0 for s in samples):raise ValueError('S2 requires in-catalog targets')
+    # S2 labels require known targets. Validation/test can retain OOV misses in
+    # ranking denominators; their CE fields are missing, never target -1.
+    if any(s.target<0 or s.target>adapter.model.num_items or (s.target==0 and not allow_oov) for s in samples):
+        raise ValueError('S2 requires in-catalog targets; pass allow_oov=True only for evaluation/features')
     adapter.model.eval();ev=IndependentEvaluator(adapter.model.num_items,mask_policy='input_history_strict')
     ids=context_ids(samples);rows=[];features=[];offset=0
     history_feats=history_statistics(samples,split,adapter.attrs,adapter.masks) if include_features else None
@@ -69,7 +72,12 @@ def collect_ablations(adapter,samples,split,batch_size=256,include_features=True
             available=adapter.availability(b['item_seqs']) if availability_aware else torch.ones(n,3,device=adapter.device)
             full_weights=adapter.weights(n)*available
             full=adapter.predict(b['item_seqs'],full_weights)
-            ce_full=torch.nn.functional.cross_entropy(full,targets-1,reduction='none').cpu().numpy()
+            valid=targets>0
+            def ce_values(scores):
+                losses=torch.full((n,),float('nan'),device=adapter.device)
+                if valid.any():losses[valid]=torch.nn.functional.cross_entropy(scores[valid],targets[valid]-1,reduction='none')
+                return losses.cpu().numpy()
+            ce_full=ce_values(full)
             full_rank=ev.evaluate_ranks(full,targets.cpu().tolist(),b['user_indices'],histories=b['item_seqs'].tolist())
             h=adapter.context(b['item_seqs'],full_weights).cpu().numpy() if include_features else None
             base_features=history_feats.iloc[offset:offset+n].to_dict('records') if include_features else None
@@ -82,7 +90,7 @@ def collect_ablations(adapter,samples,split,batch_size=256,include_features=True
                 enabled=tuple(s for s in adapter.spec.sources if s!=source)
                 # Recompute the complete forward pass, not scores_full-residual.
                 without=adapter.predict(b['item_seqs'],adapter.weights(n,enabled)*available)
-                ce_without=torch.nn.functional.cross_entropy(without,targets-1,reduction='none').cpu().numpy()
+                ce_without=ce_values(without)
                 ranks=ev.evaluate_ranks(without,targets.cpu().tolist(),b['user_indices'],histories=b['item_seqs'].tolist())
                 if include_features:
                     masked=_masked_for_features(without,b['item_seqs'].tolist())

@@ -31,7 +31,7 @@ from ..evaluation.e0_e1_protocol import make_utility_labels
 from ..experiments.logger import ExperimentLogger
 from .checkpoint2_protocol import (SEEDS,SOURCE_ORDER,SUBSETS,sha,digest,write_json,git_state,
     check_training_environment,context_signature,split_meta_users,read_ranks,group_contexts,
-    grouped_subset_analysis,paired_seed_ci,choose_utility_label)
+    grouped_subset_analysis,paired_seed_ci,choose_utility_label,validate_catalog_mapping)
 
 DATASETS={'beauty':'Beauty','sports':'Sports_and_Outdoors','toys':'Toys_and_Games'}
 
@@ -83,6 +83,9 @@ class Checkpoint2:
         meta=self.repo/self.config['metadata_root']/key
         attrs,masks=load_catalog(meta)
         manifest=json.loads((meta/'manifest.json').read_text(encoding='utf-8'))
+        required={'metadata.csv','item_map.csv','availability_mask.csv','title_embeddings.npy'}
+        if not required.issubset(manifest.get('artifact_sha256',{})):
+            raise ValueError(f'{key}: metadata manifest lacks required artifact checksums')
         metadata_hashes={}
         for rel,expected in manifest.get('artifact_sha256',{}).items():
             p=(meta/rel).resolve()
@@ -91,18 +94,31 @@ class Checkpoint2:
             metadata_hashes[rel]=expected
         raw_hash=sha(ing.reviews_path)
         if manifest.get('reviews_sha256')!=raw_hash:raise ValueError('Raw reviews differ from metadata provenance')
-        mapping=pd.read_csv(meta/'item_map.csv',keep_default_na=False)
-        # Prepared metadata must retain exactly the split's raw-ID catalog.
-        raw_col='raw_item_id' if 'raw_item_id' in mapping else 'asin'
-        if raw_col not in mapping or mapping[raw_col].astype(str).tolist()!=[split.idx2item[i] for i in range(1,split.num_items+1)]:
-            raise ValueError(f'{key}: catalog IDs do not match prepared metadata')
-        d=dict(split=split,attrs=attrs,masks=masks,metadata_dir=meta)
+        catalog=pd.read_csv(meta/'metadata.csv',keep_default_na=False,dtype={'raw_item_id':str})
+        mapping=pd.read_csv(meta/'item_map.csv',keep_default_na=False,dtype={'raw_item_id':str})
+        counts=validate_catalog_mapping(catalog,mapping,split)
+        if set(mapping.raw_item_id)!={item for seq in sequences for item in seq.items}:
+            raise ValueError(f'{key}: item_map.csv does not match the raw review cohort')
+        for field,count in [('num_catalog_items',counts['catalog_items']),('num_total_cohort_items',counts['cohort_items']),('num_oov_items',counts['oov_items'])]:
+            if manifest.get(field)!=count:raise ValueError(f'{key}: manifest {field} disagrees with catalog mapping')
+        for source in SOURCE_ORDER:
+            if len(attrs[source])!=split.num_items or len(masks[source])!=split.num_items:
+                raise ValueError(f'{key}: {source} tensor/catalog row count mismatch')
+        d=dict(split=split,attrs=attrs,masks=masks,metadata_dir=meta,catalog_counts=counts)
         d['signature']=dict(raw_reviews_sha256=raw_hash,metadata_manifest_sha256=sha(meta/'manifest.json'),metadata_files=metadata_hashes,
             catalog_sha256=digest(split.idx2item),train_base_sha256=context_signature(split.train_base_samples),
             train_meta_sha256=context_signature(split.train_meta_samples),val_sha256=context_signature(split.val_samples),
             test_sha256=context_signature(split.test_samples),train_meta_eligible=len(split.train_meta_samples),
             train_meta_oov=split.oov_counts['train_meta'],train_meta_total=len(split.train_meta_samples)+split.oov_counts['train_meta'])
         self.data[key]=d;return d
+
+    def check_data(self,key):
+        """Read-only preflight: no model, optimizer, GPU guard, or output writes."""
+        d=self.dataset(key);s=d['split']
+        return dict(dataset=key,status='PASS',**d['catalog_counts'],users=s.num_users,
+            train_base_contexts=len(s.train_base_samples),train_meta_contexts=len(s.train_meta_samples),
+            validation_contexts=len(s.val_samples),test_contexts=len(s.test_samples),
+            oov_targets=s.oov_counts,training_executed=False,model_inference_executed=False)
 
     def source_signature(self):
         return {p.relative_to(self.repo).as_posix():sha(p) for root in ['src','scripts','configs']
@@ -194,7 +210,9 @@ class Checkpoint2:
             attempt.mkdir()
             attrs,masks=self.catalog(key,control)
             id_model=copy.deepcopy(self.load_job(key,id_job).model) if id_job else None
-            model=build_model(spec,split.num_items,attrs,id_model)
+            # Random controls change values, never embedding vocabulary/shape.
+            # load_job reconstructs from the same canonical catalog dimensions.
+            model=build_model(spec,split.num_items,d['attrs'],id_model)
             adapter=ModelAdapter(model,spec,attrs,masks,self.device)
             logger=ExperimentLogger(str(attempt.parent),str(attempt.parent/'unused_registry.csv'))
             with logger.capture_output(attempt):
@@ -235,17 +253,19 @@ class Checkpoint2:
             self.ablate_subsets(key,f'early_sd_{seed}')
 
     def ablate_subsets(self,key,name,availability_aware=False):
-        self.guard(inference=True);split=self.dataset(key)['split'];adapter=self.load_job(key,name)
+        self.guard(inference=True);split=self.dataset(key)['split'];adapter=None
+        model_sha256=self.model_hash(key,name)
         target=self.output/key/('gate_ablations' if availability_aware else 'ablations')/name;target.mkdir(parents=True,exist_ok=True)
         for sources,part in itertools.product(SUBSETS,['val','test']):
             path=target/f'{subset_name(sources)}_{part}.csv'
             marker=path.with_suffix('.json')
-            signature=dict(model_sha256=sha(self.job_path(key,name)/self.completed(key,name)['checkpoint']),
+            signature=dict(model_sha256=model_sha256,
                 context_sha256=context_signature(split.val_samples if part=='val' else split.test_samples),sources=list(sources),availability_aware=availability_aware)
             if path.exists() and marker.exists():
                 rec=json.loads(marker.read_text(encoding='utf-8'))
                 if rec['signature']!=signature or rec['sha256']!=sha(path):raise ValueError('Ablation cache mismatch')
                 continue
+            if adapter is None:adapter=self.load_job(key,name)
             result=evaluate(adapter,split.val_samples if part=='val' else split.test_samples,
                 self.config['batch_size'],enabled=sources,availability_aware=availability_aware)
             rank_frame(result).to_csv(path,index=False,lineterminator='\n')
@@ -343,17 +363,22 @@ class Checkpoint2:
             if rec['signature']!=signature:raise ValueError('Alignment model/cohort changed')
             if any(not (root/n).is_file() or sha(root/n)!=h for n,h in rec['files'].items()):raise ValueError('Alignment cache changed')
             return json.loads((root/'alignment.json').read_text(encoding='utf-8'))['label_choice']
-        records=[];fixed_features=None
+        records=[];val_records=[];fixed_features=None
         for name in model_names:
             adapter=self.load_job(key,name)
             frame,features=collect_ablations(adapter,d['split'].train_meta_samples,d['split'],self.config['batch_size'],include_features=fixed_features is None,availability_aware=availability_aware)
             if fixed_features is None:fixed_features=features
             frame=frame.merge(fixed_features,on=['context_id','user_idx'],validate='many_to_one')
             records.append(frame)
+            val,_=collect_ablations(adapter,d['split'].val_samples,d['split'],self.config['batch_size'],
+                include_features=False,availability_aware=availability_aware,allow_oov=True)
+            val_records.append(val)
+            del adapter
         utility=pd.concat(records,ignore_index=True)
         ce=utility.groupby('source_name').delta_ce.mean().to_dict();rank=utility.groupby('source_name').delta_rank.mean().to_dict()
-        adapter=self.load_job(key,model_names[0]);val,_=collect_ablations(adapter,
-            [s for s in d['split'].val_samples if s.target>0],d['split'],self.config['batch_size'],include_features=False,availability_aware=availability_aware)
+        # Compare train-meta and validation over the SAME reference systems.
+        # OOV targets contribute zero NDCG difference and stay in denominators.
+        val=pd.concat(val_records,ignore_index=True)
         val['ndcg_difference']=val.ndcg_full-val.ndcg_without
         ndcg=val.groupby('source_name').ndcg_difference.mean().to_dict()
         choice=choose_utility_label(ce,rank,ndcg)
@@ -362,7 +387,8 @@ class Checkpoint2:
         fixed_features.to_csv(root/'features_train_meta.csv',index=False,lineterminator='\n')
         write_json(root/'alignment.json',dict(mean_delta_ce=ce,mean_delta_rank=rank,
             validation_ndcg_full_minus_without=ndcg,label_choice=choice,rule_locked_before_computation=True,
-            references=model_names,feature_reference=model_names[0],test_used=False,availability_aware=availability_aware))
+            references=model_names,feature_reference=model_names[0],test_used=False,availability_aware=availability_aware,
+            validation_total_contexts=len(d['split'].val_samples),validation_oov_contexts=sum(s.target==0 for s in d['split'].val_samples)))
         write_json(cache,dict(signature=signature,files={p.name:sha(p) for p in root.iterdir()
             if p.name in ['utility_both_labels.csv','validation_same_model.csv','features_train_meta.csv','alignment.json']}))
         return choice
@@ -387,7 +413,7 @@ class Checkpoint2:
         return ['K4','late_joint_43']
 
     def s2_e1(self,key):
-        jobs=self.reference_jobs(key);label=self.alignment(key,jobs,'selected_s2',availability_aware=True)
+        jobs=self.reference_jobs(key);label=self.alignment(key,jobs,'selected_s2')
         if label not in ['CE','LOG_RANK']:return
         root=self.output/key/'selected_s2';frame=pd.read_csv(root/'utility_both_labels.csv')
         groups,summary=group_contexts(self.dataset(key)['split'])
@@ -411,7 +437,6 @@ class Checkpoint2:
             if (root/'e0_e1.json').exists():raise ValueError('Unverified E0/E1 output exists without cache provenance')
             subprocess.run(command,cwd=self.repo,check=True)
             write_json(marker,dict(signature=e1_signature,sha256=sha(root/'e0_e1.json')))
-        self.ablate_subsets(key,jobs[0])
         self.nested_baselines(key,jobs[0])
 
     def s3(self,key):
@@ -437,22 +462,14 @@ class Checkpoint2:
         for part,samples in [('val',split.val_samples),('test',split.test_samples)]:
             path=root/f'features_{part}.csv';marker=path.with_suffix('.cache.json')
             signature=dict(model=self.model_hash(key,jobs[0]),contexts=context_signature(samples),
-                data=d['signature'],rules=rules,availability_aware=True,config=self.protocol_hash)
+                data=d['signature'],rules=rules,availability_aware=False,config=self.protocol_hash)
             if marker.exists():
                 cached=json.loads(marker.read_text(encoding='utf-8'))
                 if cached['signature']!=signature or not path.is_file() or sha(path)!=cached['sha256']:
                     raise ValueError('Gate feature cache changed: '+part)
                 feature_parts[part]=pd.read_csv(path);continue
-            valid=[s for s in samples if s.target>0]
-            _,f=collect_ablations(adapter,valid,split,self.config['batch_size'],include_features=True,availability_aware=True)
-            # OOV targets remain in evaluation denominators. Features must not
-            # depend on the target: use an in-catalog placeholder only to obtain
-            # the exact same history-only feature calculations for those rows.
-            if len(valid)!=len(samples):
-                from dataclasses import replace as dc_replace
-                missing=[dc_replace(s,target=1) for s in samples if s.target==0]
-                _,extra=collect_ablations(adapter,missing,split,self.config['batch_size'],include_features=True,availability_aware=True)
-                f=pd.concat([f,extra],ignore_index=True)
+            _,f=collect_ablations(adapter,samples,split,self.config['batch_size'],include_features=True,
+                allow_oov=True)
             feature_parts[part]=attach_groups(f)
             feature_parts[part].to_csv(path,index=False,lineterminator='\n')
             write_json(marker,dict(signature=signature,sha256=sha(path)))
@@ -508,7 +525,7 @@ class Checkpoint2:
             return read_ranks(target/rec['attempt']/'per_user_test.csv')
         uasf=gate_ranks('contextual')
         subsets=pd.read_csv(root/'nested_subset_per_user.csv').set_index('user_idx')
-        full=read_ranks(self.output/key/'gate_ablations'/name/'CBT_test.csv')
+        full=read_ranks(self.output/key/'ablations'/name/'CBT_test.csv')
         global_subset=full.copy();group_subset=full.copy()
         global_subset['ndcg@10']=global_subset.user_idx.map(subsets.ndcg_global)
         group_subset['ndcg@10']=group_subset.user_idx.map(subsets.ndcg_group)
@@ -533,7 +550,7 @@ class Checkpoint2:
     def nested_baselines(self,key,name):
         """All fixed / global subset / group subset are on the SAME frozen S1."""
         from .checkpoint2_protocol import aligned_rank_matrix
-        self.ablate_subsets(key,name,availability_aware=True);root=self.output/key/'gate_ablations'/name
+        self.ablate_subsets(key,name);root=self.output/key/'ablations'/name
         val={subset_name(s):read_ranks(root/f'{subset_name(s)}_val.csv') for s in SUBSETS}
         test={subset_name(s):read_ranks(root/f'{subset_name(s)}_test.csv') for s in SUBSETS}
         summary,peruser=grouped_subset_analysis(val,test,pd.read_csv(self.output/key/'groups.csv'))
@@ -585,7 +602,8 @@ class Checkpoint2:
             state['source_dropout'][label]=rows
         p=self.output/key/'backbone_decision.json'
         if p.exists():state['proposal']=json.loads(p.read_text(encoding='utf-8'))
-        state['complete']=all(len(v)==3 for v in state['early'].values()) and len(state['controls'])==6 and len(state['diagnostics'])==4 and all(len(state['groups'].get(k,[]))==3 for k in ['early','late_legacy']) and state['utility'].get('label_choice') not in [None,'PENDING'] and all(len(v)==3 for v in state['source_dropout'].values()) and isinstance(state['proposal'],dict)
+        late_group='late_legacy' if 'late_legacy' in state['groups'] else 'late'
+        state['complete']=all(len(v)==3 for v in state['early'].values()) and len(state['controls'])==6 and len(state['diagnostics'])==4 and all(len(state['groups'].get(k,[]))==3 for k in ['early',late_group]) and state['utility'].get('label_choice') not in [None,'PENDING'] and all(len(v)==3 for v in state['source_dropout'].values()) and isinstance(state['proposal'],dict)
         return state
 
     def archive(self,destination):
