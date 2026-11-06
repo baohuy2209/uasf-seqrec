@@ -7,7 +7,7 @@ __pycache__/
 .pytest_cache/
 
 # Datasets and generated experiment outputs
-data/
+/data/
 .tmp/
 
 # Large arrays and model scores (>100MB)
@@ -29,3 +29,6 @@ skills-lock.json
 !docs/
 docs/*
 !docs/decision_log.md
+
+# Isolated late reruns; generated files must not dirty execution guards.
+/runs/checkpoint2_late_*/
