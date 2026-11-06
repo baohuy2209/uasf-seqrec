@@ -1,0 +1,119 @@
+{
+  "dataset": "beauty",
+  "num_users": 22363,
+  "catalog_partition": {
+    "num_catalog_items": 11998,
+    "num_head_items": 2400,
+    "num_tail_items": 9598,
+    "head_item_ratio": 0.2,
+    "total_train_base_events": 131413,
+    "head_events_count": 80829,
+    "head_events_pct": 61.51,
+    "tail_events_count": 50584,
+    "tail_events_pct": 38.49
+  },
+  "validation_grouping": {
+    "num_groups": 10,
+    "quintile_cutoffs": {
+      "Q1": {
+        "num_users": 4473,
+        "median_tail_ratio": 0.6667,
+        "mean_tail_ratio": 0.5032,
+        "min_len": 2,
+        "max_len": 3
+      },
+      "Q2": {
+        "num_users": 4472,
+        "median_tail_ratio": 0.5,
+        "mean_tail_ratio": 0.4546,
+        "min_len": 3,
+        "max_len": 4
+      },
+      "Q3": {
+        "num_users": 4473,
+        "median_tail_ratio": 0.5,
+        "mean_tail_ratio": 0.461,
+        "min_len": 4,
+        "max_len": 5
+      },
+      "Q4": {
+        "num_users": 4472,
+        "median_tail_ratio": 0.4286,
+        "mean_tail_ratio": 0.433,
+        "min_len": 5,
+        "max_len": 8
+      },
+      "Q5": {
+        "num_users": 4473,
+        "median_tail_ratio": 0.3846,
+        "mean_tail_ratio": 0.3645,
+        "min_len": 8,
+        "max_len": 50
+      }
+    },
+    "group_counts": {
+      "0": 3738,
+      "1": 735,
+      "2": 2765,
+      "3": 1707,
+      "4": 2783,
+      "5": 1690,
+      "6": 2316,
+      "7": 2156,
+      "8": 2266,
+      "9": 2207
+    }
+  },
+  "test_grouping": {
+    "num_groups": 10,
+    "quintile_cutoffs": {
+      "Q1": {
+        "num_users": 4473,
+        "median_tail_ratio": 0.5,
+        "mean_tail_ratio": 0.5146,
+        "min_len": 3,
+        "max_len": 4
+      },
+      "Q2": {
+        "num_users": 4472,
+        "median_tail_ratio": 0.5,
+        "mean_tail_ratio": 0.47,
+        "min_len": 4,
+        "max_len": 5
+      },
+      "Q3": {
+        "num_users": 4473,
+        "median_tail_ratio": 0.5,
+        "mean_tail_ratio": 0.4724,
+        "min_len": 5,
+        "max_len": 6
+      },
+      "Q4": {
+        "num_users": 4472,
+        "median_tail_ratio": 0.4444,
+        "mean_tail_ratio": 0.442,
+        "min_len": 6,
+        "max_len": 9
+      },
+      "Q5": {
+        "num_users": 4473,
+        "median_tail_ratio": 0.4,
+        "mean_tail_ratio": 0.3701,
+        "min_len": 9,
+        "max_len": 50
+      }
+    },
+    "group_counts": {
+      "0": 2814,
+      "1": 1659,
+      "2": 2734,
+      "3": 1738,
+      "4": 2650,
+      "5": 1823,
+      "6": 2337,
+      "7": 2135,
+      "8": 2375,
+      "9": 2098
+    }
+  }
+}
