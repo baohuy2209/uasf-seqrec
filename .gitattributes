@@ -1,5 +1,11 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+* text=auto eol=lf
 
 # Preserve generated artifact bytes and literal whitespace inside quoted titles.
 artifacts/metadata/** -text whitespace=-blank-at-eol
+
+# Retain the previous normalization policy for tracked historical evidence.
+# Changing these paths to -text would falsely mark existing CRLF bundles dirty.
+# New run folders are ignored; ZIP archives preserve their exact bytes.
+runs/** text=auto !eol
+reports/** text=auto !eol

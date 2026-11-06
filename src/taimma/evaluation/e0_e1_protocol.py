@@ -403,6 +403,7 @@ class SupervisorDecisionReport:
     stability_results: Dict[str, LabelStabilityResult]
     qualifying_sources: List[str] = field(default_factory=list)
     gating_regime: str = "none"
+    recommended_regime_by_source: Dict[str, str] = field(default_factory=dict)
 
 
 def evaluate_supervisor_decision(
@@ -467,12 +468,13 @@ def evaluate_supervisor_decision(
     elif len(conditional_sources) > 0:
         decision = "CONDITIONAL"
         qualifying = [src for src, _ in conditional_sources]
-        gating_regime = "group_level"
+        required_regimes = {regime for _, regime in conditional_sources}
+        gating_regime = next(iter(required_regimes)) if len(required_regimes)==1 else "mixed"
         cond_details = [f"{src} ({regime})" for src, regime in conditional_sources]
         rationale = (
             f"CONDITIONAL: Source(s) {cond_details} satisfied E0 and E1, but stability regime requires "
             f"prescribed label averaging / soft supervision (0.1 <= rho < 0.3) or group-level gating (rho < 0.1). "
-            f"Deploy UASF as group-level gating per Memo 26/10."
+            f"Use the validated per-source fallback; do not route soft supervision automatically to a group gate."
         )
     else:
         decision = "PENDING" if pending else "NO-GO"
@@ -492,4 +494,5 @@ def evaluate_supervisor_decision(
         stability_results=stability_results,
         qualifying_sources=qualifying,
         gating_regime=gating_regime,
+        recommended_regime_by_source={s:stability_results[s].stability_regime for s in qualifying},
     )

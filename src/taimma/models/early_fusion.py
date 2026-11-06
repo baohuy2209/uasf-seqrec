@@ -20,6 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .sasrec import SASRecModel
+from .source_dropout import SOURCES, validate_source_weights
 
 
 class EarlyFusionSASRec(nn.Module):
@@ -73,6 +74,8 @@ class EarlyFusionSASRec(nn.Module):
         brand_mask: Optional[torch.Tensor] = None,
         title_mask: Optional[torch.Tensor] = None,
         item_shape: Optional[Tuple[int, ...]] = None,
+        source_weights: Optional[torch.Tensor] = None,
+        source_selection: Optional[Tuple[str, ...]] = None,
     ) -> torch.Tensor:
         """
         Compute element-wise sum of active metadata source embeddings with availability masks.
@@ -97,8 +100,19 @@ class EarlyFusionSASRec(nn.Module):
                 raise ValueError("At least one attribute tensor must be provided.")
 
         contributions = torch.zeros(*item_shape, self.embedding_dim, device=device)
+        active_sources = self.sources_enabled if source_selection is None else tuple(
+            s for s in source_selection if s in self.sources_enabled)
+        if source_weights is not None:
+            validate_source_weights(source_weights, item_shape[0])
+            if len(item_shape) != 2:
+                raise ValueError("Weighted metadata contribution expects [batch, sequence]")
 
-        if "category" in self.sources_enabled and category_ids is not None:
+        def weighted(embeds, source):
+            if source_weights is None:
+                return embeds
+            return embeds * source_weights[:, SOURCES.index(source)].view(-1, 1, 1)
+
+        if "category" in active_sources and category_ids is not None:
             cat_embeds = self.category_embedding(category_ids)
             # If category_ids has an extra label dimension (multilabel: L > 1), pool across labels
             if category_ids.dim() > len(item_shape):
@@ -108,19 +122,19 @@ class EarlyFusionSASRec(nn.Module):
                 cat_embeds = sum_embeds / counts
             if category_mask is not None:
                 cat_embeds = cat_embeds * category_mask.unsqueeze(-1).float()
-            contributions = contributions + cat_embeds
+            contributions = contributions + weighted(cat_embeds, "category")
 
-        if "brand" in self.sources_enabled and brand_ids is not None:
+        if "brand" in active_sources and brand_ids is not None:
             brand_embeds = self.brand_embedding(brand_ids)
             if brand_mask is not None:
                 brand_embeds = brand_embeds * brand_mask.unsqueeze(-1).float()
-            contributions = contributions + brand_embeds
+            contributions = contributions + weighted(brand_embeds, "brand")
 
-        if "title" in self.sources_enabled and title_features is not None:
+        if "title" in active_sources and title_features is not None:
             title_embeds = self.title_projection(title_features)
             if title_mask is not None:
                 title_embeds = title_embeds * title_mask.unsqueeze(-1).float()
-            contributions = contributions + title_embeds
+            contributions = contributions + weighted(title_embeds, "title")
 
         return contributions
 
@@ -133,6 +147,7 @@ class EarlyFusionSASRec(nn.Module):
         category_mask: Optional[torch.Tensor] = None,
         brand_mask: Optional[torch.Tensor] = None,
         title_mask: Optional[torch.Tensor] = None,
+        source_weights: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Encode user history sequence with early addition of metadata contributions:
@@ -154,6 +169,7 @@ class EarlyFusionSASRec(nn.Module):
                 brand_mask=brand_mask,
                 title_mask=title_mask,
                 item_shape=(B, S),
+                source_weights=source_weights,
             )
             item_embeds = item_embeds + meta_contributions
 
@@ -196,6 +212,7 @@ class EarlyFusionSASRec(nn.Module):
         candidate_category_mask: Optional[torch.Tensor] = None,
         candidate_brand_mask: Optional[torch.Tensor] = None,
         candidate_title_mask: Optional[torch.Tensor] = None,
+        source_weights: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Score candidate items whose representations are also early-fused:
@@ -203,6 +220,24 @@ class EarlyFusionSASRec(nn.Module):
         """
         # ID embedding
         candidate_embeds = self.base_sasrec.item_embedding(candidate_item_ids)
+
+        if source_weights is not None:
+            validate_source_weights(source_weights, context_embeddings.size(0))
+            def score(embeds):
+                if candidate_item_ids.dim() == 1:
+                    return torch.matmul(context_embeddings, embeds.t())
+                return torch.bmm(embeds, context_embeddings.unsqueeze(2)).squeeze(2)
+            scores = score(candidate_embeds)
+            for source in self.sources_enabled:
+                embeds = self.compute_source_contributions(
+                    category_ids=candidate_category_ids, brand_ids=candidate_brand_ids,
+                    title_features=candidate_title_features,
+                    category_mask=candidate_category_mask, brand_mask=candidate_brand_mask,
+                    title_mask=candidate_title_mask, item_shape=candidate_item_ids.shape,
+                    source_selection=(source,),
+                )
+                scores = scores + source_weights[:, SOURCES.index(source):SOURCES.index(source)+1] * score(embeds)
+            return scores
 
         if len(self.sources_enabled) > 0:
             meta_contributions = self.compute_source_contributions(
@@ -230,6 +265,7 @@ class EarlyFusionSASRec(nn.Module):
         catalog_category_mask: Optional[torch.Tensor] = None,
         catalog_brand_mask: Optional[torch.Tensor] = None,
         catalog_title_mask: Optional[torch.Tensor] = None,
+        source_weights: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """Score all candidate catalog items (1..num_items)."""
         candidate_item_ids = torch.arange(
@@ -244,4 +280,5 @@ class EarlyFusionSASRec(nn.Module):
             candidate_category_mask=catalog_category_mask,
             candidate_brand_mask=catalog_brand_mask,
             candidate_title_mask=catalog_title_mask,
+            source_weights=source_weights,
         )

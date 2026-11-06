@@ -20,6 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .sasrec import MultiHeadAttention, SASRecModel, TransformerBlock
+from .source_dropout import SOURCES, sample_source_weights, validate_source_weights
 
 
 class SourceSequentialEncoder(nn.Module):
@@ -147,15 +148,31 @@ class ResidualLateFusionModel(nn.Module):
         source_encoders: Dict[str, SourceSequentialEncoder],
         p_drop: float = 0.2,
         sources_enabled: Tuple[str, ...] = ("category", "brand", "title"),
+        freeze_id: bool = True,
+        source_dropout_mode: str = "batch",
+        p_all_off: float = 0.0,
     ):
         super().__init__()
         self.id_model = frozen_id_model
         self.num_items = frozen_id_model.num_items
         self.p_drop = p_drop
         self.sources_enabled = tuple(s.lower() for s in sources_enabled)
+        self.freeze_id = freeze_id
+        self.source_dropout_mode = source_dropout_mode
+        self.p_all_off = p_all_off
+        if source_dropout_mode not in ("batch", "sample"):
+            raise ValueError("source_dropout_mode must be batch or sample")
+        if not 0 <= p_drop <= 1 or not 0 <= p_all_off <= 1:
+            raise ValueError("Drop probabilities must be in [0, 1]")
+        if source_dropout_mode == "batch" and p_all_off:
+            raise ValueError("Explicit all-off examples require sample source dropout")
 
-        # Freeze the ID model parameters completely
-        self.freeze_id_branch()
+        # Preserve the historical frozen reference unless joint training is explicit.
+        if self.freeze_id:
+            self.freeze_id_branch()
+        else:
+            for param in self.id_model.parameters():
+                param.requires_grad = True
 
         # Register source encoders
         self.source_encoders = nn.ModuleDict(source_encoders)
@@ -165,6 +182,12 @@ class ResidualLateFusionModel(nn.Module):
         for param in self.id_model.parameters():
             param.requires_grad = False
         self.id_model.eval()
+
+    def train(self, mode: bool = True):
+        super().train(mode)
+        if self.freeze_id:
+            self.id_model.eval()
+        return self
 
     def set_sources_enabled(self, sources: Tuple[str, ...]):
         """Select active subset among the 8 possible source combinations."""
@@ -180,18 +203,31 @@ class ResidualLateFusionModel(nn.Module):
         catalog_source_attrs: Dict[str, torch.Tensor],
         catalog_availability_masks: Dict[str, torch.Tensor],
         apply_dropout: bool = True,
+        source_weights: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
         """
-        Compute frozen ID scores, individual residual source scores, and combined joint scores.
+        Compute ID scores, individual residual source scores, and joint scores.
 
         Returns:
             scores_joint: (B, num_items)
-            scores_id: (B, num_items) (detached / no grad)
+            scores_id: (B, num_items), detached only when freeze_id=True
             scores_per_source: Dict[source_name -> (B, num_items)]
         """
-        # 1. Compute frozen ID scores (with torch.no_grad)
-        with torch.no_grad():
-            scores_id = self.id_model.predict_all(item_id_seqs)  # (B, num_items)
+        # 1. Joint K4 must retain ID gradients as well as trainable parameters.
+        if self.freeze_id:
+            with torch.no_grad():
+                scores_id = self.id_model.predict_all(item_id_seqs)
+        else:
+            scores_id = self.id_model.predict_all(item_id_seqs)
+
+        if source_weights is not None:
+            validate_source_weights(source_weights, item_id_seqs.size(0))
+        elif self.source_dropout_mode == "sample":
+            source_weights = sample_source_weights(
+                item_id_seqs.size(0), self.sources_enabled, scores_id.device,
+                self.p_drop, self.p_all_off, self.training and apply_dropout,
+                scores_id.dtype,
+            )
 
         scores_per_source: Dict[str, torch.Tensor] = {}
         residual_sum = torch.zeros_like(scores_id)
@@ -208,7 +244,9 @@ class ResidualLateFusionModel(nn.Module):
                 scores_per_source[src_name] = s_m
 
                 # Source dropout indicator d_m
-                if self.training and apply_dropout and self.p_drop > 0.0:
+                if source_weights is not None:
+                    d_m = source_weights[:, SOURCES.index(src_name)].unsqueeze(1)
+                elif self.training and apply_dropout and self.p_drop > 0.0:
                     d_m = float(torch.rand(1).item() > self.p_drop)
                 else:
                     d_m = 1.0
@@ -226,6 +264,7 @@ class ResidualLateFusionModel(nn.Module):
         source_seqs: Dict[str, torch.Tensor],
         catalog_source_attrs: Dict[str, torch.Tensor],
         catalog_availability_masks: Dict[str, torch.Tensor],
+        source_weights: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """Predict full-catalog ranking scores during evaluation."""
         scores_joint, _, _ = self.compute_all_scores(
@@ -234,6 +273,7 @@ class ResidualLateFusionModel(nn.Module):
             catalog_source_attrs=catalog_source_attrs,
             catalog_availability_masks=catalog_availability_masks,
             apply_dropout=False,
+            source_weights=source_weights,
         )
         return scores_joint
 

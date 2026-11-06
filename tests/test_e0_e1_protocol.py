@@ -121,7 +121,8 @@ def test_supervisor_decision_logic():
     averaged_e1 = {"category": replace(e1_good["category"], evaluated_regime="averaged")}
     report_cond = evaluate_supervisor_decision(stab_fallback, e0_good, averaged_e1)
     assert report_cond.decision == "CONDITIONAL"
-    assert report_cond.gating_regime == "group_level"
+    assert report_cond.gating_regime == "soft_supervision"
+    assert report_cond.recommended_regime_by_source == {"category": "soft_supervision"}
 
     # Case 5: Mismatched sources (category passes E0, brand passes E1) -> NO-GO (independent passes cannot cross-combine)
     e0_cat_only = {"category": e0_good["category"], "brand": e0_bad["category"]}

@@ -1,5 +1,11 @@
 # UASF Sequential Recommendation
 
+The 03 November supervisor-feedback pipeline is documented in [CHECKPOINT2.md](CHECKPOINT2.md).
+`python scripts/run_checkpoint2.py` prints a nonexecuting plan. Training/inference
+require explicit flags, a clean working tree, and the recorded RTX4060 environment.
+Historical Checkpoint 1 results are preserved; no new experimental results are
+claimed by the implementation alone.
+
 Standalone TAIMMA research code for sequential recommendation with Category, Brand, and Title information. The Python package is `taimma`; the repository is `uasf-seqrec`.
 
 The repository includes the Beauty pilot, a resumable **Checkpoint 1** pipeline, three-dataset metadata preparation, residual late fusion, early fusion, and E0/E1 evaluation. The completed result bundle `runs/checkpoint1_version1` records the 3 November 2026 Beauty experiments. **UASF S3 training, group-gate evaluation, full early-fusion diagnostics, and training-time controls are not completed in that bundle.**

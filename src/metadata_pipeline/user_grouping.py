@@ -11,10 +11,12 @@ Strict Methodology (Supervisor Memo 03/11/2026, Section 4.1):
    - Test context: history strictly before test target (positions 0 .. n-2).
    - history_len = unpadded length of user interaction history.
    - tail_ratio = (number of items in history belonging to Tail) / history_len.
-3. 10 Balanced Groups (5 length quantiles x 2 tail bins):
+3. 10 Context Groups (5 length quantiles x 2 tail bins):
    - Length quintiles Q1..Q5.
    - Tail binary split (Median split: low_tail vs high_tail).
    - group_id in 0..9.
+   - Fit boundaries on validation histories once and reuse on test.
+   - Equal context features share a group; ties may yield empty groups.
 """
 
 import argparse
@@ -51,7 +53,7 @@ def compute_head_tail_partition(train_base_events: List[int], num_catalog_items:
             freqs[itm_id - 1] = cnt
 
     # Sort descending by frequency
-    sorted_item_indices = np.argsort(-freqs)  # 0-based indices
+    sorted_item_indices = np.lexsort((np.arange(num_catalog_items), -freqs))
     num_head = int(round(num_catalog_items * 0.20))
     head_indices = set(sorted_item_indices[:num_head] + 1)  # 1-based item IDs
 
@@ -76,57 +78,53 @@ def compute_head_tail_partition(train_base_events: List[int], num_catalog_items:
     return is_tail, stats
 
 
+def fit_group_rules(lengths: np.ndarray, tail_ratios: np.ndarray) -> Dict[str, Any]:
+    """Fit numeric context-only boundaries ONCE, never using targets or test data.
+
+    Equal histories always have equal groups. Tied lengths may produce empty
+    groups; do not break ties using user order to manufacture balanced groups.
+    """
+    lengths=np.asarray(lengths,dtype=float);tail_ratios=np.asarray(tail_ratios,dtype=float)
+    require(lengths.ndim==1 and len(lengths)>0 and lengths.shape==tail_ratios.shape,
+            'Grouping requires nonempty aligned context features')
+    require(np.isfinite(lengths).all() and np.isfinite(tail_ratios).all(), 'Nonfinite group features')
+    require(np.all(lengths>=0) and np.all((tail_ratios>=0)&(tail_ratios<=1)), 'Invalid history features')
+    boundaries=np.quantile(lengths,[.2,.4,.6,.8]).tolist()
+    q=np.searchsorted(boundaries,lengths,side='left')+1
+    global_median=float(np.median(tail_ratios))
+    medians={str(k):float(np.median(tail_ratios[q==k])) if np.any(q==k) else global_median
+             for k in range(1,6)}
+    return dict(schema_version=2,length_boundaries=boundaries,tail_medians=medians,
+                fit_partition='validation_contexts',tie_policy='identical_features_same_group',num_groups=10)
+
+
+def apply_group_rules(lengths, tail_ratios, rules):
+    lengths=np.asarray(lengths,dtype=float);ratios=np.asarray(tail_ratios,dtype=float)
+    require(lengths.ndim==1 and lengths.shape==ratios.shape and np.isfinite(lengths).all()
+            and np.isfinite(ratios).all(), 'Grouping features must be finite and aligned')
+    require(np.all(lengths>=0) and np.all((ratios>=0)&(ratios<=1)), 'Invalid context features')
+    q=np.searchsorted(rules['length_boundaries'],lengths,side='left')+1
+    tb=np.asarray([float(r)>rules['tail_medians'][str(int(k))] for k,r in zip(q,ratios)],dtype=np.int64)
+    gids=(q-1)*2+tb
+    return q.astype(np.int64),tb,gids.astype(np.int64)
+
+
 def assign_quantile_and_median_bins(
     lengths: np.ndarray,
     tail_ratios: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Dict[str, Any]]:
-    """
-    Computes:
-    - length_quantile: 1..5 (quintiles)
-    - tail_bin: 0 (low_tail), 1 (high_tail) using median split
-    - group_id: 0..9 (length_quantile - 1) * 2 + tail_bin
-    """
-    n_users = len(lengths)
-
-    # 1. Length Quantiles (1..5)
-    # Using rank-based quintiles to handle duplicate ties gracefully
-    length_ranks = pd.Series(lengths).rank(method="first")
-    length_quintiles = pd.qcut(length_ranks, q=5, labels=[1, 2, 3, 4, 5]).to_numpy(dtype=np.int64)
-
-    # 2. Tail Ratio Median Split (0: low_tail, 1: high_tail)
-    # Perform median split conditionally within each length quintile for optimal balance
-    tail_bins = np.zeros(n_users, dtype=np.int64)
-    cutoffs = {}
-
-    for q in range(1, 6):
-        mask = (length_quintiles == q)
-        q_ratios = tail_ratios[mask]
-        median_val = float(np.median(q_ratios))
-        cutoffs[f"Q{q}"] = {
-            "num_users": int(mask.sum()),
-            "median_tail_ratio": round(median_val, 4),
-            "mean_tail_ratio": round(float(np.mean(q_ratios)), 4),
-            "min_len": int(np.min(lengths[mask])),
-            "max_len": int(np.max(lengths[mask])),
-        }
-        # Items strictly <= median are low_tail (0), > median are high_tail (1)
-        tail_bins[mask] = (q_ratios > median_val).astype(np.int64)
-
-    # 3. Overall group_id in 0..9
-    group_ids = (length_quintiles - 1) * 2 + tail_bins
-
-    binning_summary = {
-        "num_groups": 10,
-        "quintile_cutoffs": cutoffs,
-        "group_counts": {int(g): int((group_ids == g).sum()) for g in range(10)},
-    }
-    return length_quintiles, tail_bins, group_ids, binning_summary
+    """Convenience fit/apply on one reference partition; test must reuse rules."""
+    rules=fit_group_rules(lengths,tail_ratios)
+    q,tb,gids=apply_group_rules(lengths,tail_ratios,rules)
+    summary=dict(rules=rules,num_groups=10,group_counts={int(g):int((gids==g).sum()) for g in range(10)})
+    return q,tb,gids,summary
 
 
 def generate_user_groups_for_dataset(
     dataset_name: str = "beauty",
     raw_root: str = "data/raw",
     metadata_dir: str = "artifacts/metadata",
+    output_dir=None,
 ) -> Dict[str, Any]:
     print(f"\n=======================================================")
     print(f"Generating History-based User Groups for: {dataset_name}")
@@ -137,8 +135,9 @@ def generate_user_groups_for_dataset(
     require(meta_path.exists(), f"Metadata directory missing: {meta_path}")
 
     # Build sequence splits using locked project ingestor
-    ingestor = Amazon2014Ingestor(str(raw_path), dataset_key=dataset_name.capitalize())
-    sequences, _ = ingestor.build_interaction_sequences(min_interactions=5)
+    dataset_key={'beauty':'Beauty','sports':'Sports_and_Outdoors','toys':'Toys_and_Games'}[dataset_name.lower()]
+    ingestor = Amazon2014Ingestor(str(raw_path), dataset_key=dataset_key)
+    sequences, _ = ingestor.build_interaction_sequences(min_interactions=5,include_metadata=False)
     splitter = SequenceSplitter(max_seq_len=50, min_seq_len=5)
     split_data = splitter.split(sequences)
 
@@ -184,11 +183,12 @@ def generate_user_groups_for_dataset(
         test_lens[u_idx] = t_len
         test_tail_ratios[u_idx] = t_ratio
 
-    # 3. Binning for Validation Context
-    val_q, val_tb, val_gid, val_summary = assign_quantile_and_median_bins(val_lens, val_tail_ratios)
-
-    # 4. Binning for Test Context
-    test_q, test_tb, test_gid, test_summary = assign_quantile_and_median_bins(test_lens, test_tail_ratios)
+    # Fit on validation histories; use exactly the same inference rule on test.
+    rules=fit_group_rules(val_lens,val_tail_ratios)
+    val_q,val_tb,val_gid=apply_group_rules(val_lens,val_tail_ratios,rules)
+    test_q,test_tb,test_gid=apply_group_rules(test_lens,test_tail_ratios,rules)
+    val_summary=dict(rules=rules,group_counts={int(g):int((val_gid==g).sum()) for g in range(10)})
+    test_summary=dict(rules_reused_from='validation',group_counts={int(g):int((test_gid==g).sum()) for g in range(10)})
 
     # Build output table
     records = []
@@ -213,7 +213,11 @@ def generate_user_groups_for_dataset(
         })
 
     df_groups = pd.DataFrame(records)
-    out_csv = meta_path / "user_groups.csv"
+    destination=Path(output_dir) if output_dir is not None else meta_path
+    destination.mkdir(parents=True,exist_ok=True)
+    out_csv = destination / "user_groups.csv"
+    if out_csv.exists() or (destination/'user_groups_summary.json').exists():
+        raise FileExistsError('Preserve existing grouping; specify a new --output_dir')
     df_groups.to_csv(out_csv, index=False)
 
     summary_payload = {
@@ -223,7 +227,7 @@ def generate_user_groups_for_dataset(
         "validation_grouping": val_summary,
         "test_grouping": test_summary,
     }
-    out_summary = meta_path / "user_groups_summary.json"
+    out_summary = destination / "user_groups_summary.json"
     write_json(out_summary, summary_payload)
 
     print(f"User groups table written to: {out_csv}")
@@ -236,12 +240,14 @@ def main():
     parser.add_argument("--dataset", default="beauty", choices=["beauty", "sports", "toys"])
     parser.add_argument("--raw_root", default="data/raw")
     parser.add_argument("--metadata_dir", default="artifacts/metadata")
+    parser.add_argument("--output_dir", default=None)
     args = parser.parse_args()
 
     generate_user_groups_for_dataset(
         dataset_name=args.dataset,
         raw_root=args.raw_root,
         metadata_dir=args.metadata_dir,
+        output_dir=args.output_dir,
     )
 
 

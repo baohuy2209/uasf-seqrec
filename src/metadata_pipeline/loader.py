@@ -29,6 +29,8 @@ def load_catalog(dataset_dir, mask_files=None, permutation_files=None, random_fi
                  title=torch.from_numpy(np.load(directory/"title_embeddings.npy", allow_pickle=False)))
     masks = {}
     for source in SOURCES:
+        require(not (source in (permutation_files or {}) and source in (random_files or {})),
+                f"Specify either permutation or random control, not both: {source}")
         original = flags(avail[f"has_{source}"])
         require(np.array_equal(original, flags(meta[f"has_{source}"])), f"{source} mask differs from metadata")
 
@@ -53,20 +55,28 @@ def load_catalog(dataset_dir, mask_files=None, permutation_files=None, random_fi
                 rand_labels = [json.loads(value) for value in table.random_category_indices]
                 rand_cat = np.zeros((len(meta), max(1, max(map(len, rand_labels), default=0))), dtype=np.int64)
                 for i, values in enumerate(rand_labels):
+                    require(all(isinstance(v, int) and 0 < v <= int(cat.max()) for v in values),
+                            "Random category has out-of-vocabulary labels")
                     rand_cat[i, :len(values)] = values
                 require(np.all(rand_cat[~original] == 0), "Missing items must have zero category")
+                require(np.all((rand_cat[original] > 0).any(axis=1)), "Available category cannot be empty")
                 attrs["category"] = torch.from_numpy(rand_cat)
             elif source == "brand":
                 table = read_table(rand_path)
                 require(np.array_equal(table.model_item_id, meta.model_item_id), "Random brand ID alignment")
                 rand_brand = table.random_brand_idx.to_numpy(dtype=np.int64)
                 require(np.all(rand_brand[~original] == 0), "Missing items must have zero brand")
+                require(np.all((rand_brand[original] > 0) & (rand_brand[original] <= int(meta.brand_idx.max()))),
+                        "Random brand has invalid labels")
                 attrs["brand"] = torch.tensor(rand_brand)
             elif source == "title":
                 rand_vecs = np.load(rand_path, allow_pickle=False)
-                require(rand_vecs.shape == (len(meta), 384), "Random title shape mismatch")
+                require(rand_vecs.shape == tuple(attrs['title'].shape), "Random title shape mismatch")
+                require(np.issubdtype(rand_vecs.dtype, np.floating) and np.isfinite(rand_vecs).all(),
+                        "Random title must contain finite floating-point vectors")
                 require(np.all(rand_vecs[~original] == 0), "Missing items must have zero title vector")
-                attrs["title"] = torch.from_numpy(rand_vecs)
+                require(np.all(np.linalg.norm(rand_vecs[original],axis=1) > 0), "Available title cannot be zero")
+                attrs["title"] = torch.from_numpy(rand_vecs.astype(np.float32))
 
         active = original.copy()
         if source in (mask_files or {}):

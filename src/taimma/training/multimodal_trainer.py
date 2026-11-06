@@ -163,7 +163,8 @@ class ResidualLateFusionTrainer:
         self.seed = seed
 
         # Ensure ID branch is frozen
-        self.model.freeze_id_branch()
+        if self.model.freeze_id:
+            self.model.freeze_id_branch()
 
         # Optimizer strictly over trainable residual encoder parameters
         trainable_params = [p for p in self.model.parameters() if p.requires_grad]
@@ -173,7 +174,8 @@ class ResidualLateFusionTrainer:
 
     def train_epoch(self, dataloader: DataLoader) -> float:
         self.model.train()
-        self.model.id_model.eval()  # Invariant: ID backbone stays in eval mode
+        if self.model.freeze_id:
+            self.model.id_model.eval()
         total_loss = 0.0
         n_batches = 0
 

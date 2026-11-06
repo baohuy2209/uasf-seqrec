@@ -23,3 +23,12 @@ docs/
 .agents
 skills-lock.json
 *.pt
+
+# New resumable experiments; historical tracked bundles stay tracked.
+runs/checkpoint2_*/
+reports/checkpoint2_*/
+
+# Keep the scientific decision log versioned without adding other local docs.
+!docs/
+docs/*
+!docs/decision_log.md

@@ -215,6 +215,7 @@ def build_training_contrasts_for_dataset(
     dataset_name: str = "beauty",
     base_metadata_dir: str = "artifacts/metadata",
     seeds: List[int] = [42, 43, 44],
+    output_dir=None,
 ) -> Dict[str, Any]:
     dataset_dir = resolve_project_path(base_metadata_dir) / dataset_name.lower()
     meta_path = dataset_dir / "metadata.csv"
@@ -229,8 +230,12 @@ def build_training_contrasts_for_dataset(
     check_availability(avail_df)
     require(len(meta_df) == len(avail_df), "Row count mismatch between metadata and availability mask")
 
-    output_dir = dataset_dir / "training_contrasts"
+    output_dir = Path(output_dir) if output_dir is not None else dataset_dir / "training_contrasts"
     output_dir.mkdir(parents=True, exist_ok=True)
+    if (output_dir / 'manifest.json').exists():
+        raise FileExistsError('Preserve existing contrasts; use a new output directory')
+    title_shape = np.load(dataset_dir/'title_embeddings.npy', mmap_mode='r', allow_pickle=False).shape
+    require(len(title_shape)==2 and title_shape[0]==len(meta_df), 'Title/catalog alignment mismatch')
 
     print(f"\n=======================================================")
     print(f"Building Training Contrasts for: {dataset_name} ({len(meta_df)} items)")
@@ -240,7 +245,7 @@ def build_training_contrasts_for_dataset(
     shuffled_manifest = generate_shuffled_contrasts(meta_df, avail_df, seeds, output_dir)
 
     print("- Generating random attribute contrasts (Marginal + Gaussian)...")
-    random_manifest = generate_random_contrasts(meta_df, avail_df, seeds, output_dir)
+    random_manifest = generate_random_contrasts(meta_df, avail_df, seeds, output_dir, title_dim=title_shape[1])
 
     manifest_data = {
         "dataset": dataset_name,
@@ -250,10 +255,12 @@ def build_training_contrasts_for_dataset(
         "policy": {
             "shuffled": "fixed_mask_permutation_option_b",
             "random_categorical": "marginal_sampling_with_replacement",
-            "random_dense": "gaussian_unit_normalized_d384",
+            "random_dense": f"gaussian_unit_normalized_d{title_shape[1]}",
         },
         "shuffled": shuffled_manifest,
         "random": random_manifest,
+        "input_sha256": {p.name: compute_file_sha256(p) for p in
+                         [meta_path, avail_path, dataset_dir/'title_embeddings.npy']},
     }
 
     manifest_path = output_dir / "manifest.json"
@@ -269,11 +276,14 @@ def main():
     parser.add_argument("--dataset", default="beauty", choices=["beauty", "sports", "toys", "all"])
     parser.add_argument("--metadata_dir", default="artifacts/metadata")
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
+    parser.add_argument("--output_dir", default=None, help="New artifact directory; existing manifests are never overwritten")
     args = parser.parse_args()
 
     targets = ["beauty", "sports", "toys"] if args.dataset == "all" else [args.dataset]
     for ds in targets:
-        build_training_contrasts_for_dataset(ds, base_metadata_dir=args.metadata_dir, seeds=args.seeds)
+        destination = Path(args.output_dir)/ds if args.output_dir and args.dataset=='all' else args.output_dir
+        build_training_contrasts_for_dataset(ds, base_metadata_dir=args.metadata_dir, seeds=args.seeds,
+                                            output_dir=destination)
 
 
 if __name__ == "__main__":
