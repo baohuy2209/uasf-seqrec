@@ -1,0 +1,25 @@
+{
+  "status": "COMPLETED",
+  "job": "K3",
+  "val_ndcg_10": 0.054235323309463415,
+  "test_ndcg_10": 0.04237022931587305,
+  "stop_reason": "early_stopping",
+  "spec": {
+    "kind": "late",
+    "seed": 42,
+    "sources": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "embedding_dim": 64,
+    "max_seq_len": 50,
+    "dropout": 0.5,
+    "source_dropout": 0.2,
+    "all_off_probability": 0.0,
+    "source_dropout_mode": "sample",
+    "freeze_id": true,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001
+  }
+}

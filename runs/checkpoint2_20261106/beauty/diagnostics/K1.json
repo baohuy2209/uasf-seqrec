@@ -1,0 +1,17 @@
+{
+  "status": "COMPLETED",
+  "train_base": {
+    "contexts": 109050,
+    "valid_targets": 109050,
+    "mean_ce_id": 5.24946357810266,
+    "mean_ce_late": 4.880606676436605,
+    "mean_ce_late_minus_id": -0.36885690166605556
+  },
+  "train_meta": {
+    "contexts": 22363,
+    "valid_targets": 22240,
+    "mean_ce_id": 8.974683850297199,
+    "mean_ce_late": 8.790240892339536,
+    "mean_ce_late_minus_id": -0.184442957957663
+  }
+}
