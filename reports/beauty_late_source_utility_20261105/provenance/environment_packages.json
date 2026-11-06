@@ -1,0 +1,342 @@
+[
+  {
+    "name": "tabulate",
+    "version": "0.10.0",
+    "direct_url": null
+  },
+  {
+    "name": "httpx2",
+    "version": "2.16.0",
+    "direct_url": null
+  },
+  {
+    "name": "mdurl",
+    "version": "0.1.2",
+    "direct_url": null
+  },
+  {
+    "name": "triton",
+    "version": "3.7.1",
+    "direct_url": null
+  },
+  {
+    "name": "tokenizers",
+    "version": "0.23.3",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-nvshmem-cu13",
+    "version": "3.4.5",
+    "direct_url": null
+  },
+  {
+    "name": "MarkupSafe",
+    "version": "3.0.4",
+    "direct_url": null
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cusparselt-cu13",
+    "version": "0.8.1",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cuda-cupti",
+    "version": "13.0.85",
+    "direct_url": null
+  },
+  {
+    "name": "scikit-learn",
+    "version": "1.9.0",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-nccl-cu13",
+    "version": "2.29.7",
+    "direct_url": null
+  },
+  {
+    "name": "pandas",
+    "version": "3.0.5",
+    "direct_url": null
+  },
+  {
+    "name": "annotated-doc",
+    "version": "0.0.5",
+    "direct_url": null
+  },
+  {
+    "name": "python-dateutil",
+    "version": "4.0.0",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cusolver",
+    "version": "12.0.4.66",
+    "direct_url": null
+  },
+  {
+    "name": "narwhals",
+    "version": "2.28.0",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cuda-nvrtc",
+    "version": "13.0.88",
+    "direct_url": null
+  },
+  {
+    "name": "cuda-pathfinder",
+    "version": "1.8.5",
+    "direct_url": null
+  },
+  {
+    "name": "anyio",
+    "version": "4.16.0",
+    "direct_url": null
+  },
+  {
+    "name": "click",
+    "version": "8.5.0",
+    "direct_url": null
+  },
+  {
+    "name": "setuptools",
+    "version": "84.2.1",
+    "direct_url": null
+  },
+  {
+    "name": "Jinja2",
+    "version": "3.1.6",
+    "direct_url": null
+  },
+  {
+    "name": "pluggy",
+    "version": "1.7.0",
+    "direct_url": null
+  },
+  {
+    "name": "typer",
+    "version": "0.27.3",
+    "direct_url": null
+  },
+  {
+    "name": "safetensors",
+    "version": "0.8.0",
+    "direct_url": null
+  },
+  {
+    "name": "torch",
+    "version": "2.13.0",
+    "direct_url": null
+  },
+  {
+    "name": "shellingham",
+    "version": "1.5.4",
+    "direct_url": null
+  },
+  {
+    "name": "hf-xet",
+    "version": "1.8.0",
+    "direct_url": null
+  },
+  {
+    "name": "rich",
+    "version": "15.0.0",
+    "direct_url": null
+  },
+  {
+    "name": "tqdm",
+    "version": "4.70.1",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cusparse",
+    "version": "12.6.3.3",
+    "direct_url": null
+  },
+  {
+    "name": "sentence-transformers",
+    "version": "5.7.0",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cufft",
+    "version": "12.0.0.61",
+    "direct_url": null
+  },
+  {
+    "name": "huggingface_hub",
+    "version": "2.4.0",
+    "direct_url": null
+  },
+  {
+    "name": "mpmath",
+    "version": "1.3.0",
+    "direct_url": null
+  },
+  {
+    "name": "h11",
+    "version": "0.16.0",
+    "direct_url": null
+  },
+  {
+    "name": "tzdata",
+    "version": "2026.6",
+    "direct_url": null
+  },
+  {
+    "name": "cuda-toolkit",
+    "version": "13.0.3.0",
+    "direct_url": null
+  },
+  {
+    "name": "markdown-it-py",
+    "version": "4.2.0",
+    "direct_url": null
+  },
+  {
+    "name": "pytest",
+    "version": "9.2.0",
+    "direct_url": null
+  },
+  {
+    "name": "joblib",
+    "version": "1.6.0",
+    "direct_url": null
+  },
+  {
+    "name": "transformers",
+    "version": "5.22.1",
+    "direct_url": null
+  },
+  {
+    "name": "truststore",
+    "version": "0.10.5",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cuda-runtime",
+    "version": "13.0.96",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-curand",
+    "version": "10.4.0.35",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cufile",
+    "version": "1.15.1.6",
+    "direct_url": null
+  },
+  {
+    "name": "numpy",
+    "version": "2.5.1",
+    "direct_url": null
+  },
+  {
+    "name": "PyYAML",
+    "version": "6.0.3",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cudnn-cu13",
+    "version": "9.20.0.48",
+    "direct_url": null
+  },
+  {
+    "name": "iniconfig",
+    "version": "2.3.1",
+    "direct_url": null
+  },
+  {
+    "name": "fsspec",
+    "version": "2026.9.0",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-cublas",
+    "version": "13.1.1.3",
+    "direct_url": null
+  },
+  {
+    "name": "Pygments",
+    "version": "2.21.0",
+    "direct_url": null
+  },
+  {
+    "name": "idna",
+    "version": "3.20",
+    "direct_url": null
+  },
+  {
+    "name": "psutil",
+    "version": "7.2.2",
+    "direct_url": null
+  },
+  {
+    "name": "networkx",
+    "version": "3.7",
+    "direct_url": null
+  },
+  {
+    "name": "typing_extensions",
+    "version": "4.16.0",
+    "direct_url": null
+  },
+  {
+    "name": "sympy",
+    "version": "1.14.0",
+    "direct_url": null
+  },
+  {
+    "name": "threadpoolctl",
+    "version": "3.7.0",
+    "direct_url": null
+  },
+  {
+    "name": "cuda-bindings",
+    "version": "13.4.4",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-nvjitlink",
+    "version": "13.4.92",
+    "direct_url": null
+  },
+  {
+    "name": "scipy",
+    "version": "1.18.0",
+    "direct_url": null
+  },
+  {
+    "name": "httpcore2",
+    "version": "2.16.0",
+    "direct_url": null
+  },
+  {
+    "name": "filelock",
+    "version": "4.2.6",
+    "direct_url": null
+  },
+  {
+    "name": "regex",
+    "version": "2026.9.29",
+    "direct_url": null
+  },
+  {
+    "name": "cloudpickle",
+    "version": "3.1.2",
+    "direct_url": null
+  },
+  {
+    "name": "nvidia-nvtx",
+    "version": "13.0.85",
+    "direct_url": null
+  }
+]

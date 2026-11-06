@@ -1,0 +1,26 @@
+{
+  "authority": "Agent diagnostic proposal predeclared in initial_report.md; not supervisor approval",
+  "fit_cohort": "terminal Train-base histories, before Train-meta target",
+  "popularity": "all Train-base interactions including first item",
+  "head_boundary_count": 12,
+  "head_boundary_ties": "include all",
+  "length_edges": [
+    2.0,
+    3.0,
+    4.0,
+    7.0
+  ],
+  "tail_medians_by_length": [
+    0.4375,
+    0.5,
+    0.3333333333333333,
+    0.4,
+    0.36363636363636365
+  ],
+  "edge_ties": "higher group",
+  "oov": "tail",
+  "empty_validation_group": "global validation winner",
+  "seed_policy": "select separately per seed; sample SD ddof=1; repeat excluded",
+  "subset_ties": "within 1e-12; ID,C,B,T,CB,CT,BT,CBT",
+  "oracle_scope": "post-hoc ceiling only for these groups and subsets"
+}

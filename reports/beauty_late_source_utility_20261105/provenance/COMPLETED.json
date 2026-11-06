@@ -1,0 +1,10 @@
+{
+  "completed_scopes": [
+    "task1 late diagnostic",
+    "task2 same-reference label alignment",
+    "task3 psi gap audit"
+  ],
+  "task1": "PARTIAL: early grid and approved grouping absent",
+  "task2": "BLOCKED",
+  "task3": "PARTIAL; E1 fit blocked"
+}

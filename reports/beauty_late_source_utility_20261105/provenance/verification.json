@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "checks": [
+    "unique contexts and full cohorts",
+    "weighted group reconstruction",
+    "sample SD",
+    "utility algebra",
+    "rank domain/OOV miss",
+    "NDCG rederived from same-reference ranks",
+    "Dval independent aggregation",
+    "initial readiness retained verbatim"
+  ],
+  "empty_groups": {
+    "test": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "val": [
+      0,
+      1
+    ]
+  },
+  "group_minus_id": -2.094498244600146e-05,
+  "oracle_minus_id": 4.7128894203198046e-05
+}

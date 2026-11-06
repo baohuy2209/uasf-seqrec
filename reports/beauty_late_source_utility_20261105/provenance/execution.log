@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/projects/uasf-seqrec/analysis/minh_tasks.py", line 337, in <module>
+    main()
+  File "/home/ubuntu/projects/uasf-seqrec/analysis/minh_tasks.py", line 315, in main
+    assert dict(zip(itemmap.raw_item_id.astype(str), itemmap.model_item_id)) == split.item2idx
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+                  method     mean      std
+                      ID 0.047851 0.000756
+global_validation_subset 0.047851 0.000756
+       group_test_oracle 0.047898 0.000769
+ group_validation_subset 0.047830 0.000836
+Task2 frozen CBT reference 42
+  train_meta: 256/22240
+  train_meta: 5376/22240
+  train_meta: 10496/22240
+  train_meta: 15616/22240
+  train_meta: 20736/22240
+  val: 256/22363
+  val: 5376/22363
+  val: 10496/22363
+  val: 15616/22363
+  val: 20736/22363
+Task2 frozen CBT reference 43
+  train_meta: 256/22240
+  train_meta: 5376/22240
+  train_meta: 10496/22240
+  train_meta: 15616/22240
+  train_meta: 20736/22240
+  val: 256/22363
+  val: 5376/22363
+  val: 10496/22363
+  val: 15616/22363
+  val: 20736/22363
+source_name  mean_delta_ce  mean_delta_logrank      dval  sign_mean_delta_ce  sign_mean_delta_logrank  sign_dval  ce_matches  logrank_matches
+      brand      -0.019650           -0.022129 -0.000983                  -1                       -1         -1        True             True
+   category       0.029994            0.022768 -0.000236                   1                        1         -1       False            False
+      title       0.027405           -0.049555 -0.001543                   1                       -1         -1       False             True

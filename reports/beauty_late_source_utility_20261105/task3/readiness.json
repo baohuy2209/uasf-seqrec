@@ -1,0 +1,21 @@
+{
+  "status": "PARTIAL",
+  "fit_executed": false,
+  "completed_scope": "psi specification and leakage/gap audit",
+  "blockers": [
+    "approved reference architecture absent",
+    "full current psi proposal with formulas absent",
+    "Task2 no label satisfies all3 sign rule"
+  ],
+  "locked_rules": {
+    "epsilon": "median absolute paired-seed delta difference; recompute on chosen scale",
+    "rho": [
+      0.1,
+      0.3
+    ],
+    "oof": "group by user; all learned preprocessing fit only within training fold",
+    "e1": "AUC>=0.55, lower95CI>0.5 and greater than length-only",
+    "metrics": "LR, small tree from existing protocol, length baseline, user-cluster bootstrap1000, Spearman with CI"
+  },
+  "historical_e1": "four features CE only; no final UASF/full-psi inference"
+}

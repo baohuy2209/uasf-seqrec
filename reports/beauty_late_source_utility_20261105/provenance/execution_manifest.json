@@ -1,0 +1,32 @@
+{
+  "command": [
+    "analysis/minh_tasks.py",
+    "--output",
+    "reports/minh_20261105_221459",
+    "--device",
+    "cuda"
+  ],
+  "cwd": "/home/ubuntu/projects/uasf-seqrec",
+  "code_sha256": "58130198767677303eec9c6d799bf5f05bd79325c6fbd0019d27bd91a5bb96f9",
+  "head": "7bb443431771aaff98b726fccb043a888eec2163",
+  "source_lock_sha256": "9b531c09f4f94f90b7e9ef97c231b85d83ea205908fea7baaf65a6b2592d8d9c",
+  "inputs": {
+    "runs/checkpoint1_version1/utility.csv": "86cb68aa60befeca5cf089031c84581be7c0af863061af44a87b498d88e12d30",
+    "runs/checkpoint1_version1/utility.csv.manifest.json": "f7b8cfc9b5c09652663382311e12380f24ebf5ed949d9a8e299c027af18929de",
+    "runs/checkpoint1_version1/utility_cohort.csv": "e817d8eb3fc650b043956fbe7e2687d6eab265426731ecd6c7dd623de6fd3a64",
+    "runs/checkpoint1_version1/results.csv": "e0bd5d879efb1173218c5667329415ecb67b20eca2bf981b358ed310ed993e29",
+    "artifacts/metadata/beauty/manifest.json": "74d628f99d37af861528b09b55d9f1d07367262b48fb4b9aa4e52d26a4584375",
+    "reports/minh_20261105_221459/initial_report.md": "e70188af084fddbc0318048a1acc598eca05ec37013ff8639a8dd4dfe1f2f48f"
+  },
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "reference_seeds": [
+    42,
+    43
+  ],
+  "device": "cuda",
+  "catalog_mapping": "reconstructed sorted mapping matches metadata item_map; old pilot mapping excluded"
+}

@@ -1,0 +1,1632 @@
+{
+  "timestamp": "2026-11-05T22:11:30.441951+07:00",
+  "environment": {
+    "python": "3.12.16 (main, Oct 26 2026, 14:08:45) [Clang 23.1.3 ]",
+    "platform": "Linux-6.8.0-147-generic-x86_64-with-glibc2.43",
+    "torch": "2.13.0+cu130",
+    "cuda": true
+  },
+  "all_result_sets": [
+    "results/results.csv",
+    "runs/checkpoint1_version1/results.csv"
+  ],
+  "runs": [
+    {
+      "key": "id_seed42",
+      "path": "runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0",
+      "seed": 42,
+      "sources": [],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "id_seed42_repeat",
+      "path": "runs/checkpoint1_version1/runs/id_seed42_repeat_20261103_100701_777700_9ede44bc",
+      "seed": 42,
+      "sources": [],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "id_seed43",
+      "path": "runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604",
+      "seed": 43,
+      "sources": [],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 3.469446951953614e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.71445146547012e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "id_seed44",
+      "path": "runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41",
+      "seed": 44,
+      "sources": [],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.245004513516506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.938893903907228e-18,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_BT_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_BT_seed42_20261103_102719_811702_8b3b637d",
+      "seed": 42,
+      "sources": [
+        "brand",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "brand",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 2.0816681711721685e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.245004513516506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_BT_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_BT_seed43_20261103_105807_886940_910ff977",
+      "seed": 43,
+      "sources": [
+        "brand",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "brand",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 2.0816681711721685e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.020562075079397e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_BT_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_BT_seed44_20261103_112332_938007_06f29f37",
+      "seed": 44,
+      "sources": [
+        "brand",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "brand",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.85722573273506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.71445146547012e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_B_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_B_seed42_20261103_101614_525365_3a0b521d",
+      "seed": 42,
+      "sources": [
+        "brand"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "brand"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.85722573273506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 1.3877787807814457e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_B_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_B_seed43_20261103_104548_781372_7604bb54",
+      "seed": 43,
+      "sources": [
+        "brand"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "brand"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.245004513516506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.938893903907228e-18,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_B_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_B_seed44_20261103_111318_673238_6c6b5342",
+      "seed": 44,
+      "sources": [
+        "brand"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "brand"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.245004513516506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 0.0,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CBT_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_CBT_seed42_20261103_100913_534332_bc639a46",
+      "seed": 42,
+      "sources": [
+        "category",
+        "brand",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "brand",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.245004513516506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.85722573273506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CBT_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_CBT_seed43_20261103_103553_785196_2f3e3b1a",
+      "seed": 43,
+      "sources": [
+        "category",
+        "brand",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "brand",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 8.326672684688674e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.85722573273506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CBT_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_CBT_seed44_20261103_110627_070812_9a5c92e1",
+      "seed": 44,
+      "sources": [
+        "category",
+        "brand",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "brand",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.020562075079397e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 2.0816681711721685e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CB_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_CB_seed42_20261103_101955_205350_fe67e605",
+      "seed": 42,
+      "sources": [
+        "category",
+        "brand"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "brand"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.020562075079397e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 5.551115123125783e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CB_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_CB_seed43_20261103_105000_488663_cb4e6674",
+      "seed": 43,
+      "sources": [
+        "category",
+        "brand"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "brand"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 8.326672684688674e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CB_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_CB_seed44_20261103_111720_336431_44f3a8dd",
+      "seed": 44,
+      "sources": [
+        "category",
+        "brand"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "brand"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 3.469446951953614e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CT_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_CT_seed42_20261103_102255_944742_2f0accc0",
+      "seed": 42,
+      "sources": [
+        "category",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 1.3877787807814457e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.85722573273506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CT_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_CT_seed43_20261103_105410_300442_7d921b6e",
+      "seed": 43,
+      "sources": [
+        "category",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.938893903907228e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 1.3877787807814457e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_CT_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_CT_seed44_20261103_112054_764746_204d908c",
+      "seed": 44,
+      "sources": [
+        "category",
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "category",
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.020562075079397e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.85722573273506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_C_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_C_seed42_20261103_101355_824930_d76e43d0",
+      "seed": 42,
+      "sources": [
+        "category"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "category"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 1.3877787807814457e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 9.71445146547012e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_C_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_C_seed43_20261103_104316_479179_62ba52de",
+      "seed": 43,
+      "sources": [
+        "category"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "category"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.938893903907228e-18,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 7.632783294297951e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_C_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_C_seed44_20261103_111103_012879_32f3694c",
+      "seed": 44,
+      "sources": [
+        "category"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "category"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 8.326672684688674e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_T_seed42",
+      "path": "runs/checkpoint1_version1/runs/late_T_seed42_20261103_101812_041439_3285325b",
+      "seed": 42,
+      "sources": [
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 3.469446951953614e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 0.0,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_T_seed43",
+      "path": "runs/checkpoint1_version1/runs/late_T_seed43_20261103_104807_770034_f6611669",
+      "seed": 43,
+      "sources": [
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 43,
+        "embedding_dim": 64,
+        "sources": [
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 3.469446951953614e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 6.245004513516506e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "late_T_seed44",
+      "path": "runs/checkpoint1_version1/runs/late_T_seed44_20261103_111537_171010_b90c4a62",
+      "seed": 44,
+      "sources": [
+        "title"
+      ],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "four_segment",
+        "seed": 44,
+        "embedding_dim": 64,
+        "sources": [
+          "title"
+        ],
+        "mask_policy": "input_history_strict",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 4.163336342344337e-17,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 11999,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 0.0,
+          "user_target_match": true,
+          "oov_miss_valid": true
+        }
+      }
+    },
+    {
+      "key": "loo_d64",
+      "path": "runs/checkpoint1_version1/runs/loo_d64_20261103_100125_884294_6d69bfb9",
+      "seed": 42,
+      "sources": [],
+      "config": {
+        "dataset": "Beauty",
+        "data_mode": "real",
+        "protocol": "loo",
+        "seed": 42,
+        "embedding_dim": 64,
+        "sources": [],
+        "mask_policy": "none",
+        "epochs": 100,
+        "patience": 20,
+        "batch_size": 256,
+        "learning_rate": 0.001,
+        "device": "cuda",
+        "deterministic_algorithms": true,
+        "checkpoint_selection": "trained_epochs_only",
+        "cublas_workspace_config": ":4096:8"
+      },
+      "state": "COMPLETED",
+      "git": "5fd0ce8e9ec3f2d280a724220ac9cb3d8692a94f",
+      "checks": {
+        "artifact_hash_failures": [],
+        "checkpoint_hash": true,
+        "val": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 12069,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 7.632783294297951e-17
+        },
+        "test": {
+          "rows": 22363,
+          "duplicates": 0,
+          "nulls": 0,
+          "rank_min": 1,
+          "rank_max": 12069,
+          "integer_ranks": true,
+          "ndcg_column_max_error": 5.551115123125783e-17,
+          "registry_ndcg_error": 2.7755575615628914e-17
+        }
+      }
+    }
+  ],
+  "source_mismatch": [],
+  "split": {
+    "users": 22363,
+    "catalog": 11998,
+    "train_base_samples": 109050,
+    "oov": {
+      "train_meta": 123,
+      "val": 178,
+      "test": 479
+    }
+  },
+  "raw_sha_matches_processed": true,
+  "item2idx_matches_processed": false,
+  "user2idx_matches_processed": true,
+  "utility": {
+    "rows": 133440,
+    "nulls": 0,
+    "duplicates": 0,
+    "sha_valid": true,
+    "ce_delta_max_error": 2.980232260973992e-08,
+    "cohorts": {
+      "brand:42": {
+        "n": 22240,
+        "same_users": true
+      },
+      "brand:43": {
+        "n": 22240,
+        "same_users": true
+      },
+      "category:42": {
+        "n": 22240,
+        "same_users": true
+      },
+      "category:43": {
+        "n": 22240,
+        "same_users": true
+      },
+      "title:42": {
+        "n": 22240,
+        "same_users": true
+      },
+      "title:43": {
+        "n": 22240,
+        "same_users": true
+      }
+    },
+    "manifest_metadata_valid": true,
+    "cohort_manifest_valid": true,
+    "context_ids_match_reconstruction": true
+  },
+  "reference_hashes": {
+    "42": true,
+    "43": true
+  },
+  "cache_files": [
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_test.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_validation.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_train_meta.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_test.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_validation.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_train_meta.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_test.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_validation.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    },
+    {
+      "path": "runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_train_meta.npy",
+      "bytes": 1073245224,
+      "shape": [
+        22363,
+        11998
+      ]
+    }
+  ],
+  "progress_completed": "COMPLETED"
+}

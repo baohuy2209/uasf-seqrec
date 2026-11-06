@@ -1,0 +1,4 @@
+source_name,mean_delta_ce,mean_delta_logrank,dval,sign_mean_delta_ce,sign_mean_delta_logrank,sign_dval,ce_matches,logrank_matches
+brand,-0.019649979039486884,-0.02212924586683971,-0.0009831571277912807,-1,-1,-1,True,True
+category,0.02999406594417909,0.022767693129503584,-0.00023560244926455165,1,1,-1,False,False
+title,0.02740508087754933,-0.04955503399798049,-0.0015426401356146478,1,-1,-1,False,True

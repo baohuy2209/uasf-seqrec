@@ -1,0 +1,41 @@
+{
+  "selected_label": null,
+  "status": "BLOCKED",
+  "scope": "Beauty historical late CBT reference seeds42/43; not architecture approval",
+  "seed_aggregation": "equal-weight means, predeclared",
+  "ce_tolerance": 1e-06,
+  "logrank_tolerance": 1e-06,
+  "dval_tolerance": 1e-08,
+  "rank_mask": "input_history_strict",
+  "ce_mask": "unmasked full catalog as historical artifact",
+  "rule": "CE if all3 signs match; else log-rank if all3 match; else no label",
+  "per_seed_sign_disagreement": {
+    "brand": {
+      "mean_delta_ce": true,
+      "mean_delta_logrank": false,
+      "dval": false
+    },
+    "category": {
+      "mean_delta_ce": false,
+      "mean_delta_logrank": false,
+      "dval": false
+    },
+    "title": {
+      "mean_delta_ce": false,
+      "mean_delta_logrank": false,
+      "dval": false
+    }
+  },
+  "verification": [
+    {
+      "seed": 42,
+      "all_validation_ranks_exact": true,
+      "ce_replay_max_error": 4.440892098500626e-16
+    },
+    {
+      "seed": 43,
+      "all_validation_ranks_exact": true,
+      "ce_replay_max_error": 4.440892098500626e-16
+    }
+  ]
+}

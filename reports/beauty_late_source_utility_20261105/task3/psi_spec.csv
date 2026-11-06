@@ -1,0 +1,8 @@
+feature,formula_or_gap,data_source,availability,leakage_or_semantics
+log_len,"ln(max(1,known history length)), window50",observed history,implemented,"no target; actual log(L), not log1p(L)"
+coverage,mean source availability over known history items,catalog availability + observed history,implemented,OOV removed as current code; inspect intended definition
+entropy,-sum p(label)*ln p(label); multilabel counts; title uses exact dense-vector identity,observed metadata labels/features,implemented,function docstring says unique count but code Shannon entropy; title semantics need approval
+recency,mean availability in last3 known history items (all if shorter),observed history + source masks,implemented,"presence measure, not elapsed time; naming requires specification"
+history_popularity,UNDEFINED in available approved proposal,Train-base interactions available,definition missing,fit popularity on Train-base only; target/future prohibited
+sequence_state_summary,UNDEFINED pooling/layer/projection in available proposal,frozen context embeddings computable from checkpoint,definition missing,model choice and summary formula must be approved; no target representation
+branch_agreement,UNDEFINED score/rank/similarity/top-k metric in available proposal,frozen branch scores computable,definition missing,target correctness must not enter predictor; OOF transformations train-fold only
