@@ -1,0 +1,55 @@
+raw_root: data/raw
+metadata_root: artifacts/metadata
+output: runs/memo0711_v1
+datasets:
+- beauty
+- sports
+- toys
+input_roots:
+  early: /home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106
+  late: /home/ubuntu/projects/uasf-seqrec-late-20261106/runs/checkpoint2_late_20261106
+  diagnostics: /home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_20261106
+environment:
+  gpu_contains: RTX 4060
+  python: 3.12.16
+  torch: 2.13.0+cu130
+  numpy: 2.5.1
+  scipy: 1.18.0
+  scikit-learn: 1.9.0
+  pandas: 3.0.5
+epochs: 100
+patience: 20
+batch_size: 256
+bootstrap_reps: 1000
+missing_rates:
+- 0.0
+- 0.2
+- 0.4
+- 0.6
+- 0.8
+main_seeds:
+  beauty:
+  - 42
+  - 43
+  - 44
+  - 45
+  - 46
+  sports:
+  - 42
+  - 43
+  - 44
+  toys:
+  - 42
+  - 43
+  - 44
+allow_reduced_transfer_seeds: false
+test_release_not_before: '2026-11-13'
+soft_label_temperature: 0.2
+gate_tau: 1.0
+gate_kappa: 0.1
+lambda_util: 0.5
+lambda_sparse: 0.001
+supervisor_memo: '2026-11-07'
+fallback_policy: independent_ID_Train-base_same_seed
+random_controls: retain_marginal_existing_no_refit
+k4_policy: STOP

@@ -16,6 +16,7 @@ def main():
     p.add_argument('--publish-dir',help='Copy lightweight summaries here only after all computations finish')
     p.add_argument('--freeze-tag',help='Existing reviewed Git tag at the clean commit to freeze')
     a=p.parse_args()
+    if a.stage=='all':p.error('The all stage is superseded by supervisor memo 07/11; inspect scripts/run_memo0711.py --stage plan')
     if a.stage=='plan':
         print(json.dumps(dict(execution='DISABLED',phases=['adopt verified original checkpoints','uniform/Gaussian-covariance controls',
             'B on three cohorts','early-SD diagnostic utility and both E1 targets','validation-only backbone selection',
