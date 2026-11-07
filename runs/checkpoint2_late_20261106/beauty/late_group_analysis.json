@@ -1,0 +1,71 @@
+[
+  {
+    "mechanism": "late",
+    "seed": 42,
+    "global_subset": "ID",
+    "global_test": 0.047099229151285144,
+    "id_test": 0.047099229151285144,
+    "group_val_selected_test": 0.04679682958643104,
+    "group_test_oracle": 0.04711515756818394,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "C",
+      "4": "ID",
+      "5": "ID",
+      "6": "CT",
+      "7": "C",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late",
+    "seed": 43,
+    "global_subset": "ID",
+    "global_test": 0.047841792096443896,
+    "id_test": 0.047841792096443896,
+    "group_val_selected_test": 0.04756156699101624,
+    "group_test_oracle": 0.04844865302015948,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "ID",
+      "6": "BT",
+      "7": "ID",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late",
+    "seed": 44,
+    "global_subset": "ID",
+    "global_test": 0.048611074943372204,
+    "id_test": 0.048611074943372204,
+    "group_val_selected_test": 0.04853078232081592,
+    "group_test_oracle": 0.0488048717186994,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "ID",
+      "6": "CBT",
+      "7": "ID",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  }
+]

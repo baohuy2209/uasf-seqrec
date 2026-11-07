@@ -30,5 +30,3 @@ skills-lock.json
 docs/*
 !docs/decision_log.md
 
-# Isolated late reruns; generated files must not dirty execution guards.
-/runs/checkpoint2_late_*/
