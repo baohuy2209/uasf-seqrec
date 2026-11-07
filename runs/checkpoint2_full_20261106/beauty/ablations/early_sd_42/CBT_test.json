@@ -1,0 +1,13 @@
+{
+  "signature": {
+    "model_sha256": "60350aec7640ce6aa3ef4bf318da301865f5e8fc959325416ba11921f23b0faa",
+    "context_sha256": "d1b8b3cba14e998c5b328e27faf1b6bc972a23346bc0525387ab18694d78d993",
+    "sources": [
+      "category",
+      "brand",
+      "title"
+    ],
+    "availability_aware": false
+  },
+  "sha256": "5d7652f314782358f7131710ff6282118f888f9db6b27891c12e53e97017fa1f"
+}

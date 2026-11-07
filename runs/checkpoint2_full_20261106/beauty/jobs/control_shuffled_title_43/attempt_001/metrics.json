@@ -1,0 +1,35 @@
+{
+  "run_id": "control_shuffled_title_43",
+  "best_epoch": 40,
+  "total_epochs": 60,
+  "train_time_sec": 440.81,
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.069921,
+    "Recall@10": 0.117068,
+    "NDCG@20": 0.079986,
+    "Recall@20": 0.15709
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.055717,
+    "Recall@10": 0.095649,
+    "NDCG@20": 0.064358,
+    "Recall@20": 0.129813
+  },
+  "selection": {
+    "metric": "validation/NDCG@10",
+    "mode": "max",
+    "scope": "trained_epochs_only",
+    "first_training_epoch": 1,
+    "selected_epoch": 40,
+    "selected_value": 0.06992086243462736,
+    "initial_validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.023965967623601103,
+      "Recall@10": 0.04435898582479989,
+      "NDCG@20": 0.029086517037589268,
+      "Recall@20": 0.06461565979519743
+    }
+  }
+}

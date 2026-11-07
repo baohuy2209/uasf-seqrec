@@ -1,0 +1,140 @@
+[
+  {
+    "mechanism": "early",
+    "seed": 42,
+    "global_subset": "CB",
+    "global_test": 0.05444569095157026,
+    "id_test": 0.047099229151285144,
+    "group_val_selected_test": 0.05293490644667035,
+    "group_test_oracle": 0.05639378640961694,
+    "choices_from_validation": {
+      "0": "CBT",
+      "1": "BT",
+      "2": "T",
+      "3": "BT",
+      "4": "CB",
+      "5": "CBT",
+      "6": "CB",
+      "7": "B",
+      "8": "CB",
+      "9": "T"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "early",
+    "seed": 43,
+    "global_subset": "CBT",
+    "global_test": 0.055374262026955265,
+    "id_test": 0.047841792096443896,
+    "group_val_selected_test": 0.055705689578422875,
+    "group_test_oracle": 0.056772022047689816,
+    "choices_from_validation": {
+      "0": "BT",
+      "1": "CBT",
+      "2": "CB",
+      "3": "CB",
+      "4": "CBT",
+      "5": "CBT",
+      "6": "BT",
+      "7": "BT",
+      "8": "CBT",
+      "9": "CBT"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "early",
+    "seed": 44,
+    "global_subset": "CBT",
+    "global_test": 0.05511176151567711,
+    "id_test": 0.048611074943372204,
+    "group_val_selected_test": 0.05633584883882664,
+    "group_test_oracle": 0.05676878328643435,
+    "choices_from_validation": {
+      "0": "CB",
+      "1": "CB",
+      "2": "CB",
+      "3": "CBT",
+      "4": "CB",
+      "5": "CBT",
+      "6": "CBT",
+      "7": "CBT",
+      "8": "CB",
+      "9": "CBT"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late_legacy",
+    "seed": 42,
+    "global_subset": "ID",
+    "global_test": 0.047099229151285144,
+    "id_test": 0.047099229151285144,
+    "group_val_selected_test": 0.04684565254496684,
+    "group_test_oracle": 0.047099229151285144,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "C",
+      "4": "ID",
+      "5": "ID",
+      "6": "ID",
+      "7": "C",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late_legacy",
+    "seed": 43,
+    "global_subset": "ID",
+    "global_test": 0.047841792096443896,
+    "id_test": 0.047841792096443896,
+    "group_val_selected_test": 0.04676999120299103,
+    "group_test_oracle": 0.04791147631530403,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "C",
+      "6": "BT",
+      "7": "ID",
+      "8": "BT",
+      "9": "CBT"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late_legacy",
+    "seed": 44,
+    "global_subset": "ID",
+    "global_test": 0.048611074943372204,
+    "id_test": 0.048611074943372204,
+    "group_val_selected_test": 0.048611074943372204,
+    "group_test_oracle": 0.04868412326579994,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "ID",
+      "6": "ID",
+      "7": "ID",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  }
+]

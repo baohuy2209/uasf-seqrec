@@ -1,0 +1,46 @@
+{
+  "spec": {
+    "kind": "early",
+    "seed": 43,
+    "sources": [
+      "title"
+    ],
+    "embedding_dim": 64,
+    "max_seq_len": 50,
+    "dropout": 0.2,
+    "source_dropout": 0.0,
+    "all_off_probability": 0.0,
+    "source_dropout_mode": "sample",
+    "freeze_id": true,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0
+  },
+  "control": null,
+  "fingerprint": "3043bb8c254903100015aa091eac72a54381427ea45da206d713414d4ea0ae09",
+  "checkpoint": "attempt_001/checkpoint.pt",
+  "val_ndcg_10": 0.06418180669659926,
+  "test_ndcg_10": 0.05038978670852194,
+  "best_epoch": 6,
+  "epochs": 26,
+  "stop_reason": "early_stopping",
+  "train_contexts": 109050,
+  "artifacts": {
+    "attempt_001/source_snapshot.zip": "1bfb0ca899e9f80f16365f4a3002160f3a557a7dc7b81cc3ab6fd3066ec453cd",
+    "attempt_001/working_tree.diff": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attempt_001/run.log": "3c328f65596a31ac67b617d902c30d6d79ac85d6c4dde19a326b0e6b3e890998",
+    "attempt_001/artifact_index.json": "96afc6d978cd6b5b239a5150c260e2b9ba7d70279bae457f25d4947422c6c5b9",
+    "attempt_001/history.json": "bcd409381eff7060efebb622fc59348eaef272e9ddebdcca0a8bf613318cc4f0",
+    "attempt_001/config.json": "31e322444f75437da0b28d7d39853f1483f0684b9dd0f6a8962ff0d680887a08",
+    "attempt_001/per_user_test.csv": "9f51062513b2dce0580c064551eafc2cff7d900cae18afb4be56b4e704d0e051",
+    "attempt_001/per_user_val.csv": "4a7dddf3a1f19dfb2a7154729c2663a84105aea72c7c140e957cc18fdc4655d7",
+    "attempt_001/epochs.csv": "25608079142ea3160fe0c0691ee3845fd23157fae1cabe53ba00634cc02ffefd",
+    "attempt_001/run_manifest.json": "49db51e2f7c3be058bde2e84969b8eb75b9edd99bae1ec0a51cdb2af96a323e1",
+    "attempt_001/decision_log_snapshot.md": "8d6850c2b76259901008f22da2a7f9476f648383ab62d16ca46431d3aabb993e",
+    "attempt_001/checkpoint.pt": "a6466962bbea086d5c0b31e9dbf9d558094a2647d4ee5501fc1a98727f2b7c8b",
+    "attempt_001/metrics.json": "5b993e24dbd7c7bdb1b9b1bf0fb4724ff7c270ecea80af423d58f182efe8bf41",
+    "attempt_001/per_user.csv": "9f51062513b2dce0580c064551eafc2cff7d900cae18afb4be56b4e704d0e051",
+    "attempt_001/source_snapshot.json": "30a471898fdae987d8b71da591b9dbbbb910f29303730f71b04ed778ff15c28c",
+    "attempt_001/run_state.json": "01f3ab17a041ec3cd95d0eef2c32ac468b7a6c0af1cc97857b7494e8d23ce3be"
+  },
+  "status": "COMPLETED"
+}

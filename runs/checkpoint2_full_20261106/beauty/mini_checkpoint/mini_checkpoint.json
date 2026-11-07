@@ -1,0 +1,567 @@
+{
+  "dataset": "beauty",
+  "early": {
+    "ID": [
+      {
+        "seed": 42,
+        "value": 0.047099229151285144
+      },
+      {
+        "seed": 43,
+        "value": 0.047841792096443896
+      },
+      {
+        "seed": 44,
+        "value": 0.048611074943372204
+      }
+    ],
+    "C": [
+      {
+        "seed": 42,
+        "value": 0.04575943905525518
+      },
+      {
+        "seed": 43,
+        "value": 0.04823859180350809
+      },
+      {
+        "seed": 44,
+        "value": 0.04533244062561539
+      }
+    ],
+    "B": [
+      {
+        "seed": 42,
+        "value": 0.053966100567520395
+      },
+      {
+        "seed": 43,
+        "value": 0.05180371667632619
+      },
+      {
+        "seed": 44,
+        "value": 0.050824271939817575
+      }
+    ],
+    "T": [
+      {
+        "seed": 42,
+        "value": 0.05094145347796756
+      },
+      {
+        "seed": 43,
+        "value": 0.05038978670852194
+      },
+      {
+        "seed": 44,
+        "value": 0.05071524570108946
+      }
+    ],
+    "CB": [
+      {
+        "seed": 42,
+        "value": 0.05444569095157026
+      },
+      {
+        "seed": 43,
+        "value": 0.055300726806589415
+      },
+      {
+        "seed": 44,
+        "value": 0.05599379890056118
+      }
+    ],
+    "CT": [
+      {
+        "seed": 42,
+        "value": 0.04874166132828116
+      },
+      {
+        "seed": 43,
+        "value": 0.0488976542180005
+      },
+      {
+        "seed": 44,
+        "value": 0.048164451797403994
+      }
+    ],
+    "BT": [
+      {
+        "seed": 42,
+        "value": 0.054110268420629534
+      },
+      {
+        "seed": 43,
+        "value": 0.05584591406609991
+      },
+      {
+        "seed": 44,
+        "value": 0.05432222716662894
+      }
+    ],
+    "CBT": [
+      {
+        "seed": 42,
+        "value": 0.05500876422328472
+      },
+      {
+        "seed": 43,
+        "value": 0.055374262026955265
+      },
+      {
+        "seed": 44,
+        "value": 0.05511176151567711
+      }
+    ]
+  },
+  "controls": {
+    "category_shuffled": {
+      "delta_control_minus_real": -0.0015211715848890226,
+      "ci95": [
+        -0.0023462767817257393,
+        -0.0006436797618985057
+      ],
+      "real_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05500876422328472
+        },
+        {
+          "seed": 43,
+          "value": 0.055374262026955265
+        },
+        {
+          "seed": 44,
+          "value": 0.05511176151567711
+        }
+      ],
+      "control_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05397324318706672
+        },
+        {
+          "seed": 43,
+          "value": 0.05332708217532678
+        },
+        {
+          "seed": 44,
+          "value": 0.053630947648856515
+        }
+      ],
+      "resampling_unit": "user_with_seed_predictions_together",
+      "replicates": 1000,
+      "limitation": "Conditional on these three training seeds; not a training-seed CI"
+    },
+    "category_random": {
+      "delta_control_minus_real": -0.0018233855784950692,
+      "ci95": [
+        -0.002765794722021894,
+        -0.0009154014289226024
+      ],
+      "real_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05500876422328472
+        },
+        {
+          "seed": 43,
+          "value": 0.055374262026955265
+        },
+        {
+          "seed": 44,
+          "value": 0.05511176151567711
+        }
+      ],
+      "control_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.052410959558790236
+        },
+        {
+          "seed": 43,
+          "value": 0.05389511313309985
+        },
+        {
+          "seed": 44,
+          "value": 0.053718558338541784
+        }
+      ],
+      "resampling_unit": "user_with_seed_predictions_together",
+      "replicates": 1000,
+      "limitation": "Conditional on these three training seeds; not a training-seed CI"
+    },
+    "brand_shuffled": {
+      "delta_control_minus_real": -0.007737056322160486,
+      "ci95": [
+        -0.00911184294028496,
+        -0.006375913850166434
+      ],
+      "real_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05500876422328472
+        },
+        {
+          "seed": 43,
+          "value": 0.055374262026955265
+        },
+        {
+          "seed": 44,
+          "value": 0.05511176151567711
+        }
+      ],
+      "control_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.04817675150946144
+        },
+        {
+          "seed": 43,
+          "value": 0.04739054471707115
+        },
+        {
+          "seed": 44,
+          "value": 0.04671632257290303
+        }
+      ],
+      "resampling_unit": "user_with_seed_predictions_together",
+      "replicates": 1000,
+      "limitation": "Conditional on these three training seeds; not a training-seed CI"
+    },
+    "brand_random": {
+      "delta_control_minus_real": -0.007158997161491712,
+      "ci95": [
+        -0.008580927568081006,
+        -0.005826523531168626
+      ],
+      "real_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05500876422328472
+        },
+        {
+          "seed": 43,
+          "value": 0.055374262026955265
+        },
+        {
+          "seed": 44,
+          "value": 0.05511176151567711
+        }
+      ],
+      "control_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.04857478156968866
+        },
+        {
+          "seed": 43,
+          "value": 0.047144230627016594
+        },
+        {
+          "seed": 44,
+          "value": 0.04829878408473667
+        }
+      ],
+      "resampling_unit": "user_with_seed_predictions_together",
+      "replicates": 1000,
+      "limitation": "Conditional on these three training seeds; not a training-seed CI"
+    },
+    "title_shuffled": {
+      "delta_control_minus_real": 1.0785955356231217e-05,
+      "ci95": [
+        -0.0006853032851660782,
+        0.0007623828362913756
+      ],
+      "real_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05500876422328472
+        },
+        {
+          "seed": 43,
+          "value": 0.055374262026955265
+        },
+        {
+          "seed": 44,
+          "value": 0.05511176151567711
+        }
+      ],
+      "control_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05452159515941041
+        },
+        {
+          "seed": 43,
+          "value": 0.05571715011216733
+        },
+        {
+          "seed": 44,
+          "value": 0.05528840036040803
+        }
+      ],
+      "resampling_unit": "user_with_seed_predictions_together",
+      "replicates": 1000,
+      "limitation": "Conditional on these three training seeds; not a training-seed CI"
+    },
+    "title_random": {
+      "delta_control_minus_real": -0.00011603795688462968,
+      "ci95": [
+        -0.0008504119390115079,
+        0.0006317065701863214
+      ],
+      "real_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05500876422328472
+        },
+        {
+          "seed": 43,
+          "value": 0.055374262026955265
+        },
+        {
+          "seed": 44,
+          "value": 0.05511176151567711
+        }
+      ],
+      "control_by_seed": [
+        {
+          "seed": 42,
+          "value": 0.05450183479730631
+        },
+        {
+          "seed": 43,
+          "value": 0.055652351702991903
+        },
+        {
+          "seed": 44,
+          "value": 0.054992487394964984
+        }
+      ],
+      "resampling_unit": "user_with_seed_predictions_together",
+      "replicates": 1000,
+      "limitation": "Conditional on these three training seeds; not a training-seed CI"
+    }
+  },
+  "diagnostics": {},
+  "groups": {
+    "early": [
+      {
+        "mechanism": "early",
+        "seed": 42,
+        "global_subset": "CB",
+        "global_test": 0.05444569095157026,
+        "id_test": 0.047099229151285144,
+        "group_val_selected_test": 0.05293490644667035,
+        "group_test_oracle": 0.05639378640961694,
+        "choices_from_validation": {
+          "0": "CBT",
+          "1": "BT",
+          "2": "T",
+          "3": "BT",
+          "4": "CB",
+          "5": "CBT",
+          "6": "CB",
+          "7": "B",
+          "8": "CB",
+          "9": "T"
+        },
+        "unseen_validation_groups_fallback_global": [],
+        "oracle_is_descriptive_test_selection": true
+      },
+      {
+        "mechanism": "early",
+        "seed": 43,
+        "global_subset": "CBT",
+        "global_test": 0.055374262026955265,
+        "id_test": 0.047841792096443896,
+        "group_val_selected_test": 0.055705689578422875,
+        "group_test_oracle": 0.056772022047689816,
+        "choices_from_validation": {
+          "0": "BT",
+          "1": "CBT",
+          "2": "CB",
+          "3": "CB",
+          "4": "CBT",
+          "5": "CBT",
+          "6": "BT",
+          "7": "BT",
+          "8": "CBT",
+          "9": "CBT"
+        },
+        "unseen_validation_groups_fallback_global": [],
+        "oracle_is_descriptive_test_selection": true
+      },
+      {
+        "mechanism": "early",
+        "seed": 44,
+        "global_subset": "CBT",
+        "global_test": 0.05511176151567711,
+        "id_test": 0.048611074943372204,
+        "group_val_selected_test": 0.05633584883882664,
+        "group_test_oracle": 0.05676878328643435,
+        "choices_from_validation": {
+          "0": "CB",
+          "1": "CB",
+          "2": "CB",
+          "3": "CBT",
+          "4": "CB",
+          "5": "CBT",
+          "6": "CBT",
+          "7": "CBT",
+          "8": "CB",
+          "9": "CBT"
+        },
+        "unseen_validation_groups_fallback_global": [],
+        "oracle_is_descriptive_test_selection": true
+      }
+    ],
+    "late_legacy": [
+      {
+        "mechanism": "late_legacy",
+        "seed": 42,
+        "global_subset": "ID",
+        "global_test": 0.047099229151285144,
+        "id_test": 0.047099229151285144,
+        "group_val_selected_test": 0.04684565254496684,
+        "group_test_oracle": 0.047099229151285144,
+        "choices_from_validation": {
+          "0": "ID",
+          "1": "ID",
+          "2": "ID",
+          "3": "C",
+          "4": "ID",
+          "5": "ID",
+          "6": "ID",
+          "7": "C",
+          "8": "ID",
+          "9": "ID"
+        },
+        "unseen_validation_groups_fallback_global": [],
+        "oracle_is_descriptive_test_selection": true
+      },
+      {
+        "mechanism": "late_legacy",
+        "seed": 43,
+        "global_subset": "ID",
+        "global_test": 0.047841792096443896,
+        "id_test": 0.047841792096443896,
+        "group_val_selected_test": 0.04676999120299103,
+        "group_test_oracle": 0.04791147631530403,
+        "choices_from_validation": {
+          "0": "ID",
+          "1": "ID",
+          "2": "ID",
+          "3": "ID",
+          "4": "ID",
+          "5": "C",
+          "6": "BT",
+          "7": "ID",
+          "8": "BT",
+          "9": "CBT"
+        },
+        "unseen_validation_groups_fallback_global": [],
+        "oracle_is_descriptive_test_selection": true
+      },
+      {
+        "mechanism": "late_legacy",
+        "seed": 44,
+        "global_subset": "ID",
+        "global_test": 0.048611074943372204,
+        "id_test": 0.048611074943372204,
+        "group_val_selected_test": 0.048611074943372204,
+        "group_test_oracle": 0.04868412326579994,
+        "choices_from_validation": {
+          "0": "ID",
+          "1": "ID",
+          "2": "ID",
+          "3": "ID",
+          "4": "ID",
+          "5": "ID",
+          "6": "ID",
+          "7": "ID",
+          "8": "ID",
+          "9": "ID"
+        },
+        "unseen_validation_groups_fallback_global": [],
+        "oracle_is_descriptive_test_selection": true
+      }
+    ]
+  },
+  "source_dropout": {
+    "ID": [
+      {
+        "seed": 42,
+        "value": 0.039754991871703255
+      },
+      {
+        "seed": 43,
+        "value": 0.039034640584240804
+      },
+      {
+        "seed": 44,
+        "value": 0.04010673900392387
+      }
+    ],
+    "CB": [
+      {
+        "seed": 42,
+        "value": 0.05448074584985235
+      },
+      {
+        "seed": 43,
+        "value": 0.05427662405367039
+      },
+      {
+        "seed": 44,
+        "value": 0.05387252299597026
+      }
+    ],
+    "CT": [
+      {
+        "seed": 42,
+        "value": 0.04401418863964292
+      },
+      {
+        "seed": 43,
+        "value": 0.045190926162771164
+      },
+      {
+        "seed": 44,
+        "value": 0.0442344777667671
+      }
+    ],
+    "BT": [
+      {
+        "seed": 42,
+        "value": 0.05210824185369859
+      },
+      {
+        "seed": 43,
+        "value": 0.05224380300057894
+      },
+      {
+        "seed": 44,
+        "value": 0.05242755393669519
+      }
+    ],
+    "CBT": [
+      {
+        "seed": 42,
+        "value": 0.05596520255481151
+      },
+      {
+        "seed": 43,
+        "value": 0.05563848083563773
+      },
+      {
+        "seed": 44,
+        "value": 0.05571359086974432
+      }
+    ]
+  },
+  "utility": {},
+  "proposal": "Chưa chốt kiến trúc nền; không tự chạy S3 trên late fusion cũ.",
+  "complete": false
+}
