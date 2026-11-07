@@ -1,4 +1,0 @@
-{
-  "rule": "CE if all three signs match validation; else LOG_RANK if all match; else UNRESOLVED",
-  "test_used": false
-}
