@@ -1,0 +1,261 @@
+{
+  "data_mode": "real",
+  "delta_file": "/home/ubuntu/projects/uasf-seqrec/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_CE.csv",
+  "delta_file_sha256": "f9f4f17863127343162e1aebbd60801cc5b8fb906b6b4b0b96d79ffa26aaf1e2",
+  "git_commit": "013d01aa4ed8277e247170a229ed331ec7afe6f7",
+  "timestamp": "2026-11-07T08:16:08Z",
+  "decision": "GO",
+  "rationale": "GO: Source(s) ['brand', 'category', 'title'] satisfied both E0 (utility heterogeneity) and E1 (predictability) with reliable contextual label stability (rho >= 0.3). Authorized to proceed to full S3 UASF contextual gating.",
+  "qualifying_sources": [
+    "brand",
+    "category",
+    "title"
+  ],
+  "gating_regime": "contextual",
+  "feature_names": [
+    "feat_log_len",
+    "feat_brand_coverage",
+    "feat_brand_entropy",
+    "feat_brand_recency",
+    "feat_brand_score_cosine",
+    "feat_brand_top10_agreement",
+    "feat_category_coverage",
+    "feat_category_entropy",
+    "feat_category_recency",
+    "feat_category_score_cosine",
+    "feat_category_top10_agreement",
+    "feat_history_logpop_mean",
+    "feat_history_tail_ratio",
+    "feat_last_logpop",
+    "feat_state_000",
+    "feat_state_001",
+    "feat_state_002",
+    "feat_state_003",
+    "feat_state_004",
+    "feat_state_005",
+    "feat_state_006",
+    "feat_state_007",
+    "feat_state_008",
+    "feat_state_009",
+    "feat_state_010",
+    "feat_state_011",
+    "feat_state_012",
+    "feat_state_013",
+    "feat_state_014",
+    "feat_state_015",
+    "feat_state_016",
+    "feat_state_017",
+    "feat_state_018",
+    "feat_state_019",
+    "feat_state_020",
+    "feat_state_021",
+    "feat_state_022",
+    "feat_state_023",
+    "feat_state_024",
+    "feat_state_025",
+    "feat_state_026",
+    "feat_state_027",
+    "feat_state_028",
+    "feat_state_029",
+    "feat_state_030",
+    "feat_state_031",
+    "feat_state_032",
+    "feat_state_033",
+    "feat_state_034",
+    "feat_state_035",
+    "feat_state_036",
+    "feat_state_037",
+    "feat_state_038",
+    "feat_state_039",
+    "feat_state_040",
+    "feat_state_041",
+    "feat_state_042",
+    "feat_state_043",
+    "feat_state_044",
+    "feat_state_045",
+    "feat_state_046",
+    "feat_state_047",
+    "feat_state_048",
+    "feat_state_049",
+    "feat_state_050",
+    "feat_state_051",
+    "feat_state_052",
+    "feat_state_053",
+    "feat_state_054",
+    "feat_state_055",
+    "feat_state_056",
+    "feat_state_057",
+    "feat_state_058",
+    "feat_state_059",
+    "feat_state_060",
+    "feat_state_061",
+    "feat_state_062",
+    "feat_state_063",
+    "feat_title_coverage",
+    "feat_title_entropy",
+    "feat_title_recency",
+    "feat_title_score_cosine",
+    "feat_title_top10_agreement"
+  ],
+  "reference_seeds": [
+    42,
+    43
+  ],
+  "n_bootstrap": 1000,
+  "seed": 42,
+  "sources": {
+    "brand": {
+      "stability": {
+        "source_name": "brand",
+        "epsilon": 0.7532773017883301,
+        "spearman_rho": 0.42450542351948767,
+        "p_value": 0.0,
+        "stability_regime": "contextual",
+        "spearman_ci": [
+          0.4115756530671482,
+          0.4375332337266933
+        ]
+      },
+      "e0": {
+        "source_name": "brand",
+        "epsilon": 0.7532773017883301,
+        "frac_positive": 0.2899,
+        "frac_negative": 0.2148,
+        "condition_a_met": true,
+        "q1_mean": 0.15976056141825729,
+        "q1_ci": [
+          0.11186837134380297,
+          0.20487037330127586
+        ],
+        "q5_mean": 0.20323447436563297,
+        "q5_ci": [
+          0.16337887532029152,
+          0.24419329251119154
+        ],
+        "condition_b_met": false,
+        "e0_passed": true
+      },
+      "e1": {
+        "source_name": "brand",
+        "oof_auc_lr": 0.6434367691512617,
+        "oof_auc_tree": 0.616677830719955,
+        "baseline_len_auc": 0.5062730921489287,
+        "bootstrap_95_ci": [
+          0.63603412732278,
+          0.6508915819350728
+        ],
+        "e1_passed": true,
+        "evidence_summary": "contextual user-grouped OOF; AUC=0.643437; length=0.506273; valid AUC bootstrap=1000/1000",
+        "oof_spearman_rho": 0.13161140498490498,
+        "oof_spearman_ci": [
+          0.11856666031664222,
+          0.1440948199897085
+        ],
+        "status": "EVALUATED",
+        "evaluated_regime": "contextual"
+      }
+    },
+    "category": {
+      "stability": {
+        "source_name": "category",
+        "epsilon": 0.3573136329650878,
+        "spearman_rho": 0.308440210584508,
+        "p_value": 0.0,
+        "stability_regime": "contextual",
+        "spearman_ci": [
+          0.2954200485592793,
+          0.32159060287639696
+        ]
+      },
+      "e0": {
+        "source_name": "category",
+        "epsilon": 0.3573136329650878,
+        "frac_positive": 0.2621,
+        "frac_negative": 0.1921,
+        "condition_a_met": true,
+        "q1_mean": 0.0683825310560868,
+        "q1_ci": [
+          0.050031721549068424,
+          0.08740786637628463
+        ],
+        "q5_mean": 0.07731529596603388,
+        "q5_ci": [
+          0.05898687137548792,
+          0.09344918270404418
+        ],
+        "condition_b_met": false,
+        "e0_passed": true
+      },
+      "e1": {
+        "source_name": "category",
+        "oof_auc_lr": 0.645336685548909,
+        "oof_auc_tree": 0.607318107426178,
+        "baseline_len_auc": 0.49779467782045234,
+        "bootstrap_95_ci": [
+          0.6367380576145819,
+          0.6530545968136079
+        ],
+        "e1_passed": true,
+        "evidence_summary": "contextual user-grouped OOF; AUC=0.645337; length=0.497795; valid AUC bootstrap=1000/1000",
+        "oof_spearman_rho": 0.11454063021056599,
+        "oof_spearman_ci": [
+          0.10134541417527129,
+          0.12786999775582408
+        ],
+        "status": "EVALUATED",
+        "evaluated_regime": "contextual"
+      }
+    },
+    "title": {
+      "stability": {
+        "source_name": "title",
+        "epsilon": 0.24578952789306635,
+        "spearman_rho": 0.39561071903556516,
+        "p_value": 0.0,
+        "stability_regime": "contextual",
+        "spearman_ci": [
+          0.38293579861594207,
+          0.40837080868824965
+        ]
+      },
+      "e0": {
+        "source_name": "title",
+        "epsilon": 0.24578952789306635,
+        "frac_positive": 0.2477,
+        "frac_negative": 0.2128,
+        "condition_a_met": true,
+        "q1_mean": 0.009771184766289891,
+        "q1_ci": [
+          -0.002076269452449222,
+          0.02096702783098846
+        ],
+        "q5_mean": 0.020337324334884718,
+        "q5_ci": [
+          0.008920222545786352,
+          0.0313954514885998
+        ],
+        "condition_b_met": false,
+        "e0_passed": true
+      },
+      "e1": {
+        "source_name": "title",
+        "oof_auc_lr": 0.5982448952344368,
+        "oof_auc_tree": 0.5792173540682972,
+        "baseline_len_auc": 0.4980491331776642,
+        "bootstrap_95_ci": [
+          0.5898109920944428,
+          0.607245829016
+        ],
+        "e1_passed": true,
+        "evidence_summary": "contextual user-grouped OOF; AUC=0.598245; length=0.498049; valid AUC bootstrap=1000/1000",
+        "oof_spearman_rho": 0.08101551452503734,
+        "oof_spearman_ci": [
+          0.06881668809657653,
+          0.09552276682738427
+        ],
+        "status": "EVALUATED",
+        "evaluated_regime": "contextual"
+      }
+    }
+  }
+}

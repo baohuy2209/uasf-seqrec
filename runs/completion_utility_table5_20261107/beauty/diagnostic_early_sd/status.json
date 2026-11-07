@@ -1,0 +1,12 @@
+{
+  "label_choice": "CE",
+  "selected_backbone": false,
+  "decision": "GO",
+  "s3_eligible": false,
+  "diagnostic_only": true,
+  "reference_jobs": [
+    "early_sd_42",
+    "early_sd_43"
+  ],
+  "test_used": false
+}

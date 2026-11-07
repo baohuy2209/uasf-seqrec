@@ -1,0 +1,17 @@
+{
+  "table5_utility.csv": "85634f5246d356acdc5fe1f3119b61d1cfa6b61204ed05c03597df74a52766c0",
+  "table5_utility.md": "7291702b8a208aa6fe09ee8d25e96c563070e2c861e4a1e75bf3a3b51afa64cd",
+  "table5_inputs.json": "bc5c2978cdfa91f2c7298c833df72e78d81ef17b1230917685f12e2233da2e07",
+  "diagnostic_early_sd/e0_e1_LOG_RANK.cache.json": "ba41c2d4e41d331a1c39896ff66e2ed9887d4394c6de4da920df4cd96fe989ff",
+  "diagnostic_early_sd/e0_e1_CE.cache.json": "c10e966ffcf497a09828195006b7f0c07e8ab5f993e80db3b978c1769c5db857",
+  "diagnostic_early_sd/utility_LOG_RANK.csv": "b83a761077bef933899864b87a49e1a082444ac9c4d76fe2e5a8980167413401",
+  "diagnostic_early_sd/features_train_meta.csv": "1209cd3294d976c72b041eb8aa0a2d92788bd44eabe6094104737786a8767a46",
+  "diagnostic_early_sd/status.json": "d4ce2d56c152e09a3da968b34fe39a7c0f2b4bf823e7824d805595067a4c1859",
+  "diagnostic_early_sd/validation_same_model.csv": "b836e4ca944d462ce3a75167617a18fbdea1ea2c3616fdddd2c89ca7c768579b",
+  "diagnostic_early_sd/utility_CE.csv": "f9f4f17863127343162e1aebbd60801cc5b8fb906b6b4b0b96d79ffa26aaf1e2",
+  "diagnostic_early_sd/alignment.json": "0f36e11396e6ee540a83d1cd176ed1683c5bbe634a3e352bb78167d990a12887",
+  "diagnostic_early_sd/e0_e1_LOG_RANK.json": "16c217aa099eeb114118145597d0a1f595e7d5549e9d901a3f2dfdf0a7cb438b",
+  "diagnostic_early_sd/e0_e1_CE.json": "e487ae762200f9d8cb4209daeed25f34238a6aa31f5be75e8d876869b9c74ddb",
+  "diagnostic_early_sd/alignment_cache.json": "f860790b157b5cade8af5ba9098ef5307bfc9d9df249a545d4b28b8b469a4e39",
+  "diagnostic_early_sd/utility_both_labels.csv": "9a6ecb2edbaa3a03318d1a08ba9e269b037fb1263263a1eedf7504abfbfad49a"
+}
