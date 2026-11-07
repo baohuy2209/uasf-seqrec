@@ -156,6 +156,14 @@ class SequenceSplitter:
                 )
             elif self.protocol == "four_segment":
                 oov_counts["train_meta"] += 1
+                if self.include_oov_in_eval:
+                    train_meta_samples.append(
+                        SequenceSample(
+                            user_idx=u_idx, history=padded_meta_hist, target=0,
+                            history_len=min(len(meta_hist), self.max_seq_len),
+                            raw_user_id=seq.user_id, raw_target_asin=seq.items[n - 3],
+                        )
+                    )
 
             # C. Validation target: position n-1 (0-indexed: n-2)
             val_hist = int_items[: n - 2]

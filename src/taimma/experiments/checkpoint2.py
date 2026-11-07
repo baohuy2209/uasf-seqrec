@@ -395,6 +395,23 @@ class Checkpoint2:
 
     def lock_backbone(self,key,backbone,reason):
         if backbone not in ['early_sd','late_joint'] or not reason:raise ValueError('Explicit backbone and reason required')
+        from .study_completion import choose_backbone
+        def values(prefix):
+            out=[]
+            for seed in SEEDS:
+                name='K4' if prefix=='late_joint' and seed==42 else f'{prefix}_{seed}'
+                rec=self.completed(key,name)
+                if rec is None:raise RuntimeError('Missing three-seed validation evidence: '+name)
+                out.append(rec['val_ndcg_10'])
+            return out
+        off=[]
+        for seed in SEEDS:
+            p=self.output/key/'ablations'/f'early_sd_{seed}'/'ID_val.csv'
+            if not p.exists():raise RuntimeError('Compute validation all-off profile using complete_checkpoint2.py first')
+            off.append(float(read_ranks(p)['ndcg@10'].mean()))
+        choice=choose_backbone(values('id'),values('early_CBT'),values('early_sd'),off,
+                               values('late_joint') if backbone=='late_joint' else None)
+        if choice['backbone']!=backbone:raise RuntimeError('Requested backbone fails the 06/11 validation rule; do not force S3')
         path=self.output/key/'backbone_decision.json'
         jobs=['early_sd_42','early_sd_43','early_sd_44'] if backbone=='early_sd' else ['K4']
         if any(self.completed(key,n) is None for n in jobs):raise RuntimeError('Missing validation evidence for proposed backbone')
@@ -440,79 +457,7 @@ class Checkpoint2:
         self.nested_baselines(key,jobs[0])
 
     def s3(self,key):
-        self.guard(training=True);root=self.output/key/'selected_s2';report_path=root/'e0_e1.json'
-        if not report_path.exists():raise RuntimeError('S2/E1 and explicit backbone selection are required before S3')
-        marker=root/'e0_e1.cache.json'
-        if not marker.exists():raise RuntimeError('Run S2/E1 to verify eligibility provenance before S3')
-        cached=json.loads(marker.read_text(encoding='utf-8'))
-        if cached['sha256']!=sha(report_path) or cached['signature']['utility_sha256']!=sha(root/'utility.csv'):
-            raise ValueError('S3 eligibility or utility changed after S2/E1')
-        report=json.loads(report_path.read_text(encoding='utf-8'))
-        if report['decision'] not in ['GO','CONDITIONAL']:
-            write_json(root/'s3_status.json',dict(status='NOT_AUTHORIZED_BY_PROTOCOL',decision=report['decision']));return
-        if not (root/'nested_subset_summary.json').is_file():
-            raise RuntimeError('Review same-S1 global/group/oracle evidence from S2/E1 before requesting S3')
-        d=self.dataset(key);jobs=self.reference_jobs(key);adapter=self.load_job(key,jobs[0]);split=d['split']
-        utility=pd.read_csv(root/'utility.csv');features=pd.read_csv(root/'features_train_meta.csv')
-        rules=json.loads((self.output/key/'groups.json').read_text(encoding='utf-8'))['rules']
-        def attach_groups(f):
-            f=f.copy();f['group_idx']=apply_group_rules(np.rint(np.exp(f.feat_log_len)),f.feat_history_tail_ratio,rules)[2];return f
-        features=attach_groups(features)
-        feature_parts={}
-        for part,samples in [('val',split.val_samples),('test',split.test_samples)]:
-            path=root/f'features_{part}.csv';marker=path.with_suffix('.cache.json')
-            signature=dict(model=self.model_hash(key,jobs[0]),contexts=context_signature(samples),
-                data=d['signature'],rules=rules,availability_aware=False,config=self.protocol_hash)
-            if marker.exists():
-                cached=json.loads(marker.read_text(encoding='utf-8'))
-                if cached['signature']!=signature or not path.is_file() or sha(path)!=cached['sha256']:
-                    raise ValueError('Gate feature cache changed: '+part)
-                feature_parts[part]=pd.read_csv(path);continue
-            _,f=collect_ablations(adapter,samples,split,self.config['batch_size'],include_features=True,
-                allow_oov=True)
-            feature_parts[part]=attach_groups(f)
-            feature_parts[part].to_csv(path,index=False,lineterminator='\n')
-            write_json(marker,dict(signature=signature,sha256=sha(path)))
-        labels=utility.groupby(['user_idx','source_name']).delta.mean().unstack()
-        qualified=report['qualifying_sources'];regimes={}
-        for source in qualified:
-            record=report['sources'][source];regime=record['stability']['stability_regime'];regimes[source]=regime
-            temperature=self.config['soft_label_temperature'] if regime=='soft_supervision' else None
-            labels[source]=make_utility_labels(labels[source].to_numpy(),record['stability']['epsilon'],temperature)
-        for s in SOURCE_ORDER:
-            if s not in qualified:labels[s]=0.
-        labels=labels.reset_index();columns=sorted(c for c in features if c.startswith('feat_'))
-        for mode in ['global','unsupervised','contextual']:
-            target=root/f'gate_{mode}';done=target/'completed.json'
-            gate_inputs=digest(dict(utility=sha(root/'utility.csv'),model=sha(self.job_path(key,jobs[0])/self.completed(key,jobs[0])['checkpoint']),
-                mode=mode,config=self.protocol_hash,eligibility=sha(report_path),
-                features={p:sha(root/f'features_{p}.csv') for p in ['train_meta','val','test']}))
-            if done.exists():
-                rec=json.loads(done.read_text(encoding='utf-8'))
-                if rec.get('input_signature')!=gate_inputs or any(not (target/n).is_file() or sha(target/n)!=h for n,h in rec['artifacts'].items()):
-                    raise ValueError('Gate cache inputs or outputs changed')
-                continue
-            from ..training.trainer import set_seed
-            set_seed(adapter.spec.seed)
-            gate=SelectiveGate(len(columns),mode,regimes if mode=='contextual' else None,
-                tau=self.config['gate_tau'],kappa=self.config['gate_kappa'])
-            with exclusive(target/'execution.lock'):
-                attempt=target/f'attempt_{len(list(target.glob("attempt_*")))+1:03d}'
-                attempt.mkdir()
-                result,mean,scale,hist=train_gate(adapter,gate,split.train_meta_samples,split.val_samples,
-                    features,feature_parts['val'],labels,columns,attempt,self.config['epochs'],self.config['patience'],
-                    self.config['batch_size'],lambda_util=self.config['lambda_util'] if mode=='contextual' else 0.,
-                    lambda_sparse=self.config['lambda_sparse'],qualified_sources=qualified if mode=='contextual' else ())
-                val=gate_evaluate(adapter,result,split.val_samples,feature_parts['val'],columns,mean,scale,self.config['batch_size'])
-                test=gate_evaluate(adapter,result,split.test_samples,feature_parts['test'],columns,mean,scale,self.config['batch_size'])
-                rank_frame(val).to_csv(attempt/'per_user_val.csv',index=False,lineterminator='\n')
-                rank_frame(test).to_csv(attempt/'per_user_test.csv',index=False,lineterminator='\n')
-                write_json(done,dict(mode=mode,val_ndcg_10=val.ndcg_10,test_ndcg_10=test.ndcg_10,
-                    gate_sha256=sha(attempt/'gate.pt'),regimes=regimes,feature_columns=columns,epochs=len(hist),
-                    attempt=attempt.name,input_signature=gate_inputs,
-                    artifacts={f'{attempt.name}/{n}':sha(attempt/n) for n in ['gate.pt','per_user_val.csv','per_user_test.csv','gate_epochs.csv']}))
-        self.nested_baselines(key,jobs[0])
-        self.compare_gate_baselines(key,jobs[0])
+        raise RuntimeError('The old S3 route is retired: use scripts/complete_checkpoint2.py for validation-only gates and explicit freeze/release-test.')
 
     def compare_gate_baselines(self,key,name):
         """Seven declared comparisons, paired users; this S3 analysis is seed42."""

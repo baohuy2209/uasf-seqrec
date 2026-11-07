@@ -30,3 +30,6 @@ skills-lock.json
 docs/*
 !docs/decision_log.md
 
+
+# Runtime completion cache; publish lightweight summaries to results/.
+/runs/completion_*/

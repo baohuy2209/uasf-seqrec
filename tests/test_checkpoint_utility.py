@@ -132,7 +132,7 @@ def recovery_sources(tmp_path):
     for name, content in files.items():
         path = project / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content)
+        path.write_text(content, newline='\n')
     manifest = project / 'artifacts/metadata/beauty/manifest.json'
     manifest.parent.mkdir(parents=True)
     manifest.write_text('{}')
@@ -141,7 +141,7 @@ def recovery_sources(tmp_path):
     (run / 'protocol.lock.json').write_text(json.dumps(lock))
     with zipfile.ZipFile(run / 'source_snapshot.zip', 'w') as archive:
         archive.writestr('scripts/run_checkpoint1.py', source)
-    (project / 'scripts/run_checkpoint1.py').write_text(source.replace('return 0', 'return 2'))
+    (project / 'scripts/run_checkpoint1.py').write_text(source.replace('return 0', 'return 2'), newline='\n')
     (project / 'scripts/resume_checkpoint1_utility.py').write_text('# recovery entry point\n')
     return run, project
 

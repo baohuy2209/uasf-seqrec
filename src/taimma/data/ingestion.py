@@ -89,6 +89,10 @@ class Amazon2014Ingestor:
             f"ratings_{spaced_key}.csv",
             f"{norm_key}_ratings.csv",
             f"{spaced_key}_ratings.csv",
+            f"ratings_{norm_key}.csv.gz",
+            f"ratings_{spaced_key}.csv.gz",
+            f"{norm_key}_ratings.csv.gz",
+            f"{spaced_key}_ratings.csv.gz",
         ]
 
         meta_candidates = [
