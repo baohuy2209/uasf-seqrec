@@ -31,5 +31,4 @@ docs/*
 !docs/decision_log.md
 
 
-# Runtime completion cache; publish lightweight summaries to results/.
-/runs/completion_*/
+runs/completion_20261107/beauty/diagnostic_early_sd/*.csv
