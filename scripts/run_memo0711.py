@@ -6,22 +6,28 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src'))
 
 def resolve_input_roots(repo, config, args):
     """Explicit CLI paths override YAML; omitted flags preserve configured paths."""
+    saved = {}
+    reuse = getattr(args, 'reuse_memo', None)
+    if reuse:
+        protocol = Path(repo) / reuse / 'beauty/protocol.lock.json'
+        if protocol.is_file():
+            saved = json.loads(protocol.read_text(encoding='utf-8'))['config'].get('input_roots', {})
     defaults = dict(early='runs/checkpoint2_full_20261106',
                     late='runs/checkpoint2_late_20261106', diagnostics='runs/checkpoint2_20261106')
     return {key: str((Path(repo) / (getattr(args, key+'_root', None)
-                    or config.get('input_roots', {}).get(key) or value)).resolve())
+                    or saved.get(key) or config.get('input_roots', {}).get(key) or value)).resolve())
             for key, value in defaults.items()}
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--stage',choices=['plan','check','adopt','b','beauty','fairness','robustness','title','rank','all','transfer','report','freeze','release-test'],default='plan')
+    p.add_argument('--stage',choices=['plan','check','audit','e1-evidence','adopt','b','beauty','fairness','robustness','title','rank','all','transfer','report','freeze','release-test'],default='plan')
     p.add_argument('--datasets',nargs='+',choices=['beauty','sports','toys'],default=['beauty','sports','toys'])
     p.add_argument('--config',default='configs/experiments/memo0711.yaml')
     p.add_argument('--early-root');p.add_argument('--late-root')
     p.add_argument('--diagnostics-root')
     p.add_argument('--reuse-memo',help='Verified completed memo output to adopt; old run remains unchanged')
-    p.add_argument('--output',default='runs/memo0711_v2');p.add_argument('--publish-dir')
+    p.add_argument('--output',default='runs/memo0711_v3');p.add_argument('--publish-dir')
     p.add_argument('--execute-training',action='store_true');p.add_argument('--execute-inference',action='store_true');p.add_argument('--freeze-tag')
     a=p.parse_args()
     if a.stage=='plan':
@@ -31,11 +37,26 @@ def main():
             forbidden=['extra K4 seeds','random V2 reruns','UASF Test before freeze'],
             transfer='Explicit transfer stage, F1 Beauty and >=12/11; 3 seeds Sports/Toys'),indent=2));return
     import yaml
+    cfg=yaml.safe_load((ROOT/a.config).read_text(encoding='utf-8'))
+    cfg['input_roots']=resolve_input_roots(ROOT,cfg,a)
+    if a.stage=='e1-evidence':
+        from taimma.experiments.memo0711_e1_evidence import export_e1_evidence
+        print(json.dumps(export_e1_evidence(ROOT,(ROOT/a.output).resolve(),a.datasets),indent=2,ensure_ascii=False))
+        return 0
+    # CPU-only commands return before registry/publication or model-class imports.
+    if a.stage in ['audit','report']:
+        from taimma.experiments.memo0711_report import audit_runtime,write_memo_report
+        output=(ROOT/a.output).resolve()
+        if a.stage=='audit':
+            result=audit_runtime(output,cfg)
+            print(json.dumps(result,indent=2,ensure_ascii=False))
+            return 0 if result['status']=='PASS' else 2
+        destination=Path(a.publish_dir) if a.publish_dir else Path('results')/(output.name+'_tables')
+        print(write_memo_report(output,cfg,(ROOT/destination).resolve()))
+        return 0
     from taimma.experiments.memo0711 import Memo0711,rank_diagnostics
     from taimma.experiments.checkpoint2 import exclusive
     from taimma.experiments.checkpoint2_protocol import write_json,sha
-    cfg=yaml.safe_load((ROOT/a.config).read_text(encoding='utf-8'))
-    cfg['input_roots']=resolve_input_roots(ROOT,cfg,a)
     run=Memo0711(ROOT,cfg,a.output,execute_training=a.execute_training,execute_inference=a.execute_inference)
     if a.stage not in ['report','freeze','release-test','adopt']:
         for kind in ['early','late']:
@@ -46,7 +67,7 @@ def main():
     if a.reuse_memo and a.stage not in ['report','freeze','release-test','check']:
         run.adopt_memo((ROOT/a.reuse_memo).resolve(),a.datasets)
     if a.stage=='adopt':pass
-    elif a.stage=='rank':rank_diagnostics(cfg['input_roots'],run.output/'beauty')
+    elif a.stage=='rank':rank_diagnostics(cfg['input_roots'],run.output,a.datasets)
     elif a.stage=='check':
         from taimma.experiments.table5_utility import check_references
         for k in ['early','late']:
@@ -97,7 +118,11 @@ def main():
             if a.stage in ['robustness','all']:
                 for key in a.datasets:run.robustness_current(key)
             if a.stage in ['title','all']:run.title_controls()
-            if a.stage=='all':rank_diagnostics(cfg['input_roots'],run.output/'beauty')
+            if a.stage=='all':
+                rank_diagnostics(cfg['input_roots'],run.output,a.datasets)
+                from taimma.experiments.memo0711_e1_evidence import export_e1_evidence
+                e1_datasets=[key for key in dict.fromkeys(['beauty']+a.datasets) if (run.output/key/'selected_s2/status.json').is_file()]
+                print(json.dumps(export_e1_evidence(ROOT,run.output,e1_datasets),indent=2))
             if a.stage=='transfer':
                 for key in a.datasets:
                     if key!='beauty':run.uasf(key,transfer=True)
@@ -118,9 +143,6 @@ def main():
         for path in run.output.glob('*/framing_decision.json'):
             note.extend([str(path.relative_to(run.output)),path.read_text()])
         (run.output/'report.md').write_text('\n\n'.join(note),encoding='utf-8',newline='\n')
-    if a.stage=='report':
-        from taimma.experiments.memo0711_report import write_memo_report
-        print(write_memo_report(run.output,cfg,ROOT/'results'/(run.output.name+'_tables')))
     if a.publish_dir:
         dest=(ROOT/a.publish_dir).resolve()
         for srcroot in [run.output]+[Path(x) for x in cfg['input_roots'].values()]:
@@ -135,4 +157,4 @@ def main():
         write_json(dest/'large_artifacts_manifest.json',omitted_large)
     print('Completed requested stage. No K4/random V2 fallback jobs were launched.')
 
-if __name__=='__main__':main()
+if __name__=='__main__':raise SystemExit(main())

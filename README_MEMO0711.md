@@ -1,4 +1,4 @@
-# TAIMMA — hoàn tất thực nghiệm theo memo 07/11, bản sửa ngày 10/11
+# TAIMMA — hoàn tất thực nghiệm theo memo 07/11, bản kiểm định v3 ngày 10/11
 
 Entry point: `scripts/run_memo0711.py`. Config: `configs/experiments/memo0711.yaml`.
 Mặc định chỉ in plan; không train/inference trên import. Không chạy lại runner
@@ -8,14 +8,14 @@ Mặc định chỉ in plan; không train/inference trên import. Không chạy 
 
 Giữ nguyên `runs/memo0711_v1` và toàn bộ checkpoint gốc. Commit/review source mới
 rồi cập nhật server khi không còn process train dùng checkout này. Không nâng
-thư viện, thay dữ liệu hoặc sửa lock v1. Dùng output mới `runs/memo0711_v2`.
+thư viện, thay dữ liệu hoặc sửa lock v1. Dùng output mới `runs/memo0711_v3`.
 
 ```bash
 cd /home/ubuntu/projects/uasf-seqrec
 source .venv/bin/activate
 
 COMMON=(
-  --output runs/memo0711_v2
+  --output runs/memo0711_v3
   --early-root /home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106
   --late-root /home/ubuntu/projects/uasf-seqrec-late-20261106/runs/checkpoint2_late_20261106
   --diagnostics-root /home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_20261106
@@ -33,9 +33,15 @@ python -u scripts/run_memo0711.py --stage adopt \
 python -u scripts/run_memo0711.py --stage all \
   --reuse-memo runs/memo0711_v1 --execute-training "${COMMON[@]}"
 
+# all tự xuất OOF E1. Có thể chạy riêng CPU nếu chỉ còn thiếu bằng chứng này:
+python -u scripts/run_memo0711.py --stage e1-evidence --datasets beauty "${COMMON[@]}"
+
+# Kiểm định bằng chứng CPU, không ghi vào runtime, không mở mô hình.
+python scripts/run_memo0711.py --stage audit "${COMMON[@]}"
+
 # Tạo bảng số liệu và gói publish sau khi compute hoàn tất.
 python scripts/run_memo0711.py --stage report \
-  --publish-dir results/memo0711_v2 "${COMMON[@]}"
+  --publish-dir results/memo0711_v3 "${COMMON[@]}"
 ```
 
 Đổi `--late-root` nếu kết quả late thật ở checkout chính. Flag CLI chỉ override
@@ -77,8 +83,9 @@ không dùng ID fairness làm fallback. Các run cũ giữ nguyên làm provenan
 - B sử dụng45 job/cohort (ID dùng chung cho hai ô cơ chế), tương ứng48 ô bảng:
   early/late ×8subset ×3seed. Không train hai lần cùng ID chỉ để đủ ô bảng.
 - F1 Beauty cần năm seed42–46, UASF Val mean cao hơn best nested baseline và
-  paired-user bootstrap1.000 lần có cận dưới95%CI chưa làm tròn >0. Sáu selector
-  lồng nhau được tách khỏi ID/noSD/fairness bổ sung; không chọn family theo Test.
+  paired-user bootstrap1.000 lần có cận dưới95%CI chưa làm tròn >0. Kết luận chính giữ family mười đối chứng của memo v1, gồm fairness; sáu selector
+  là so sánh phụ, không dùng để đổi F2 thành F1 sau khi đã thấy số. Quy tắc này
+  được ghi bằng framing_policy và historic_decisions giữ nguyên quyết định cũ.
 - Utility E1 Spearman giữa dự đoán và delta khác rho ổn định nhãn giữa hai seed.
 
 ## Các stage riêng khi cần kiểm tra hoặc bù thiếu
@@ -96,6 +103,8 @@ python scripts/run_memo0711.py --stage rank "${COMMON[@]}"
 
 `robustness` cần SD/noSD/ID foundations đã có;90 dòng/cohort,270 dòng ba cohort
 cho2family ×3nguồn ×5mức0–80% ×3seed. Không buộc NDCG giảm đơn điệu.
+Mask, coverage, history/candidate exposure và paired logits/ranks được lưu theo
+case. Chỉ đánh dấu hoàn tất sau inspect_evidence; xem mục kiểm định v3 bên dưới.
 `rank` chỉ đọc ranks CPU: median/top10/100/1000. Không suy thành phần Brand
 top10 từ target ranks; tùy chọn đó cần topK item IDs.
 
@@ -117,9 +126,9 @@ Không mở Test UASF trước freeze. Các Test chẩn đoán B/Title/ranks đ�
 Sau13/11, review code và dữ liệu, commit sạch, không process giữ lock:
 
 ```bash
-git tag checkpoint2_0711_frozen_v2
+git tag checkpoint2_0711_frozen_v3
 python scripts/run_memo0711.py --stage freeze \
-  --freeze-tag checkpoint2_0711_frozen_v2 "${COMMON[@]}"
+  --freeze-tag checkpoint2_0711_frozen_v3 "${COMMON[@]}"
 python -u scripts/run_memo0711.py --stage release-test --datasets beauty \
   --execute-inference "${COMMON[@]}"
 ```
@@ -132,7 +141,7 @@ giao thức rồi dùng cache để tái lập bảng; không chọn lại gate 
 ## Báo cáo, kho chung và Git
 
 `--stage report` không chạy mô hình. Registry ở runtime; bộ bảng đầy đủ ngoài
-runtime tại `results/memo0711_v2_tables/` để không thay artifact đã freeze:
+runtime tại `results/memo0711_v3_tables/` để không thay artifact đã freeze:
 
 - B ba tập, Add/Drop từng seed, kiểm kê nguồn/số seed và fairness summary;
 - gate/baseline Val/Test, mean±SD, evidence framing/paired comparisons;
@@ -155,3 +164,70 @@ Chỉ publish/commit khi compute đã dừng; giữ working tree sạch trước
 
 Không đưa lại v1 hoặc checkpoint vào Git chỉ để chạy bước sửa này. User có thể
 chuyển metadata/log nhỏ để review; code nhận lại thực sự chạy trên server có .pt.
+
+
+## Kiểm định v3 và giữ lineage khoa học
+
+`--stage audit` chỉ đọc metadata/ranks và in JSON, không sửa runtime/registry,
+không load checkpoint/model, không dùng GPU. Exit0 là đủ các kiểm tra CPU được
+thực hiện; exit2 là INCOMPLETE, xem checks. Audit không thay thế freeze guard.
+`--stage report` cũng chỉ đọc runtime, ghi gói bảng vào `--publish-dir` hoặc
+mặc định `results/memo0711_v3_tables`; không cập nhật registry trong output đã khóa.
+
+`--reuse-memo` tự đọc ba input_roots từ protocol.lock.json Beauty của nguồn,
+trừ khi truyền CLI override rõ. Cách này tránh thay đường dẫn ngoài ý muốn làm
+cache gate không tương thích. Checkpoint nguồn vẫn phải có trên server.
+
+### Bằng chứng robustness
+
+- `robustness_evidence/`: item mask CSV, manifest, probe history/candidate,
+  paired fixed-batch logits mức0/80 và per-user ranks; mọi file có SHA256.
+- `robustness.csv`: eligible/removed/remaining item, coverage gốc/effective,
+  số token/ngữ cảnh lịch sử thực sự mất metadata, candidate exposure và hashes.
+- `robustness_diagnostics.csv`: đổi logits, số user đổi rank, chênh metric,
+  cờ đường phẳng. Curve phẳng không tự đồng nghĩa lỗi hoặc miễn nhiễm.
+- `robustness_binding.json`: evaluation_version3 và toàn bộ evidence hashes.
+  Không nhận lại robustness v1/v2 như bằng chứng đã kiểm định.
+- Nếu effective mask đúng nhưng logits vẫn không đổi, trạng thái REVIEW_REQUIRED
+  chặn khóa. Chỉ có thể chấp nhận bằng giải thích cụ thể cho từng case trong
+  `robustness_review.json`, gắn SHA diagnostic, tên reviewer và thời điểm ISO có timezone; trạng thái là
+  HUMAN_REVIEWED_FLAT, không phải tự động VERIFIED. Không sửa metric hoặc ép đường giảm.
+  Report giữ trạng thái chưa xác minh và không vẽ curve như kết quả đã xác nhận.
+
+### Nhóm, utility và framing
+
+`group_lineage.json` gắn groups.csv/groups.json/rule, checkpoint/model, rank CSV,
+context hash, lựa chọn từng seed và source implementation. Bảng nhóm luôn có
+lineage_id và nguồn. Không lấy số07/11 và09/11 khác rule rồi gộp cùng một dòng.
+Global/group chọn bằng Val; oracle Test chỉ mô tả. Bản historical giữ riêng.
+
+`framing_decision.json` chính so toàn bộ mười baseline như memo v1; trường
+`secondary_six_selectors` báo riêng phép so cùng S1. Các file trong
+`historic_decisions/<dataset>/` giữ số/kết luận F2, hash nguồn và family từng
+được ghi, không tự gắn lại nhãn. Khác kết quả chính/phụ phải hiện trong báo cáo.
+Không đổi threshold, seed, objective hoặc family theo Test.
+
+`feature_definitions.csv` gắn cột psi, nguồn feature CSV và mã định nghĩa.
+Đặc trưng dùng lịch sử và score của frozen reference ungated; target chỉ dùng
+cho label/audit. Recommendation loss S3 thực tế là full-catalog cross-entropy,
+cộng utility supervision/sparsity đã khai báo; không gọi là pairwise BPR.
+Spearman E1-prediction-vs-delta luôn tách khỏi rho ổn định nhãn giữa seed.
+
+Bảng thống kê dataset/coverage lấy artifact metadata thật. File thiếu giữ
+missing, Test chưa mở không điền0. Bảng CSV/LaTeX và hình SVG/PDF được tạo từ
+số đã đo; REVIEW_REQUIRED không được dùng để tuyên bố kết quả RQ3 cuối.
+
+
+### Bằng chứng dự đoán E1 theo từng context
+
+`--stage e1-evidence` là phân tích CPU: tái fit các predictor OOF LR/tree/length
+trên đúng input utility, feature order, seed và user-held-out folds của E1 cũ.
+Nó không train S1/gate, không mở Test, không đổi quyết định E0/E1 đã báo cáo.
+`all` tự làm bước này sau compute/rank cho những cohort đã có selected S2.
+
+`e1_oof_evidence/<CE hoặc LOG_RANK>/` lưu `paired_oof_predictions.csv`,
+`replay_summary.json` và manifest SHA input/report/engine/loader/features.
+AUC và Spearman dự đoán-delta được tái tính và so với JSON gốc; khác vượt
+sai số cho phép thì dừng, không sửa JSON cũ cho vừa. Audit/report kiểm tra
+OOF evidence; báo cáo có `E1_OOF_replay_summary` và `E1_OOF_artifacts`.
+Chỉ replay trước freeze; sau freeze chỉ đọc cache hoàn tất đúng binding.

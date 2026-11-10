@@ -147,6 +147,24 @@ def adopt_memo(run, source_root, datasets):
         if not markers:
             raise FileNotFoundError('No completed source jobs for ' + key)
         run.prepare(key)
+        decision=source_root/key/'framing_decision.json'
+        if decision.is_file():
+            target=run.output/'historic_decisions'/key/'framing_decision.json'
+            target.parent.mkdir(parents=True,exist_ok=True)
+            if target.exists() and sha(target)!=sha(decision):raise ValueError('Historical framing decision changed')
+            if not target.exists():shutil.copy2(decision,target)
+            recorded=json.loads(decision.read_text(encoding='utf-8'))
+            declared=recorded.get('framing_family')
+            family_evidence='explicit_in_source' if declared is not None else 'not_explicitly_recorded'
+            if declared is None and recorded.get('best_baseline') in ['id_plus_meta','early_plus_meta']:
+                family_evidence='fairness_winner_proves_fairness_was_included; full_family_not_explicit'
+            provenance=dict(source=str(decision),source_sha256=sha(decision),recorded_framing=recorded.get('framing'),
+                recorded_best_baseline=recorded.get('best_baseline'),recorded_family=declared,
+                family_evidence=family_evidence,source_protocol_sha256=sha(source_root/key/'protocol.lock.json'),historical_only=True,not_relabelled=True)
+            record_path=target.with_name('provenance.json')
+            if record_path.exists() and json.loads(record_path.read_text(encoding='utf-8'))!=provenance:raise ValueError('Historical decision provenance collision')
+            if not record_path.exists():write_json(record_path,provenance)
+            manifest.setdefault('historical_decisions',{})[key]=dict(path=str(target.relative_to(run.output)),sha256=sha(target),provenance_sha256=sha(record_path))
         # Permutations must remain the exact same training controls.
         contrasts = source_root / key / 'training_contrasts'
         if contrasts.is_dir():
@@ -165,7 +183,7 @@ def adopt_memo(run, source_root, datasets):
         # Posthoc utility is regenerated from unchanged models. Existing gates
         # are retained only when every exact signature dependency is identical.
         lock = source_root / key / 'protocol.lock.json'
-        protocol = json.loads(lock.read_text()) if lock.exists() else {}
+        protocol = json.loads(lock.read_text(encoding='utf-8')) if lock.exists() else {}
         gate_dependencies = ['src/taimma/training/selective_fusion.py', 'src/taimma/experiments/study_gates.py',
                              'src/taimma/evaluation/checkpoint2_utility.py', 'src/taimma/evaluation/e0_e1_protocol.py']
         compatible = digest(protocol.get('config', {})) == run.protocol_hash and all(
@@ -183,11 +201,11 @@ def adopt_memo(run, source_root, datasets):
                     if target.exists() and sha(target) != sha(p):raise ValueError('Evidence collision: '+str(target))
                     if not target.exists():shutil.copy2(p,target)
             for marker in (source_root/key/'gates').glob('*/completed.json'):
-                rec=json.loads(marker.read_text()); mode=rec['mode']; seed=rec['seed']
+                rec=json.loads(marker.read_text(encoding='utf-8')); mode=rec['mode']; seed=rec['seed']
                 if mode == 'add_one':continue
                 folder='no_sd_s2' if mode=='wo_source_dropout' else 'selected_s2'
-                status=json.loads((source_root/key/'selected_s2/status.json').read_text());label=status['label_choice']
-                report=json.loads((source_root/key/f'{folder}/e0_e1_{label}.json').read_text())
+                status=json.loads((source_root/key/'selected_s2/status.json').read_text(encoding='utf-8'));label=status['label_choice']
+                report=json.loads((source_root/key/f'{folder}/e0_e1_{label}.json').read_text(encoding='utf-8'))
                 job=f'early_CBT_{seed}' if mode=='wo_source_dropout' else f'early_sd_{seed}'
                 expected=digest(dict(model=run.model_hash(key,job),config=run.protocol_hash,mode=mode,label=label,report=report))
                 if rec['signature'] != expected:continue

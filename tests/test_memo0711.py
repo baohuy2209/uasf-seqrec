@@ -35,9 +35,9 @@ def frame(v):return pd.DataFrame(dict(user_idx=np.arange(len(v)),target_idx=np.a
 def test_framing_requires_paired_ci_not_only_point_improvement():
     base=np.full(100,.2);small=base+np.r_[np.full(51,.1),np.full(49,-.1)]
     frames={'uasf':{s:frame(small) for s in range(42,47)},'baseline':{s:frame(base) for s in range(42,47)}}
-    assert framing_from_ranks(frames,200)['framing']=='F2'
+    assert framing_from_ranks(frames,200,family=['baseline'])['framing']=='F2'
     frames['uasf']={s:frame(base+.05) for s in range(42,47)}
-    assert framing_from_ranks(frames,200)['framing']=='F1'
+    assert framing_from_ranks(frames,200,family=['baseline'])['framing']=='F1'
     del frames['uasf'][46]
     with pytest.raises(ValueError):framing_from_ranks(frames)
 

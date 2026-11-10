@@ -67,7 +67,7 @@ def test_fairness_adoption_uses_meta_and_base_targets(tmp_path):
     assert training_samples(run, 'beauty', 'id_42') == base
 
 
-def test_framing_uses_teacher_nested_family_not_fairness_controls():
+def test_framing_preserves_locked_fairness_family_and_reports_six_selector_sensitivity():
     from taimma.experiments.memo0711 import framing_from_ranks
     def frame(value):
         return pd.DataFrame(dict(user_idx=np.arange(30), target_idx=np.arange(30)+1,
@@ -76,9 +76,13 @@ def test_framing_uses_teacher_nested_family_not_fairness_controls():
     frames = {name: {s: frame(.2) for s in range(42, 47)} for name in nested}
     frames['uasf'] = {s: frame(.3) for s in range(42, 47)}
     frames['id_plus_meta'] = {s: frame(.4) for s in range(42, 47)}
+    for name in ['independent_ID','early_no_sd','early_plus_meta']:
+        frames[name]={s:frame(.2) for s in range(42,47)}
     result = framing_from_ranks(frames, 30)
-    assert result['framing'] == 'F1'
-    assert result['best_baseline'] in nested
+    assert result['framing'] == 'F2'
+    assert result['best_baseline'] == 'id_plus_meta'
+    assert result['secondary_six_selectors']['framing'] == 'F1'
+    assert result['secondary_six_selectors']['used_for_primary_decision'] is False
 
 
 def test_cli_preserves_yaml_roots_until_explicit_override(tmp_path):
@@ -188,11 +192,11 @@ def test_imported_legacy_config_uses_normalized_memo_meta_binding(tmp_path):
     from taimma.experiments.checkpoint2_protocol import sha,write_json
     run,old,source,_ = adoption_fixture(tmp_path)
     p = source/'attempt_001/config.json'
-    cfg = json.loads(p.read_text())
+    cfg = json.loads(p.read_text(encoding='utf-8'))
     cfg['data_signature'].update(train_meta_sha256='old_hash_including_oov',
                                  train_meta_eligible=2, train_meta_total=3)
     write_json(p,cfg)
-    rec = json.loads((source/'completed.json').read_text())
+    rec = json.loads((source/'completed.json').read_text(encoding='utf-8'))
     rec['artifacts']['attempt_001/config.json'] = sha(p)
     write_json(source/'completed.json',rec)
     write_json(source/'import_provenance.json',dict(source='original_historical_job',scientific_inputs_checked=True))
@@ -228,7 +232,7 @@ def test_report_removes_owned_stale_tables_but_preserves_user_notes(tmp_path):
     write_memo_report(output,{'datasets':['beauty']},destination)
     assert not (destination/'obsolete.csv').exists()
     write_memo_report(output,{'datasets':['beauty']},destination)
-    assert (destination/'personal.md').read_text() == 'keep me'
+    assert (destination/'personal.md').read_text(encoding='utf-8') == 'keep me'
 
 
 def test_report_refuses_tampered_gate_rank_csv(tmp_path):
@@ -263,7 +267,7 @@ def test_transfer_no_go_is_explicit_hash_bound_and_never_trains_gate(tmp_path,mo
     run.utility=utility
     run.gate_run=lambda *args:pytest.fail('NO-GO cannot train or evaluate transfer gates')
     run.uasf('sports',transfer=True)
-    outcome=json.loads((run.output/'sports/framing_decision.json').read_text())
+    outcome=json.loads((run.output/'sports/framing_decision.json').read_text(encoding='utf-8'))
     assert outcome['framing']=='TRANSFER_NO_ELIGIBLE'
     assert outcome['s2_status_sha256']==sha(run.output/'sports/selected_s2/status.json')
     run.completed=lambda *args:{'fixture':'present'}
@@ -277,7 +281,108 @@ def test_transfer_no_go_is_explicit_hash_bound_and_never_trains_gate(tmp_path,mo
     for rel in ['beauty/title_only_comparison.json','beauty/late_rank_diagnostics.csv',
                 'beauty/selected_s2/features_train_meta.csv','beauty/selected_s2/validation_same_model.csv']:
         path=run.output/rel;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('fixture')
+    from taimma.experiments import memo0711_robustness
+    monkeypatch.setattr(memo0711_robustness,'validate_robustness',lambda *a:None)
+    run.validate_group_lineage=lambda *a:None
     assert run.validate_ready()=={'sports':'PASS'}
     write_json(run.output/'sports/selected_s2/status.json',dict(s3_eligible=False,decision='different-reason'))
     with pytest.raises(RuntimeError,match='bound explicit outcome'):
         run.validate_ready()
+
+
+def test_official_framing_refuses_missing_fairness_instead_of_shrinking_family():
+    from taimma.experiments.memo0711 import framing_from_ranks,SECONDARY_FRAMING_BASELINES
+    def f(v):return pd.DataFrame(dict(user_idx=[0],target_idx=[1],rank=[1],**{'ndcg@10':[v]}))
+    frames={name:{seed:f(.1) for seed in range(42,47)} for name in SECONDARY_FRAMING_BASELINES+['uasf']}
+    with pytest.raises(ValueError,match='mandatory locked'):
+        framing_from_ranks(frames,10)
+
+
+def test_adoption_preserves_historical_f2_without_inventing_family(tmp_path,monkeypatch):
+    import json
+    from taimma.experiments import memo0711_adoption as module
+    from taimma.experiments.checkpoint2_protocol import write_json,sha
+    old=tmp_path/'old';write_json(old/'beauty/jobs/id_42/completed.json',{})
+    write_json(old/'beauty/protocol.lock.json',dict(config={'old':1}))
+    source=old/'beauty/framing_decision.json'
+    decision=dict(framing='F2',best_baseline='early_plus_meta',comparison={'mean_diff':-.011718})
+    write_json(source,decision);before=sha(source)
+    run=SimpleNamespace(output=tmp_path/'new',protocol_hash='different',prepare=lambda key:None)
+    monkeypatch.setattr(module,'adopt_s1',lambda *args:None)
+    result=module.adopt_memo(run,old,['beauty'])
+    historic=run.output/'historic_decisions/beauty/framing_decision.json'
+    provenance=json.loads(historic.with_name('provenance.json').read_text(encoding='utf-8'))
+    assert sha(source)==before==sha(historic)
+    assert json.loads(historic.read_text(encoding='utf-8'))==decision
+    assert provenance['recorded_family'] is None
+    assert 'full_family_not_explicit' in provenance['family_evidence']
+    module.adopt_memo(run,old,['beauty'])
+    write_json(source,{**decision,'framing':'F1'})
+    with pytest.raises(ValueError,match='Historical framing decision changed'):
+        module.adopt_memo(run,old,['beauty'])
+
+
+def test_subset_selection_checks_group_lineage_before_test_inference(tmp_path):
+    from taimma.experiments.memo0711 import LABELS
+    from taimma.experiments.checkpoint2_protocol import write_json,sha,context_signature
+    from taimma.data.split import SequenceSample
+    run=Memo0711(tmp_path,{'supervisor_memo':'2026-11-07'},'runs/lineage',device='cpu')
+    samples=[SequenceSample(0,[1],2,1),SequenceSample(1,[2],3,1)]
+    run.dataset=lambda key:dict(signature={'fixture':1},split=SimpleNamespace(val_samples=samples))
+    run.model_hash=lambda *a:'fixed-model'
+    root=run.output/'beauty'
+    write_json(root/'groups.json',{'rules':{'fixture':1}})
+    pd.DataFrame(dict(user_idx=[0,1],val_group_id=[0,1],test_group_id=[0,1])).to_csv(root/'groups.csv',index=False)
+    def inference(key,job,label,part):
+        assert part=='val','Must reject changed groups before opening Test'
+        path=root/'evaluations'/job/f'{label}_val.csv';path.parent.mkdir(parents=True,exist_ok=True)
+        f=pd.DataFrame(dict(user_idx=[0,1],target_idx=[2,3],rank=[1,2],**{'ndcg@10':[1.,.5]}))
+        f.to_csv(path,index=False)
+        signature=dict(model='fixed-model',contexts=context_signature(samples),label=label,mask=None)
+        write_json(path.with_suffix('.json'),dict(signature=signature,sha256=sha(path)))
+        return f
+    run.inference_ranks=inference
+    run.subset_frames('beauty',42,'val')
+    assert run._verify_subset_selection('beauty',42)['test_used'] is False
+    write_json(root/'groups.json',{'rules':{'fixture':'changed'}})
+    with pytest.raises(ValueError,match='lineage changed'):
+        run.subset_frames('beauty',42,'test')
+
+
+def test_cpu_rank_diagnostics_rejects_invalid_ranks_and_inconsistent_ndcg():
+    from taimma.experiments.memo0711 import validate_rank_numbers
+    good=pd.DataFrame(dict(user_idx=[0,1],target_idx=[2,0],rank=[1,12],**{'ndcg@10':[1.,0.]}))
+    validate_rank_numbers(good)
+    for bad in [0.,-1.,1.5,float('nan')]:
+        f=good.copy();f['rank']=f['rank'].astype(float);f.loc[0,'rank']=bad
+        with pytest.raises(ValueError,match='finite integers'):validate_rank_numbers(f)
+    f=good.copy();f.loc[0,'ndcg@10']=.5
+    with pytest.raises(ValueError,match='disagrees'):validate_rank_numbers(f)
+
+
+def test_group_lineage_binds_rules_ranks_models_and_grouping_source(tmp_path,monkeypatch):
+    from taimma.experiments import memo0711 as module
+    from taimma.experiments.checkpoint2_protocol import write_json
+    from taimma.data.split import SequenceSample
+    monkeypatch.setattr(module,'SEEDS',[42]);monkeypatch.setattr(module,'LABELS',['ID'])
+    run=Memo0711(tmp_path,{'supervisor_memo':'2026-11-07'},'runs/groups',device='cpu')
+    sample=SequenceSample(0,[1],2,1)
+    run.dataset=lambda key:dict(signature={'fixture':1},split=SimpleNamespace(val_samples=[sample],test_samples=[sample]))
+    run.model_hash=lambda *a:'model-sha'
+    root=run.output/'beauty'
+    write_json(root/'groups.json',dict(rules={'length_boundaries':[1]}))
+    (root/'groups.csv').write_text('user_idx,val_group_id,test_group_id\n0,0,0\n')
+    write_json(root/'group_analysis.json',[])
+    for kind in ['early','late']:(root/f'group_{kind}_42.csv').write_text('user_idx,ndcg_global\n0,1\n')
+    job=run.job_path('beauty','id_42');attempt=job/'attempt_001';attempt.mkdir(parents=True)
+    for part in ['val','test']:(attempt/f'per_user_{part}.csv').write_text('user_idx,target_idx,rank,ndcg@10\n0,2,1,1\n')
+    rec=dict(checkpoint='attempt_001/checkpoint.pt')
+    write_json(job/'completed.json',rec);run.completed=lambda *a:rec
+    for rel in ['src/taimma/experiments/checkpoint2_protocol.py','src/metadata_pipeline/user_grouping.py']:
+        p=tmp_path/rel;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('# grouping fixture')
+    value=run._write_group_lineage('beauty')
+    assert value['grouping_definition']['max_history_length']==50
+    assert run.validate_group_lineage('beauty')['lineage_id']==value['lineage_id']
+    (attempt/'per_user_test.csv').write_text('changed ranks')
+    with pytest.raises(ValueError,match='Source group ranks changed'):
+        run.validate_group_lineage('beauty')

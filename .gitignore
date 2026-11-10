@@ -42,3 +42,7 @@ results/utility_table5_20261107/beauty/diagnostic_early_sd/*.csv
 
 # Runtime for the supervisor 07 November protocol
 /runs/memo0711*/
+.specify/ 
+specs
+AGENTS.md
+

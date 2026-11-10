@@ -24,7 +24,9 @@ LABELS=['ID','C','B','T','CB','CT','BT','CBT']
 SOURCES=['category','brand','title']
 BASELINES=['all_fixed','global_subset','group_subset','global_gate','unsupervised','softmax_null',
            'independent_ID','early_no_sd','id_plus_meta','early_plus_meta']
-FRAMING_BASELINES=BASELINES[:6]
+FRAMING_BASELINES=list(BASELINES)
+SECONDARY_FRAMING_BASELINES=BASELINES[:6]
+FRAMING_POLICY="memo0711_v1_locked_ten_v3"
 TRANSFER_BASELINES=BASELINES[:8]
 TRANSFER_MODES=['uasf','global_gate','unsupervised','softmax_null']
 MODES=['uasf','global_gate','unsupervised','softmax_null','wo_utility','state_only','add_one','fallback_s1','wo_source_dropout']
@@ -60,10 +62,21 @@ class NullGate(SoftmaxNullGate):
         return alpha,beta
 
 
-def framing_from_ranks(frames,reps=1000):
+def framing_from_ranks(frames,reps=1000,family=None):
+    """Primary comparison keeps the ten-baseline family used by memo v1.
+
+    Explicit custom families support isolated tests/research declarations;
+    a six-selector sensitivity must never replace the primary decision.
+    """
+    declared=list(FRAMING_BASELINES if family is None else family)
+    if not declared or len(set(declared))!=len(declared) or 'uasf' in declared:
+        raise ValueError('Declare a nonempty unique comparison family excluding UASF')
+    if any(name not in frames for name in declared):raise ValueError('Missing a mandatory locked framing baseline')
     seeds=sorted(frames['uasf'])
     if seeds!=[42,43,44,45,46]:raise ValueError('Beauty framing requires five seeds 42..46')
     arrays={name:[] for name in frames};cohort=None
+    for name,values in frames.items():
+        if sorted(values)!=seeds:raise ValueError('Every method requires the same five seeds: '+name)
     for seed in seeds:
         current={name:by_seed[seed] for name,by_seed in frames.items()}
         names,users,m=aligned_rank_matrix(current)
@@ -72,38 +85,80 @@ def framing_from_ranks(frames,reps=1000):
         cohort=keys
         for i,name in enumerate(names):arrays[name].append(m[:,i])
     values={name:np.mean(v,axis=0) for name,v in arrays.items()}
-    family=[n for n in FRAMING_BASELINES if n in values]
-    if len(family)!=len(FRAMING_BASELINES):
-        if set(values)=={'uasf','baseline'}:family=['baseline']  # Small regression fixtures only.
-        else:raise ValueError('Missing a mandatory nested framing baseline')
-    best=max(sorted(family),key=lambda n:values[n].mean())
-    comparison=paired_bootstrap_test(values['uasf'],values[best],method_b_name=best,n_bootstrap=reps)
-    delta=values['uasf']-values[best];rng=np.random.default_rng(42)
-    interval=np.percentile([delta[rng.integers(len(delta),size=len(delta))].mean() for _ in range(reps)],[2.5,97.5])
-    comparison.mean_diff=float(delta.mean());comparison.ci_lower=float(interval[0]);comparison.ci_upper=float(interval[1])
-    return dict(framing='F1' if comparison.mean_diff>0 and comparison.ci_lower>0 else 'F2',
-        framing_family=family,wider_best_baseline=max(sorted(set(values)-{'uasf'}),key=lambda n:values[n].mean()),
-        best_baseline=best,comparison=asdict(comparison),validation_means={n:float(v.mean()) for n,v in values.items()},
-        seeds=seeds,test_used=False,rule='mean UASF exceeds best locked baseline and paired-user CI lower > 0')
+    def compare(names):
+        best=max(sorted(names),key=lambda n:values[n].mean())
+        comparison=paired_bootstrap_test(values['uasf'],values[best],method_b_name=best,n_bootstrap=reps)
+        delta=values['uasf']-values[best];rng=np.random.default_rng(42)
+        interval=np.percentile([delta[rng.integers(len(delta),size=len(delta))].mean() for _ in range(reps)],[2.5,97.5])
+        comparison.mean_diff=float(delta.mean());comparison.ci_lower=float(interval[0]);comparison.ci_upper=float(interval[1])
+        return dict(framing='F1' if comparison.mean_diff>0 and comparison.ci_lower>0 else 'F2',
+                    framing_family=list(names),best_baseline=best,comparison=asdict(comparison))
+    result=compare(declared)
+    if family is None and all(n in values for n in SECONDARY_FRAMING_BASELINES):
+        result['secondary_six_selectors']=dict(**compare(SECONDARY_FRAMING_BASELINES),
+            sensitivity_only=True,used_for_primary_decision=False)
+    result.update(framing_policy=FRAMING_POLICY if family is None else 'explicit_caller_declared_family',
+        validation_means={n:float(v.mean()) for n,v in values.items()},seeds=seeds,test_used=False,
+        rule='mean UASF exceeds best predeclared locked baseline and paired-user CI lower > 0')
+    return result
 
 
-def rank_diagnostics(roots,output):
-    rows=[]
-    for seed in SEEDS:
-        pair={}
-        for mode,root,name in [('ID',roots['early'],f'id_{seed}'),('late_CBT',roots['late'],f'late_CBT_{seed}')]:
-            job=Path(root)/'beauty/jobs'/name;rec=json.loads((job/'completed.json').read_text())
-            pair[mode]=pd.read_csv((job/rec['checkpoint']).parent/'per_user_test.csv').sort_values('user_idx').reset_index(drop=True)
-        aligned_rank_matrix(pair)
-        for mode,f in pair.items():
-            valid=(f.target_idx>0)
-            rows.append(dict(seed=seed,model=mode,n=len(f),oov=int((~valid).sum()),median_rank=float(f['rank'].median()),
-                **{f'top{k}':float(((f['rank']<=k)&valid).mean()) for k in [10,100,1000]}))
-    out=Path(output);out.mkdir(parents=True,exist_ok=True)
-    pd.DataFrame(rows).to_csv(out/'late_rank_diagnostics.csv',index=False,lineterminator='\n')
-    pd.DataFrame(rows).groupby('model')[['median_rank','top10','top100','top1000']].agg(['mean','std']).to_csv(out/'late_rank_summary.csv',lineterminator='\n')
-    write_json(out/'rank_scope.json',dict(training=False,inference=False,top10_brand_composition='Requires top-K item IDs; not inferable from target ranks'))
-    return rows
+def validate_rank_numbers(frame):
+    """Recompute NDCG from integer target ranks before CPU diagnostics."""
+    required={'user_idx','target_idx','rank','ndcg@10'}
+    if not required.issubset(frame) or frame.empty:raise ValueError('Missing nonempty target-rank columns')
+    for name,minimum in [('user_idx',0),('target_idx',0),('rank',1)]:
+        values=frame[name].to_numpy(dtype=float)
+        if not np.isfinite(values).all() or np.any(values<minimum) or np.any(values!=np.floor(values)):
+            raise ValueError('Target-rank values must be finite integers in range: '+name)
+    if frame.user_idx.duplicated().any():raise ValueError('Duplicate rank users')
+    ranks=frame['rank'].to_numpy(float);targets=frame.target_idx.to_numpy(float)
+    ndcg=np.where((targets>0)&(ranks<=10),1/np.log2(1+ranks),0.)
+    reported=frame['ndcg@10'].to_numpy(float)
+    if not np.isfinite(reported).all() or not np.allclose(ndcg,reported,rtol=0,atol=1e-14):
+        raise ValueError('Reported NDCG disagrees with target ranks')
+    return frame
+
+
+def rank_diagnostics(roots,output,datasets=None):
+    """CPU-only target-rank audit, preserving a hash-bound cohort lineage."""
+    output=Path(output)
+    # Old callers passed output/beauty; new callers pass the runtime root.
+    if datasets is None:
+        datasets=['beauty'];runtime=output.parent if output.name=='beauty' else output
+    else:runtime=output
+    all_rows=[]
+    for key in datasets:
+        rows=[];evidence=[]
+        for seed in SEEDS:
+            pair={}
+            for mode,root,name in [('ID',roots['early'],f'id_{seed}'),('late_CBT',roots['late'],f'late_CBT_{seed}')]:
+                local=runtime/key/'jobs'/name
+                job=local if (local/'completed.json').is_file() else Path(root)/key/'jobs'/name
+                marker=job/'completed.json';rec=json.loads(marker.read_text(encoding='utf-8'))
+                rank=(job/rec['checkpoint']).parent/'per_user_test.csv'
+                if not rank.resolve().is_relative_to(job.resolve()):raise ValueError('Rank path escapes job')
+                rel=rank.relative_to(job).as_posix();expected=rec.get('artifacts',{}).get(rel)
+                from .memo0711_adoption import verify_files
+                if expected is None:raise ValueError('Rank file lacks artifact hash: '+str(rank))
+                verify_files(job,{rel:expected})
+                pair[mode]=validate_rank_numbers(pd.read_csv(rank)).sort_values('user_idx').reset_index(drop=True)
+                evidence.append(dict(seed=seed,model=mode,completed_path=str(marker.resolve()),
+                    completed_sha256=sha(marker),ranks_path=str(rank.resolve()),ranks_sha256=sha(rank),
+                    checkpoint_sha256=rec['artifacts'].get(rec['checkpoint'])))
+            aligned_rank_matrix(pair)
+            for mode,f in pair.items():
+                valid=f.target_idx>0
+                rows.append(dict(dataset=key,seed=seed,model=mode,n=len(f),oov=int((~valid).sum()),
+                    median_rank=float(f['rank'].median()),**{f'top{k}':float(((f['rank']<=k)&valid).mean()) for k in [10,100,1000]}))
+        out=runtime/key;out.mkdir(parents=True,exist_ok=True)
+        pd.DataFrame(rows).to_csv(out/'late_rank_diagnostics.csv',index=False,lineterminator='\n')
+        pd.DataFrame(rows).groupby('model')[['median_rank','top10','top100','top1000']].agg(['mean','std']).to_csv(out/'late_rank_summary.csv',lineterminator='\n')
+        write_json(out/'rank_scope.json',dict(schema_version=3,dataset=key,training=False,inference=False,
+            ranks=evidence,diagnostics_sha256=sha(out/'late_rank_diagnostics.csv'),
+            top10_brand_composition='Requires top-K item IDs; not inferable from target ranks'))
+        all_rows.extend(rows)
+    return all_rows
 
 
 class Memo0711(StudyCompletion):
@@ -194,7 +249,7 @@ class Memo0711(StudyCompletion):
         path=self.output/key/f'per_seed_s2/{job}/raw_add_one_{label}.csv';marker=path.with_suffix('.json')
         signature=dict(model=self.model_hash(key,job),data=self.dataset(key)['signature'],label=label,evaluation_version=2)
         if marker.exists():
-            rec=json.loads(marker.read_text())
+            rec=json.loads(marker.read_text(encoding='utf-8'))
             if rec['signature']!=signature or sha(path)!=rec['sha256']:raise ValueError('Add-one cache changed')
             return pd.read_csv(path)
         rows=[];adapter=self.load_job(key,job);adapter.model.eval();samples=self.dataset(key)['split'].train_meta_samples
@@ -239,15 +294,36 @@ class Memo0711(StudyCompletion):
         for seed in seeds:
             self.run_job(key,f'id_plus_meta_{seed}',ModelSpec('id',seed,sources=()),train_samples=samples)
             self.run_job(key,f'early_plus_meta_{seed}',ModelSpec('early',seed),train_samples=samples)
+    def _subset_lineage(self,key,seed):
+        root=self.output/key;job=f'early_sd_{seed}'
+        paths={f'{label}_val.csv':root/'evaluations'/job/f'{label}_val.csv' for label in LABELS}
+        for label in LABELS:
+            path=paths[f'{label}_val.csv'];marker=json.loads(path.with_suffix('.json').read_text(encoding='utf-8'))
+            expected=dict(model=self.model_hash(key,job),contexts=context_signature(self.dataset(key)['split'].val_samples),label=label,mask=None)
+            if marker.get('signature')!=expected or marker.get('sha256')!=sha(path):raise ValueError('Subset validation rank cache changed: '+str(path))
+        return dict(schema_version=3,dataset=key,seed=seed,model=self.model_hash(key,job),
+            data=self.dataset(key)['signature'],groups_sha256=sha(root/'groups.csv'),
+            rules_sha256=sha(root/'groups.json'),validation_ranks_sha256={name:sha(path) for name,path in paths.items()},test_used=False)
+    def _verify_subset_selection(self,key,seed):
+        path=self.output/key/'gate_baselines'/f'{seed}.json'
+        marker=json.loads(path.with_suffix('.binding.json').read_text(encoding='utf-8'))
+        if marker.get('sha256')!=sha(path) or marker.get('lineage')!=self._subset_lineage(key,seed):
+            raise ValueError('Subset selection lineage changed: '+str(path))
+        result=json.loads(path.read_text(encoding='utf-8'))
+        if result.get('test_used') is not False:raise ValueError('Subset selection must use validation only')
+        return result
     def subset_frames(self,key,seed,part):
-        job=f'early_sd_{seed}';frames={lab:self.inference_ranks(key,job,lab,part) for lab in LABELS}
-        folder=self.output/key/'gate_baselines';path=folder/f'{seed}.json'
+        job=f'early_sd_{seed}';folder=self.output/key/'gate_baselines';path=folder/f'{seed}.json'
+        if part not in ['val','test']:raise ValueError('Subset selection supports Val or Test only')
+        if part=='test':selection=self._verify_subset_selection(key,seed)
+        frames={lab:self.inference_ranks(key,job,lab,part) for lab in LABELS}
         if part=='val':
             names,users,m=aligned_rank_matrix(frames);g=pd.read_csv(self.output/key/'groups.csv').set_index('user_idx').loc[users].val_group_id.to_numpy()
             global_lab=names[int(np.argmax(m.mean(0)))];choices={str(int(i)):names[int(np.argmax(m[g==i].mean(0)))] for i in np.unique(g)}
-            write_json(path,dict(global_subset=global_lab,groups=choices,test_used=False))
-        selection=json.loads(path.read_text());groups=pd.read_csv(self.output/key/'groups.csv').set_index('user_idx')
-        pieces=[]
+            selection=dict(global_subset=global_lab,groups=choices,test_used=False,selection_rule='argmax mean validation NDCG@10; ties follow LABELS order',subset_order=list(LABELS))
+            write_json(path,selection)
+            write_json(path.with_suffix('.binding.json'),dict(sha256=sha(path),lineage=self._subset_lineage(key,seed)))
+        groups=pd.read_csv(self.output/key/'groups.csv').set_index('user_idx');pieces=[]
         for gid,rows in groups.groupby('val_group_id' if part=='val' else 'test_group_id'):
             lab=selection['groups'].get(str(int(gid)),selection['global_subset']);pieces.append(frames[lab][frames[lab].user_idx.isin(rows.index)])
         return dict(all_fixed=frames['CBT'],global_subset=frames[selection['global_subset']],
@@ -263,7 +339,7 @@ class Memo0711(StudyCompletion):
         root=self.output/key/'gates'/f'{mode}_{seed}';marker=root/'completed.json'
         signature=digest(dict(model=self.model_hash(key,job),config=self.protocol_hash,mode=mode,label=label,report=report,**({'add_one_evaluation_version':2} if mode=='add_one' else {})))
         if marker.exists():
-            rec=json.loads(marker.read_text())
+            rec=json.loads(marker.read_text(encoding='utf-8'))
             if rec['signature']!=signature or any(sha(root/n)!=h for n,h in rec['artifacts'].items()):raise ValueError('Gate cache changed')
         else:
             if part=='test':raise FileNotFoundError('No trained gate: '+str(root))
@@ -283,7 +359,7 @@ class Memo0711(StudyCompletion):
         if part=='test':self.verify_freeze()
         out=root/f'per_user_{part}.csv';binding=out.with_suffix('.binding.json');sig=dict(gate=signature,part=part)
         if binding.exists():
-            m=json.loads(binding.read_text())
+            m=json.loads(binding.read_text(encoding='utf-8'))
             if m['signature']!=sig or sha(out)!=m['sha256']:raise ValueError('Gate rank cache changed')
             return pd.read_csv(out)
         result=gate_evaluate(adapter,gate,getattr(self.dataset(key)['split'],part+'_samples'),features_for(self,key,job,part),
@@ -291,7 +367,7 @@ class Memo0711(StudyCompletion):
         f=rank_frame(result);f.to_csv(out,index=False,lineterminator='\n');write_json(binding,dict(signature=sig,sha256=sha(out)));return f
     def uasf(self,key,transfer=False):
         if key!='beauty':
-            decision=json.loads((self.output/'beauty/framing_decision.json').read_text())
+            decision=json.loads((self.output/'beauty/framing_decision.json').read_text(encoding='utf-8'))
             from datetime import datetime,timezone,timedelta
             if not transfer or decision['framing']!='F1' or datetime.now(timezone(timedelta(hours=7))).date().isoformat()<'2026-11-12':
                 raise RuntimeError('Transfer UASF requires F1 Beauty and date >=12/11; use transfer stage')
@@ -302,7 +378,7 @@ class Memo0711(StudyCompletion):
         if not status['s3_eligible']:
             write_json(self.output/key/'framing_decision.json',dict(framing='F2' if key=='beauty' else 'TRANSFER_NO_ELIGIBLE',reason=status['decision'],s2_status_sha256=sha(self.output/key/'selected_s2/status.json'),test_used=False))
             return
-        label=status['label_choice'];report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text())
+        label=status['label_choice'];report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text(encoding='utf-8'))
         baselines=BASELINES if key=='beauty' else TRANSFER_BASELINES
         modes=MODES if key=='beauty' else TRANSFER_MODES
         frames={name:{} for name in baselines+['uasf']};rows=[]
@@ -315,7 +391,7 @@ class Memo0711(StudyCompletion):
                 r=report
                 if mode=='wo_source_dropout':
                     self.utility(key,['early_CBT_42','early_CBT_43'],'no_sd_s2',selected=False)
-                    r=json.loads((self.output/key/f'no_sd_s2/e0_e1_{label}.json').read_text())
+                    r=json.loads((self.output/key/f'no_sd_s2/e0_e1_{label}.json').read_text(encoding='utf-8'))
                 f=self.gate_run(key,seed,mode,r,label);rows.append(dict(seed=seed,mode=mode,val_ndcg_10=float(f['ndcg@10'].mean())))
                 if mode in frames:current[mode]=f
             for name,f in current.items():frames[name][seed]=f
@@ -323,18 +399,8 @@ class Memo0711(StudyCompletion):
         else:write_json(self.output/key/'framing_decision.json',dict(framing='TRANSFER_F1',test_used=False))
         pd.DataFrame(rows).to_csv(self.output/key/'gate_validation.csv',index=False,lineterminator='\n')
     def robustness_current(self,key):
-        self.foundation(key,SEEDS);rows=[]
-        for seed in SEEDS:
-            for family in ['early_sd','early_CBT']:
-                for source in SOURCES:
-                    mask=self.dataset(key)['masks'];available=np.flatnonzero(mask[source].numpy()>0)
-                    order=np.random.default_rng(seed).permutation(available)
-                    for rate in self.config['missing_rates']:
-                        active={s:v.clone() for s,v in mask.items()};active[source][order[:round(rate*len(order))]]=0
-                        f=self.inference_ranks(key,f'{family}_{seed}',f'missing_v2_{source}_{rate:.2f}','test',active)
-                        rows.append(dict(seed=seed,model=family,source=source,missing_rate=rate,ndcg_10=float(f['ndcg@10'].mean())))
-        pd.DataFrame(rows).to_csv(self.output/key/'robustness.csv',index=False,lineterminator='\n')
-        write_json(self.output/key/'robustness_binding.json',dict(evaluation_version=2,sha256=sha(self.output/key/'robustness.csv'),rows=len(rows),data=self.dataset(key)['signature']))
+        from .memo0711_robustness import run_robustness
+        return run_robustness(self,key)
     def title_controls(self):
         key='beauty';self.prepare(key)
         from metadata_pipeline.build_training_contrasts import build_training_contrasts_for_dataset
@@ -355,8 +421,8 @@ class Memo0711(StudyCompletion):
         write_json(self.output/key/'title_only_comparison.json',dict(direction='shuffled minus real',
             **paired_summary(shuffled,real,self.config['bootstrap_reps'])))
     def release(self,key):
-        self.verify_freeze();label=json.loads((self.output/key/'selected_s2/status.json').read_text())['label_choice']
-        report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text());rows=[]
+        self.verify_freeze();label=json.loads((self.output/key/'selected_s2/status.json').read_text(encoding='utf-8'))['label_choice']
+        report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text(encoding='utf-8'));rows=[]
         baselines=BASELINES if key=='beauty' else TRANSFER_BASELINES
         modes=MODES if key=='beauty' else TRANSFER_MODES
         frames={n:{} for n in baselines+['uasf']}
@@ -366,7 +432,7 @@ class Memo0711(StudyCompletion):
             for name,job in [('independent_ID',f'id_{seed}'),('early_no_sd',f'early_CBT_{seed}'),('id_plus_meta',f'id_plus_meta_{seed}'),('early_plus_meta',f'early_plus_meta_{seed}')]:
                 if name in baselines:current[name]=self.inference_ranks(key,job,'CBT','test')
             for mode in modes:
-                r=report if mode!='wo_source_dropout' else json.loads((self.output/key/f'no_sd_s2/e0_e1_{label}.json').read_text())
+                r=report if mode!='wo_source_dropout' else json.loads((self.output/key/f'no_sd_s2/e0_e1_{label}.json').read_text(encoding='utf-8'))
                 f=self.gate_run(key,seed,mode,r,label,'test');rows.append(dict(seed=seed,mode=mode,test_ndcg_10=float(f['ndcg@10'].mean())))
                 if mode in frames:current[mode]=f
             for name,f in current.items():frames[name][seed]=f
@@ -396,17 +462,70 @@ class Memo0711(StudyCompletion):
                         f=pd.read_csv(attempt/'per_user_test.csv')
                         rec.update(test_ndcg_10=float(f['ndcg@10'].mean()),test_status='DIAGNOSTIC_B_EVALUATED')
                         write_json(self.job_path(key,name)/'completed.json',rec)
-        return super().group_analysis(key)
+        super().group_analysis(key)
+        return self._write_group_lineage(key)
+
+    def _write_group_lineage(self,key):
+        root=self.output/key;split=self.dataset(key)['split'];records=[]
+        for kind in ['early','late']:
+            for seed in SEEDS:
+                ranks={};models={}
+                for label in LABELS:
+                    job=f'id_{seed}' if label=='ID' else f'{kind}_{label}_{seed}'
+                    rec=self.completed(key,job);models[job]=dict(model_sha256=self.model_hash(key,job),completed_sha256=sha(self.job_path(key,job)/'completed.json'))
+                    attempt=(self.job_path(key,job)/rec['checkpoint']).parent
+                    for part in ['val','test']:
+                        path=attempt/f'per_user_{part}.csv'
+                        ranks[path.relative_to(root).as_posix()]=sha(path)
+                records.append(dict(mechanism=kind,seed=seed,models=models,ranks_sha256=ranks,
+                    selected_users_sha256=sha(root/f'group_{kind}_{seed}.csv')))
+        files={name:sha(root/name) for name in ['groups.json','groups.csv','group_analysis.json']}
+        lineage=dict(schema_version=3,dataset=key,runtime=str(self.output),data=self.dataset(key)['signature'],
+            rules=json.loads((root/'groups.json').read_text(encoding='utf-8')).get('rules'),files=files,analyses=records,
+            contexts={part:context_signature(getattr(split,part+'_samples')) for part in ['val','test']},
+            source_sha256={rel:sha(self.repo/rel) for rel in ['src/taimma/experiments/checkpoint2_protocol.py','src/metadata_pipeline/user_grouping.py']},
+            global_and_group_selection='validation_only',oracle='test_descriptive_only',
+            grouping_definition=dict(length='count of in-catalog nonpadding IDs in truncated input history',max_history_length=50,
+                oov_history_ids='mapped to zero and excluded from length/tail ratio',tail_partition='Train-base event frequencies',
+                rules_fit='Validation histories only; numeric quantiles and per-bin tail medians',
+                ties='identical histories/features stay in the same numeric group',empty_validation_groups='fallback to global validation subset',
+                subset_selection_ties='first subset in checkpoint2_protocol.SUBSETS order'))
+        lineage['lineage_id']=digest(lineage)
+        write_json(root/'group_lineage.json',lineage)
+        return lineage
+
+    def validate_group_lineage(self,key):
+        root=self.output/key;path=root/'group_lineage.json';value=json.loads(path.read_text(encoding='utf-8'))
+        body={k:v for k,v in value.items() if k!='lineage_id'}
+        if value.get('schema_version')!=3 or value.get('lineage_id')!=digest(body) or value.get('data')!=self.dataset(key)['signature']:
+            raise ValueError('Group lineage binding changed: '+key)
+        expected={(kind,seed) for kind in ['early','late'] for seed in SEEDS}
+        if {(r['mechanism'],r['seed']) for r in value['analyses']}!=expected or len(value['analyses'])!=len(expected):raise ValueError('Incomplete group lineage coverage')
+        if value.get('contexts')!={part:context_signature(getattr(self.dataset(key)['split'],part+'_samples')) for part in ['val','test']}:raise ValueError('Group context lineage changed')
+        for rel,h in value['source_sha256'].items():
+            path=(self.repo/rel).resolve()
+            if not path.is_relative_to(self.repo.resolve()) or sha(path)!=h:raise ValueError('Grouping source changed')
+        for rel,h in value['files'].items():
+            p=(root/rel).resolve()
+            if not p.is_relative_to(root.resolve()) or sha(p)!=h:raise ValueError('Group rules/summary changed: '+key+'/'+rel)
+        for record in value['analyses']:
+            if sha(root/f"group_{record['mechanism']}_{record['seed']}.csv")!=record['selected_users_sha256']:raise ValueError('Selected-group ranks changed')
+            for rel,h in record['ranks_sha256'].items():
+                p=(root/rel).resolve()
+                if not p.is_relative_to(root.resolve()) or sha(p)!=h:raise ValueError('Source group ranks changed')
+            for job,item in record['models'].items():
+                if self.model_hash(key,job)!=item['model_sha256'] or sha(self.job_path(key,job)/'completed.json')!=item['completed_sha256']:raise ValueError('Group model lineage changed')
+        return value
 
     def validate_ready(self):
         """Verify measured coverage before creating the immutable Test release lock."""
         if list(self.output.glob('*/memo_execution.lock')) or list(self.output.glob('*/jobs/*/execution.lock')) or list(self.output.glob('*/gates/*/execution.lock')):
             raise RuntimeError('An experiment lock is active; inspect before freezing')
         checked={}
-        beauty=json.loads((self.output/'beauty/framing_decision.json').read_text())
+        beauty=json.loads((self.output/'beauty/framing_decision.json').read_text(encoding='utf-8'))
         def cached_val(key,job,label):
             path=self.output/key/'evaluations'/job/f'{label}_val.csv'
-            marker=json.loads(path.with_suffix('.json').read_text())
+            marker=json.loads(path.with_suffix('.json').read_text(encoding='utf-8'))
             expected=dict(model=self.model_hash(key,job),contexts=context_signature(self.dataset(key)['split'].val_samples),label=label,mask=None)
             if marker['signature']!=expected or marker['sha256']!=sha(path):raise ValueError('Validation rank cache changed: '+str(path))
             return pd.read_csv(path)
@@ -418,19 +537,14 @@ class Memo0711(StudyCompletion):
                     for label in LABELS:
                         name=f'id_{seed}' if label=='ID' else f'{kind}_{label}_{seed}'
                         if self.completed(key,name) is None:raise FileNotFoundError('Missing B job: '+key+'/'+name)
-            binding=json.loads((self.output/key/'robustness_binding.json').read_text())
-            csv=self.output/key/'robustness.csv';frame=pd.read_csv(csv)
-            if binding.get('evaluation_version')!=2 or binding.get('sha256')!=sha(csv) or binding.get('data')!=self.dataset(key)['signature']:
-                raise ValueError('Robustness must use corrected version2 and unchanged data: '+key)
-            expected={(s,m,src,float(r)) for s in SEEDS for m in ['early_sd','early_CBT'] for src in SOURCES for r in self.config['missing_rates']}
-            actual=set(zip(frame.seed,frame.model,frame.source,frame.missing_rate.astype(float)))
-            if len(frame)!=len(expected) or actual!=expected or not np.isfinite(frame.ndcg_10).all():raise ValueError('Incomplete robustness coverage: '+key)
-            if not (self.output/key/'group_analysis.json').is_file():raise FileNotFoundError('Missing group analysis: '+key)
+            from .memo0711_robustness import validate_robustness
+            validate_robustness(self,key)
+            self.validate_group_lineage(key)
             if key=='beauty' or beauty['framing']=='F1':
-                status=json.loads((self.output/key/'selected_s2/status.json').read_text())
+                status=json.loads((self.output/key/'selected_s2/status.json').read_text(encoding='utf-8'))
                 if beauty['framing']=='F1' and not status.get('s3_eligible'):
                     if key=='beauty':raise RuntimeError('Beauty F1 requires eligible S2')
-                    outcome=json.loads((self.output/key/'framing_decision.json').read_text())
+                    outcome=json.loads((self.output/key/'framing_decision.json').read_text(encoding='utf-8'))
                     if outcome.get('framing')!='TRANSFER_NO_ELIGIBLE' or outcome.get('test_used') is not False or outcome.get('reason')!=status.get('decision') or outcome.get('s2_status_sha256')!=sha(self.output/key/'selected_s2/status.json'):
                         raise RuntimeError('Transfer S2 NO-GO must have a bound explicit outcome: '+key)
                 if status.get('s3_eligible'):
@@ -439,21 +553,21 @@ class Memo0711(StudyCompletion):
                     for seed in seeds:
                         for mode in modes:
                             root=self.output/key/'gates'/f'{mode}_{seed}'
-                            rec=json.loads((root/'completed.json').read_text())
+                            rec=json.loads((root/'completed.json').read_text(encoding='utf-8'))
                             from .memo0711_adoption import verify_files
                             verify_files(root,rec['artifacts'])
                             rank=root/'per_user_val.csv'
-                            binding=json.loads(rank.with_suffix('.binding.json').read_text())
+                            binding=json.loads(rank.with_suffix('.binding.json').read_text(encoding='utf-8'))
                             if binding.get('signature')!=dict(gate=rec['signature'],part='val') or binding.get('sha256')!=sha(rank):
                                 raise ValueError('Gate validation ranks changed: '+str(rank))
                             f=pd.read_csv(rank)
                             if key=='beauty' and mode in framing_frames:framing_frames[mode][seed]=f
                             aligned_rank_matrix({'gate':f},self.dataset(key)['split'].val_samples)
                     if key=='beauty':
-                        if beauty.get('framing_family')!=FRAMING_BASELINES:raise ValueError('Framing must declare the six nested baselines')
+                        if beauty.get('framing_family')!=FRAMING_BASELINES or beauty.get('framing_policy')!=FRAMING_POLICY:raise ValueError('Framing must preserve the locked ten-baseline policy')
                         groups=pd.read_csv(self.output/key/'groups.csv').set_index('user_idx')
                         for seed in seeds:
-                            job=f'early_sd_{seed}';choices=json.loads((self.output/key/'gate_baselines'/f'{seed}.json').read_text())
+                            job=f'early_sd_{seed}';choices=self._verify_subset_selection(key,seed)
                             allframes={lab:cached_val(key,job,lab) for lab in LABELS}
                             framing_frames['all_fixed'][seed]=allframes['CBT']
                             framing_frames['global_subset'][seed]=allframes[choices['global_subset']]
@@ -462,6 +576,8 @@ class Memo0711(StudyCompletion):
                                 lab=choices['groups'].get(str(int(gid)),choices['global_subset'])
                                 pieces.append(allframes[lab][allframes[lab].user_idx.isin(rows.index)])
                             framing_frames['group_subset'][seed]=pd.concat(pieces).sort_values('user_idx').reset_index(drop=True)
+                            for method,reference in [('independent_ID',f'id_{seed}'),('early_no_sd',f'early_CBT_{seed}'),('id_plus_meta',f'id_plus_meta_{seed}'),('early_plus_meta',f'early_plus_meta_{seed}')]:
+                                framing_frames[method][seed]=cached_val(key,reference,'CBT')
                         computed=framing_from_ranks(framing_frames,self.config['bootstrap_reps'])
                         if computed['framing']!=beauty['framing'] or computed['best_baseline']!=beauty['best_baseline']:
                             raise ValueError('Stored framing differs from measured validation ranks')
