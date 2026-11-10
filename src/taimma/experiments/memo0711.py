@@ -541,6 +541,9 @@ class Memo0711(StudyCompletion):
             validate_robustness(self,key)
             self.validate_group_lineage(key)
             if key=='beauty' or beauty['framing']=='F1':
+                from .memo0711_e1_evidence import inspect_e1_evidence
+                if inspect_e1_evidence(self.output/key)['status']!='PASS':
+                    raise ValueError('Missing or invalid E1 OOF evidence: '+key)
                 status=json.loads((self.output/key/'selected_s2/status.json').read_text(encoding='utf-8'))
                 if beauty['framing']=='F1' and not status.get('s3_eligible'):
                     if key=='beauty':raise RuntimeError('Beauty F1 requires eligible S2')

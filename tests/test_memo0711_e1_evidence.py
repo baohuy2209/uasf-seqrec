@@ -67,6 +67,7 @@ def test_export_cache_and_pure_inspector(tmp_path, monkeypatch):
     monkeypatch.setattr(module, 'replay_predictions', lambda *args: pytest.fail('Valid cache must not refit'))
     cached = module.export_e1_evidence(REPO, output)
     assert all(row['status'] == 'VERIFIED_CACHE' for row in cached['outcomes'])
+    assert not cached['cpu_predictor_fitting'] and cached['fitted_sources']==0
     p = output/'beauty/e1_oof_evidence/CE/paired_oof_predictions.csv'
     p.write_text(p.read_text(encoding='utf-8') + '\n', encoding='utf-8')
     with pytest.raises(ValueError, match='artifact changed'):
@@ -78,6 +79,7 @@ def test_missing_data_never_fabricates_rows(tmp_path):
     result = module.export_e1_evidence(REPO, output)
     assert all(row['status'] == 'MISSING_INPUTS' for row in result['outcomes'])
     assert not output.exists()
+    assert not result['cpu_predictor_fitting'] and result['fitted_sources']==0
 
 
 def test_mismatched_original_auc_is_rejected(tmp_path):
@@ -90,3 +92,14 @@ def test_mismatched_original_auc_is_rejected(tmp_path):
     with pytest.raises(ValueError, match='differs from the bound original'):
         module.export_e1_evidence(REPO, output)
     assert not (output/'beauty/e1_oof_evidence/CE/manifest.json').exists()
+
+
+def test_copied_oof_bundle_retains_original_hashes(tmp_path):
+    import shutil
+    output, _ = make_evidence_input(tmp_path)
+    make_evidence_input(tmp_path, 'LOG_RANK')
+    module.export_e1_evidence(REPO, output)
+    copied=tmp_path/'copied'/'runs'/'memo'
+    shutil.copytree(output,copied)
+    shutil.rmtree(output)
+    assert module.inspect_e1_evidence(copied/'beauty')['status']=='PASS'

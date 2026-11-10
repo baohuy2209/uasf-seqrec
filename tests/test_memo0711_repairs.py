@@ -284,6 +284,10 @@ def test_transfer_no_go_is_explicit_hash_bound_and_never_trains_gate(tmp_path,mo
     from taimma.experiments import memo0711_robustness
     monkeypatch.setattr(memo0711_robustness,'validate_robustness',lambda *a:None)
     run.validate_group_lineage=lambda *a:None
+    with pytest.raises(ValueError,match='OOF'):
+        run.validate_ready()
+    from taimma.experiments import memo0711_e1_evidence
+    monkeypatch.setattr(memo0711_e1_evidence,'inspect_e1_evidence',lambda *a:{'status':'PASS'})
     assert run.validate_ready()=={'sports':'PASS'}
     write_json(run.output/'sports/selected_s2/status.json',dict(s3_eligible=False,decision='different-reason'))
     with pytest.raises(RuntimeError,match='bound explicit outcome'):

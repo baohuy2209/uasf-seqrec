@@ -126,6 +126,8 @@ def main():
             if a.stage=='transfer':
                 for key in a.datasets:
                     if key!='beauty':run.uasf(key,transfer=True)
+                from taimma.experiments.memo0711_e1_evidence import export_e1_evidence
+                print(json.dumps(export_e1_evidence(ROOT,run.output,[k for k in a.datasets if k!='beauty']),indent=2))
     # A registry includes only measured outputs, no invented Test values.
     import pandas as pd
     rows=[]

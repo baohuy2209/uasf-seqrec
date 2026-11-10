@@ -65,7 +65,7 @@ def audit_runtime(output,config):
                 # Transfer S2 is conditional; absence outside Beauty is explicit N/A under F2.
                 if dataset!='beauty' and name.startswith('selected_s2'):
                     b=output/'beauty/framing_decision.json'
-                    decision=json.loads(b.read_text()) if b.is_file() else {}
+                    decision=json.loads(b.read_text(encoding='utf-8')) if b.is_file() else {}
                     if decision.get('framing')=='F2':result(dataset,name,'NOT_APPLICABLE_F2');continue
                 result(dataset,name,'MISSING')
             else:result(dataset,name,'PRESENT')
@@ -114,7 +114,7 @@ def audit_runtime(output,config):
                 result(dataset,marker.parent.name,'PASS')
             except (ValueError,KeyError,FileNotFoundError) as exc:result(dataset,marker.parent.name,'FAILED',exc)
         status_path=root/'selected_s2/status.json'
-        status=json.loads(status_path.read_text()) if status_path.is_file() else {}
+        status=json.loads(status_path.read_text(encoding='utf-8')) if status_path.is_file() else {}
         if status.get('s3_eligible'):
             seeds=range(42,47) if dataset=='beauty' else [42,43,44]
             modes=['uasf','global_gate','unsupervised','softmax_null','wo_utility','state_only','add_one','fallback_s1','wo_source_dropout'] if dataset=='beauty' else ['uasf','global_gate','unsupervised','softmax_null']
@@ -122,29 +122,29 @@ def audit_runtime(output,config):
                 for mode in modes:
                     folder=root/'gates'/f'{mode}_{seed}'
                     try:
-                        rec=json.loads((folder/'completed.json').read_text())
+                        rec=json.loads((folder/'completed.json').read_text(encoding='utf-8'))
                         for rel,h in rec['artifacts'].items():
                             artifact=(folder/rel).resolve()
                             if not artifact.is_relative_to(folder.resolve()) or not artifact.is_file() or file_sha(artifact)!=h:raise ValueError('Gate checkpoint artifact missing/changed')
-                        rank=folder/'per_user_val.csv';binding=json.loads(rank.with_suffix('.binding.json').read_text())
+                        rank=folder/'per_user_val.csv';binding=json.loads(rank.with_suffix('.binding.json').read_text(encoding='utf-8'))
                         if binding.get('signature')!={'gate':rec['signature'],'part':'val'} or binding.get('sha256')!=file_sha(rank):raise ValueError('Gate validation binding changed')
                         validate_rank_measurements(pd.read_csv(rank),rank)
                         result(dataset,'gate:'+folder.name,'PASS')
                     except (ValueError,KeyError,FileNotFoundError) as exc:result(dataset,'gate:'+folder.name,'MISSING_OR_INVALID_GATE',exc)
         for p in sorted((root/'gates').glob('*/per_user_*.csv')):
             try:
-                binding=json.loads(p.with_suffix('.binding.json').read_text())
+                binding=json.loads(p.with_suffix('.binding.json').read_text(encoding='utf-8'))
                 if binding.get('sha256')!=file_sha(p):raise ValueError('Gate rank hash changed')
                 validate_rank_measurements(pd.read_csv(p),p)
                 result(dataset,str(p.relative_to(root)),'PASS')
             except (ValueError,KeyError,FileNotFoundError) as exc:result(dataset,str(p.relative_to(root)),'FAILED',exc)
     decision_path=output/'beauty/framing_decision.json'
     if decision_path.is_file():
-        decision=json.loads(decision_path.read_text())
+        decision=json.loads(decision_path.read_text(encoding='utf-8'))
         family=decision.get('framing_family',[])
         official=['all_fixed','global_subset','group_subset','global_gate','unsupervised','softmax_null','independent_ID','early_no_sd','id_plus_meta','early_plus_meta']
         status_path=output/'beauty/selected_s2/status.json'
-        s2=json.loads(status_path.read_text()) if status_path.is_file() else {}
+        s2=json.loads(status_path.read_text(encoding='utf-8')) if status_path.is_file() else {}
         no_gate=(decision.get('framing')=='F2' and s2.get('s3_eligible') is False
                  and decision.get('reason')==s2.get('decision')
                  and decision.get('s2_status_sha256')==file_sha(status_path))

@@ -110,7 +110,7 @@ def export_e1_evidence(repo, output, datasets=('beauty',)):
     engine = repo / 'src/taimma/evaluation/e0_e1_protocol.py'
     module_spec = importlib.util.spec_from_file_location('_memo_e1_original_loader', script)
     loader = importlib.util.module_from_spec(module_spec); module_spec.loader.exec_module(loader)
-    outcomes = []
+    outcomes = []; fitted_sources = 0
     for dataset in datasets:
         root = output / dataset / 'selected_s2'
         for metric in ('CE', 'LOG_RANK'):
@@ -142,7 +142,7 @@ def export_e1_evidence(repo, output, datasets=('beauty',)):
                 expected_env = _json(protocol).get('config', {}).get('environment', {})
                 if any(str(expected_env.get(k, versions[k])) != str(versions[k]) for k in versions):
                     raise ValueError('CPU replay libraries differ from the locked E1 environment')
-            signature = dict(schema_version=1, sources=sources, seed=42, folds=5, library_versions=versions,
+            signature = dict(schema_version=1, sources=sources, dataset_root=str(root.parent), repository_root=str(repo), seed=42, folds=5, library_versions=versions,
                              estimator_contract='unchanged_evaluate_e1_predictability', metric=metric)
             folder = output / dataset / 'e1_oof_evidence' / metric
             marker = folder / 'manifest.json'
@@ -183,6 +183,7 @@ def export_e1_evidence(repo, output, datasets=('beauty',)):
                 delta = first if regime == 'contextual' else (first + second) / 2
                 frame, metrics, folds = replay_predictions(meta['source_features'].get(source, X), delta,
                     users, stability['epsilon'], regime, meta['group_indices'])
+                fitted_sources += 1
                 _assert_metrics(metrics, e1)
                 frame['context_id'] = contexts.context_id.to_numpy()
                 frame['source_name'] = source; frame['metric'] = metric; frame['evaluated_regime'] = regime
@@ -203,7 +204,7 @@ def export_e1_evidence(repo, output, datasets=('beauty',)):
             _write(marker, dict(signature=signature, files=files, analysis='CPU E1 predictor replay only',
                                 original_report_unchanged=True))
             outcomes.append(dict(dataset=dataset, metric=metric, status='EXPORTED', manifest=str(marker)))
-    return dict(s1_training=False, gate_training=False, cpu_predictor_fitting=True, outcomes=outcomes)
+    return dict(s1_training=False, gate_training=False, cpu_predictor_fitting=bool(fitted_sources), fitted_sources=fitted_sources, outcomes=outcomes)
 
 
 def inspect_e1_evidence(dataset_root):
@@ -221,6 +222,17 @@ def inspect_e1_evidence(dataset_root):
             raise ValueError('Unknown E1 OOF evidence schema')
         for absolute, expected in record['signature']['sources'].items():
             p = Path(absolute)
+            if not p.is_file():
+                # A copied bundle may be audited on Windows without changing its
+                # original Linux provenance. Rebase only declared dataset/repo roots.
+                normalized=str(absolute).replace('\\','/')
+                for old, new in [(record['signature'].get('dataset_root'), root),
+                                 (record['signature'].get('repository_root'), root.parents[2])]:
+                    prefix=str(old).replace('\\','/').rstrip('/')+'/' if old else ''
+                    if prefix and normalized.startswith(prefix):
+                        candidate=(new/normalized[len(prefix):]).resolve()
+                        if not candidate.is_relative_to(new.resolve()):raise ValueError('E1 evidence path escapes declared root')
+                        p=candidate;break
             if not p.is_file() or sha(p) != expected:
                 raise ValueError('E1 evidence source changed: ' + str(p))
         for relative, expected in record['files'].items():

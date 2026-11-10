@@ -16,9 +16,7 @@ source .venv/bin/activate
 
 COMMON=(
   --output runs/memo0711_v3
-  --early-root /home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106
-  --late-root /home/ubuntu/projects/uasf-seqrec-late-20261106/runs/checkpoint2_late_20261106
-  --diagnostics-root /home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_20261106
+  --reuse-memo runs/memo0711_v1
 )
 
 python scripts/run_memo0711.py --stage plan
@@ -44,7 +42,7 @@ python scripts/run_memo0711.py --stage report \
   --publish-dir results/memo0711_v3 "${COMMON[@]}"
 ```
 
-Đổi `--late-root` nếu kết quả late thật ở checkout chính. Flag CLI chỉ override
+Các input roots được lấy tự động từ protocol của memo v1 để giữ đúng config và khả năng dùng lại gate. Chỉ truyền `--late-root` rõ ràng nếu đường dẫn gốc đã chuyển. Flag CLI chỉ override
 YAML khi truyền rõ; đường YAML không còn bị default argparse ghi đè. Giữ cùng
 roots/output trên mọi lệnh. Windows thiếu .pt không thay thế được bước nhận lại
 server: checkpoint phải tồn tại và khớp hash; thiếu sẽ dừng rõ thay vì train thay.
