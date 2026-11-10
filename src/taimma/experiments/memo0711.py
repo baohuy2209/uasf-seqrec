@@ -24,6 +24,9 @@ LABELS=['ID','C','B','T','CB','CT','BT','CBT']
 SOURCES=['category','brand','title']
 BASELINES=['all_fixed','global_subset','group_subset','global_gate','unsupervised','softmax_null',
            'independent_ID','early_no_sd','id_plus_meta','early_plus_meta']
+FRAMING_BASELINES=BASELINES[:6]
+TRANSFER_BASELINES=BASELINES[:8]
+TRANSFER_MODES=['uasf','global_gate','unsupervised','softmax_null']
 MODES=['uasf','global_gate','unsupervised','softmax_null','wo_utility','state_only','add_one','fallback_s1','wo_source_dropout']
 
 
@@ -34,6 +37,10 @@ class SeparateID:
         fallback.model.eval()
         for p in fallback.model.parameters():p.requires_grad=False
     def __getattr__(self,name):return getattr(self.adapter,name)
+    @property
+    def masks(self):return self.adapter.masks
+    @masks.setter
+    def masks(self,value):self.adapter.masks=value
     def predict(self,ids,weights=None):
         scores=self.adapter.predict(ids,weights)
         if weights is not None and self.use_id_fallback:
@@ -65,12 +72,17 @@ def framing_from_ranks(frames,reps=1000):
         cohort=keys
         for i,name in enumerate(names):arrays[name].append(m[:,i])
     values={name:np.mean(v,axis=0) for name,v in arrays.items()}
-    best=max(sorted(set(values)-{'uasf'}),key=lambda n:values[n].mean())
+    family=[n for n in FRAMING_BASELINES if n in values]
+    if len(family)!=len(FRAMING_BASELINES):
+        if set(values)=={'uasf','baseline'}:family=['baseline']  # Small regression fixtures only.
+        else:raise ValueError('Missing a mandatory nested framing baseline')
+    best=max(sorted(family),key=lambda n:values[n].mean())
     comparison=paired_bootstrap_test(values['uasf'],values[best],method_b_name=best,n_bootstrap=reps)
     delta=values['uasf']-values[best];rng=np.random.default_rng(42)
     interval=np.percentile([delta[rng.integers(len(delta),size=len(delta))].mean() for _ in range(reps)],[2.5,97.5])
     comparison.mean_diff=float(delta.mean());comparison.ci_lower=float(interval[0]);comparison.ci_upper=float(interval[1])
     return dict(framing='F1' if comparison.mean_diff>0 and comparison.ci_lower>0 else 'F2',
+        framing_family=family,wider_best_baseline=max(sorted(set(values)-{'uasf'}),key=lambda n:values[n].mean()),
         best_baseline=best,comparison=asdict(comparison),validation_means={n:float(v.mean()) for n,v in values.items()},
         seeds=seeds,test_used=False,rule='mean UASF exceeds best locked baseline and paired-user CI lower > 0')
 
@@ -98,6 +110,9 @@ class Memo0711(StudyCompletion):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         if self.config.get('supervisor_memo')!='2026-11-07':raise ValueError('Use the 07/11 configuration')
+    def adopt_memo(self,source_root,datasets):
+        from .memo0711_adoption import adopt_memo
+        return adopt_memo(self,source_root,datasets)
     def load_job(self,key,name):
         adapter=super().load_job(key,name)
         if adapter.spec.kind=='early':
@@ -121,6 +136,8 @@ class Memo0711(StudyCompletion):
         if existing:
             if existing['fingerprint']!=fingerprint:raise ValueError('Job configuration changed: '+name)
             return existing
+        if getattr(self,'reuse_memo_source',None) or (self.output/'adoption_manifest.json').exists():
+            raise FileNotFoundError('Missing adopted S1 checkpoint; refusing implicit retraining: '+key+'/'+name)
         self.guard(training=True)
         root=self.job_path(key,name)
         with exclusive(root/'execution.lock'):
@@ -175,12 +192,12 @@ class Memo0711(StudyCompletion):
         self.group_analysis(key)
     def raw_add_one(self,key,job,label):
         path=self.output/key/f'per_seed_s2/{job}/raw_add_one_{label}.csv';marker=path.with_suffix('.json')
-        signature=dict(model=self.model_hash(key,job),data=self.dataset(key)['signature'],label=label)
+        signature=dict(model=self.model_hash(key,job),data=self.dataset(key)['signature'],label=label,evaluation_version=2)
         if marker.exists():
             rec=json.loads(marker.read_text())
             if rec['signature']!=signature or sha(path)!=rec['sha256']:raise ValueError('Add-one cache changed')
             return pd.read_csv(path)
-        rows=[];adapter=self.load_job(key,job);samples=self.dataset(key)['split'].train_meta_samples
+        rows=[];adapter=self.load_job(key,job);adapter.model.eval();samples=self.dataset(key)['split'].train_meta_samples
         for batch in batches(samples,adapter.attrs,adapter.masks,self.config['batch_size']):
             with torch.no_grad():
                 ids=batch['item_seqs'];n=len(ids);y=batch['targets'].to(adapter.device)-1
@@ -244,7 +261,7 @@ class Memo0711(StudyCompletion):
         gate=NullGate(len(columns),tau=self.config['gate_tau'],kappa=self.config['gate_kappa']) if mode=='softmax_null' else SelectiveGate(len(columns),
             'global' if mode=='global_gate' else 'unsupervised' if mode=='unsupervised' else 'contextual',regimes,tau=self.config['gate_tau'],kappa=self.config['gate_kappa'])
         root=self.output/key/'gates'/f'{mode}_{seed}';marker=root/'completed.json'
-        signature=digest(dict(model=self.model_hash(key,job),config=self.protocol_hash,mode=mode,label=label,report=report))
+        signature=digest(dict(model=self.model_hash(key,job),config=self.protocol_hash,mode=mode,label=label,report=report,**({'add_one_evaluation_version':2} if mode=='add_one' else {})))
         if marker.exists():
             rec=json.loads(marker.read_text())
             if rec['signature']!=signature or any(sha(root/n)!=h for n,h in rec['artifacts'].items()):raise ValueError('Gate cache changed')
@@ -258,7 +275,7 @@ class Memo0711(StudyCompletion):
                     features,features_for(self,key,job,'val'),labels,columns,attempt,self.config['epochs'],self.config['patience'],self.config['batch_size'],
                     lambda_util=0. if mode in ['global_gate','unsupervised','wo_utility'] else self.config['lambda_util'],
                     lambda_sparse=self.config['lambda_sparse'],qualified_sources=report['qualifying_sources'])
-                rec=dict(signature=signature,attempt=attempt.name,mode=mode,seed=seed,best_epoch=int(np.argmax([r['val_ndcg_10'] for r in h]))+1,
+                rec=dict(signature=signature,attempt=attempt.name,mode=mode,seed=seed,evaluation_version=2,best_epoch=int(np.argmax([r['val_ndcg_10'] for r in h]))+1,
                          artifacts={p.relative_to(root).as_posix():sha(p) for p in attempt.iterdir() if p.is_file()})
                 write_json(marker,rec)
         state=torch.load(root/rec['attempt']/'gate.pt',map_location=adapter.device,weights_only=True)
@@ -279,18 +296,21 @@ class Memo0711(StudyCompletion):
             if not transfer or decision['framing']!='F1' or datetime.now(timezone(timedelta(hours=7))).date().isoformat()<'2026-11-12':
                 raise RuntimeError('Transfer UASF requires F1 Beauty and date >=12/11; use transfer stage')
         seeds=list(range(42,47)) if key=='beauty' else SEEDS
-        self.foundation(key,seeds);self.fairness(key,seeds)
+        self.foundation(key,seeds)
+        if key=='beauty':self.fairness(key,seeds)
         status=self.utility(key,['early_sd_42','early_sd_43'],'selected_s2',selected=True)
         if not status['s3_eligible']:
-            write_json(self.output/key/'framing_decision.json',dict(framing='F2',reason=status['decision'],test_used=False))
+            write_json(self.output/key/'framing_decision.json',dict(framing='F2' if key=='beauty' else 'TRANSFER_NO_ELIGIBLE',reason=status['decision'],s2_status_sha256=sha(self.output/key/'selected_s2/status.json'),test_used=False))
             return
         label=status['label_choice'];report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text())
-        frames={name:{} for name in BASELINES+['uasf']};rows=[]
+        baselines=BASELINES if key=='beauty' else TRANSFER_BASELINES
+        modes=MODES if key=='beauty' else TRANSFER_MODES
+        frames={name:{} for name in baselines+['uasf']};rows=[]
         for seed in seeds:
             current=self.subset_frames(key,seed,'val')
             for mode,job in [('independent_ID',f'id_{seed}'),('early_no_sd',f'early_CBT_{seed}'),('id_plus_meta',f'id_plus_meta_{seed}'),('early_plus_meta',f'early_plus_meta_{seed}')]:
-                current[mode]=self.inference_ranks(key,job,'CBT','val')
-            for mode in MODES:
+                if mode in baselines:current[mode]=self.inference_ranks(key,job,'CBT','val')
+            for mode in modes:
                 # No-SD labels use own two-reference noise estimate, same chosen label metric.
                 r=report
                 if mode=='wo_source_dropout':
@@ -311,9 +331,10 @@ class Memo0711(StudyCompletion):
                     order=np.random.default_rng(seed).permutation(available)
                     for rate in self.config['missing_rates']:
                         active={s:v.clone() for s,v in mask.items()};active[source][order[:round(rate*len(order))]]=0
-                        f=self.inference_ranks(key,f'{family}_{seed}',f'missing_{source}_{rate:.2f}','test',active)
+                        f=self.inference_ranks(key,f'{family}_{seed}',f'missing_v2_{source}_{rate:.2f}','test',active)
                         rows.append(dict(seed=seed,model=family,source=source,missing_rate=rate,ndcg_10=float(f['ndcg@10'].mean())))
         pd.DataFrame(rows).to_csv(self.output/key/'robustness.csv',index=False,lineterminator='\n')
+        write_json(self.output/key/'robustness_binding.json',dict(evaluation_version=2,sha256=sha(self.output/key/'robustness.csv'),rows=len(rows),data=self.dataset(key)['signature']))
     def title_controls(self):
         key='beauty';self.prepare(key)
         from metadata_pipeline.build_training_contrasts import build_training_contrasts_for_dataset
@@ -335,25 +356,28 @@ class Memo0711(StudyCompletion):
             **paired_summary(shuffled,real,self.config['bootstrap_reps'])))
     def release(self,key):
         self.verify_freeze();label=json.loads((self.output/key/'selected_s2/status.json').read_text())['label_choice']
-        report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text());rows=[];frames={n:{} for n in BASELINES+['uasf']}
+        report=json.loads((self.output/key/f'selected_s2/e0_e1_{label}.json').read_text());rows=[]
+        baselines=BASELINES if key=='beauty' else TRANSFER_BASELINES
+        modes=MODES if key=='beauty' else TRANSFER_MODES
+        frames={n:{} for n in baselines+['uasf']}
         seeds=list(range(42,47)) if key=='beauty' else SEEDS
         for seed in seeds:
             current=self.subset_frames(key,seed,'test')
             for name,job in [('independent_ID',f'id_{seed}'),('early_no_sd',f'early_CBT_{seed}'),('id_plus_meta',f'id_plus_meta_{seed}'),('early_plus_meta',f'early_plus_meta_{seed}')]:
-                current[name]=self.inference_ranks(key,job,'CBT','test')
-            for mode in MODES:
+                if name in baselines:current[name]=self.inference_ranks(key,job,'CBT','test')
+            for mode in modes:
                 r=report if mode!='wo_source_dropout' else json.loads((self.output/key/f'no_sd_s2/e0_e1_{label}.json').read_text())
                 f=self.gate_run(key,seed,mode,r,label,'test');rows.append(dict(seed=seed,mode=mode,test_ndcg_10=float(f['ndcg@10'].mean())))
                 if mode in frames:current[mode]=f
             for name,f in current.items():frames[name][seed]=f
         comparisons=[];equivalence={}
-        for mode in BASELINES:
+        for mode in baselines:
             a=[];b=[]
             for seed in seeds:
                 _,_,m=aligned_rank_matrix({'uasf':frames['uasf'][seed],mode:frames[mode][seed]});a.append(m[:,0]);b.append(m[:,1])
             comparisons.append(paired_bootstrap_test(np.mean(a,0),np.mean(b,0),method_b_name=mode,n_bootstrap=self.config['bootstrap_reps']))
             ok,low,high,p=tost_equivalence_test(np.mean(a,0),np.mean(b,0));equivalence[mode]=dict(equivalent=bool(ok),lower=low,upper=high,p=p)
-        write_json(self.output/key/'baseline_comparisons.json',dict(family_size=len(BASELINES),holm=asdict(holm_bonferroni_correction(comparisons)),tost=equivalence))
+        write_json(self.output/key/'baseline_comparisons.json',dict(family_size=len(baselines),holm=asdict(holm_bonferroni_correction(comparisons)),tost=equivalence))
         pd.DataFrame(rows).to_csv(self.output/key/'gate_test.csv',index=False,lineterminator='\n')
     def group_analysis(self,key):
         # New fit jobs are Val-only; diagnostic Test ranks are evaluated here explicitly.
@@ -373,3 +397,83 @@ class Memo0711(StudyCompletion):
                         rec.update(test_ndcg_10=float(f['ndcg@10'].mean()),test_status='DIAGNOSTIC_B_EVALUATED')
                         write_json(self.job_path(key,name)/'completed.json',rec)
         return super().group_analysis(key)
+
+    def validate_ready(self):
+        """Verify measured coverage before creating the immutable Test release lock."""
+        if list(self.output.glob('*/memo_execution.lock')) or list(self.output.glob('*/jobs/*/execution.lock')) or list(self.output.glob('*/gates/*/execution.lock')):
+            raise RuntimeError('An experiment lock is active; inspect before freezing')
+        checked={}
+        beauty=json.loads((self.output/'beauty/framing_decision.json').read_text())
+        def cached_val(key,job,label):
+            path=self.output/key/'evaluations'/job/f'{label}_val.csv'
+            marker=json.loads(path.with_suffix('.json').read_text())
+            expected=dict(model=self.model_hash(key,job),contexts=context_signature(self.dataset(key)['split'].val_samples),label=label,mask=None)
+            if marker['signature']!=expected or marker['sha256']!=sha(path):raise ValueError('Validation rank cache changed: '+str(path))
+            return pd.read_csv(path)
+        framing_frames={n:{} for n in FRAMING_BASELINES+['uasf']}
+
+        for key in self.config['datasets']:
+            for seed in SEEDS:
+                for kind in ['early','late']:
+                    for label in LABELS:
+                        name=f'id_{seed}' if label=='ID' else f'{kind}_{label}_{seed}'
+                        if self.completed(key,name) is None:raise FileNotFoundError('Missing B job: '+key+'/'+name)
+            binding=json.loads((self.output/key/'robustness_binding.json').read_text())
+            csv=self.output/key/'robustness.csv';frame=pd.read_csv(csv)
+            if binding.get('evaluation_version')!=2 or binding.get('sha256')!=sha(csv) or binding.get('data')!=self.dataset(key)['signature']:
+                raise ValueError('Robustness must use corrected version2 and unchanged data: '+key)
+            expected={(s,m,src,float(r)) for s in SEEDS for m in ['early_sd','early_CBT'] for src in SOURCES for r in self.config['missing_rates']}
+            actual=set(zip(frame.seed,frame.model,frame.source,frame.missing_rate.astype(float)))
+            if len(frame)!=len(expected) or actual!=expected or not np.isfinite(frame.ndcg_10).all():raise ValueError('Incomplete robustness coverage: '+key)
+            if not (self.output/key/'group_analysis.json').is_file():raise FileNotFoundError('Missing group analysis: '+key)
+            if key=='beauty' or beauty['framing']=='F1':
+                status=json.loads((self.output/key/'selected_s2/status.json').read_text())
+                if beauty['framing']=='F1' and not status.get('s3_eligible'):
+                    if key=='beauty':raise RuntimeError('Beauty F1 requires eligible S2')
+                    outcome=json.loads((self.output/key/'framing_decision.json').read_text())
+                    if outcome.get('framing')!='TRANSFER_NO_ELIGIBLE' or outcome.get('test_used') is not False or outcome.get('reason')!=status.get('decision') or outcome.get('s2_status_sha256')!=sha(self.output/key/'selected_s2/status.json'):
+                        raise RuntimeError('Transfer S2 NO-GO must have a bound explicit outcome: '+key)
+                if status.get('s3_eligible'):
+                    seeds=range(42,47) if key=='beauty' else SEEDS
+                    modes=MODES if key=='beauty' else TRANSFER_MODES
+                    for seed in seeds:
+                        for mode in modes:
+                            root=self.output/key/'gates'/f'{mode}_{seed}'
+                            rec=json.loads((root/'completed.json').read_text())
+                            from .memo0711_adoption import verify_files
+                            verify_files(root,rec['artifacts'])
+                            rank=root/'per_user_val.csv'
+                            binding=json.loads(rank.with_suffix('.binding.json').read_text())
+                            if binding.get('signature')!=dict(gate=rec['signature'],part='val') or binding.get('sha256')!=sha(rank):
+                                raise ValueError('Gate validation ranks changed: '+str(rank))
+                            f=pd.read_csv(rank)
+                            if key=='beauty' and mode in framing_frames:framing_frames[mode][seed]=f
+                            aligned_rank_matrix({'gate':f},self.dataset(key)['split'].val_samples)
+                    if key=='beauty':
+                        if beauty.get('framing_family')!=FRAMING_BASELINES:raise ValueError('Framing must declare the six nested baselines')
+                        groups=pd.read_csv(self.output/key/'groups.csv').set_index('user_idx')
+                        for seed in seeds:
+                            job=f'early_sd_{seed}';choices=json.loads((self.output/key/'gate_baselines'/f'{seed}.json').read_text())
+                            allframes={lab:cached_val(key,job,lab) for lab in LABELS}
+                            framing_frames['all_fixed'][seed]=allframes['CBT']
+                            framing_frames['global_subset'][seed]=allframes[choices['global_subset']]
+                            pieces=[]
+                            for gid,rows in groups.groupby('val_group_id'):
+                                lab=choices['groups'].get(str(int(gid)),choices['global_subset'])
+                                pieces.append(allframes[lab][allframes[lab].user_idx.isin(rows.index)])
+                            framing_frames['group_subset'][seed]=pd.concat(pieces).sort_values('user_idx').reset_index(drop=True)
+                        computed=framing_from_ranks(framing_frames,self.config['bootstrap_reps'])
+                        if computed['framing']!=beauty['framing'] or computed['best_baseline']!=beauty['best_baseline']:
+                            raise ValueError('Stored framing differs from measured validation ranks')
+                        for field in ['mean_diff','ci_lower','ci_upper']:
+                            if not np.isclose(computed['comparison'][field],beauty['comparison'][field],rtol=0,atol=1e-14):
+                                raise ValueError('Stored framing CI differs from measured validation ranks')
+            checked[key]='PASS'
+        for seed in range(42,47):
+            for prefix in ['id','early_CBT','early_sd','id_plus_meta','early_plus_meta']:
+                if self.completed('beauty',f'{prefix}_{seed}') is None:raise FileNotFoundError('Missing Beauty foundation/fairness')
+        for seed in SEEDS:
+            if self.completed('beauty',f'title_shuffled_{seed}') is None:raise FileNotFoundError('Missing Title-only control')
+        for rel in ['beauty/title_only_comparison.json','beauty/late_rank_diagnostics.csv','beauty/selected_s2/features_train_meta.csv','beauty/selected_s2/validation_same_model.csv']:
+            if not (self.output/rel).is_file():raise FileNotFoundError('Missing required analysis: '+rel)
+        return checked

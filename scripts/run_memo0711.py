@@ -4,14 +4,24 @@ from pathlib import Path
 os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG',':4096:8')
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src'))
 
+def resolve_input_roots(repo, config, args):
+    """Explicit CLI paths override YAML; omitted flags preserve configured paths."""
+    defaults = dict(early='runs/checkpoint2_full_20261106',
+                    late='runs/checkpoint2_late_20261106', diagnostics='runs/checkpoint2_20261106')
+    return {key: str((Path(repo) / (getattr(args, key+'_root', None)
+                    or config.get('input_roots', {}).get(key) or value)).resolve())
+            for key, value in defaults.items()}
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--stage',choices=['plan','check','b','beauty','fairness','robustness','title','rank','all','transfer','report','freeze','release-test'],default='plan')
+    p.add_argument('--stage',choices=['plan','check','adopt','b','beauty','fairness','robustness','title','rank','all','transfer','report','freeze','release-test'],default='plan')
     p.add_argument('--datasets',nargs='+',choices=['beauty','sports','toys'],default=['beauty','sports','toys'])
     p.add_argument('--config',default='configs/experiments/memo0711.yaml')
-    p.add_argument('--early-root',default='runs/checkpoint2_full_20261106');p.add_argument('--late-root',default='runs/checkpoint2_late_20261106')
-    p.add_argument('--diagnostics-root',default='runs/checkpoint2_20261106')
-    p.add_argument('--output',default='runs/memo0711_v1');p.add_argument('--publish-dir')
+    p.add_argument('--early-root');p.add_argument('--late-root')
+    p.add_argument('--diagnostics-root')
+    p.add_argument('--reuse-memo',help='Verified completed memo output to adopt; old run remains unchanged')
+    p.add_argument('--output',default='runs/memo0711_v2');p.add_argument('--publish-dir')
     p.add_argument('--execute-training',action='store_true');p.add_argument('--execute-inference',action='store_true');p.add_argument('--freeze-tag')
     a=p.parse_args()
     if a.stage=='plan':
@@ -25,14 +35,18 @@ def main():
     from taimma.experiments.checkpoint2 import exclusive
     from taimma.experiments.checkpoint2_protocol import write_json,sha
     cfg=yaml.safe_load((ROOT/a.config).read_text(encoding='utf-8'))
-    cfg['input_roots']={k:str((ROOT/getattr(a,k+'_root')).resolve()) for k in ['early','late','diagnostics']}
+    cfg['input_roots']=resolve_input_roots(ROOT,cfg,a)
     run=Memo0711(ROOT,cfg,a.output,execute_training=a.execute_training,execute_inference=a.execute_inference)
-    if a.stage not in ['report','freeze','release-test']:
+    if a.stage not in ['report','freeze','release-test','adopt']:
         for kind in ['early','late']:
             if not Path(cfg['input_roots'][kind]).is_dir():raise FileNotFoundError('Wrong input root; not a request to retrain: '+cfg['input_roots'][kind])
     if a.stage in ['b','beauty','fairness','title','all','transfer'] and not a.execute_training:p.error('This stage requires --execute-training; inspect plan first')
     if a.stage in ['robustness','release-test'] and not (a.execute_training or a.execute_inference):p.error('Requires --execute-inference')
-    if a.stage=='rank':rank_diagnostics(cfg['input_roots'],run.output/'beauty')
+    if a.stage=='adopt' and not a.reuse_memo:p.error('adopt requires --reuse-memo runs/memo0711_v1')
+    if a.reuse_memo and a.stage not in ['report','freeze','release-test','check']:
+        run.adopt_memo((ROOT/a.reuse_memo).resolve(),a.datasets)
+    if a.stage=='adopt':pass
+    elif a.stage=='rank':rank_diagnostics(cfg['input_roots'],run.output/'beauty')
     elif a.stage=='check':
         from taimma.experiments.table5_utility import check_references
         for k in ['early','late']:
@@ -40,6 +54,7 @@ def main():
         print(json.dumps(check_references(cfg['input_roots']['early']),indent=2))
         for key in a.datasets:print(json.dumps(run.check_data(key),indent=2))
     elif a.stage=='freeze':
+        run.validate_ready()
         if list(run.output.glob('*/memo_execution.lock')):raise RuntimeError('A study process is running; do not freeze')
         for key in cfg['datasets']:
             for seed in [42,43,44]:
@@ -57,7 +72,19 @@ def main():
     elif a.stage=='release-test':
         run.verify_freeze()
         for key in a.datasets:
-            if (run.output/key/'selected_s2/status.json').exists() and list((run.output/key/'gates').glob('*/completed.json')):run.release(key)
+            status_path=run.output/key/'selected_s2/status.json'
+            if not status_path.is_file():
+                framing_path=run.output/key/'framing_decision.json'
+                framing=json.loads(framing_path.read_text()) if framing_path.is_file() else {}
+                if key!='beauty' and framing.get('framing')=='DIAGNOSTIC_ONLY_F2':
+                    print(key+': UASF Test not applicable under F2');continue
+                raise FileNotFoundError('Missing S2 status for requested Test release: '+str(status_path))
+            status=json.loads(status_path.read_text())
+            if not status.get('s3_eligible'):
+                print(key+': UASF Test not applicable; S2 decision='+str(status.get('decision')));continue
+            if not list((run.output/key/'gates').glob('*/completed.json')):
+                raise FileNotFoundError('No trained gates for requested Test release: '+key)
+            run.release(key)
     elif a.stage!='report':
         from contextlib import ExitStack
         with ExitStack() as stack:
@@ -91,15 +118,21 @@ def main():
         for path in run.output.glob('*/framing_decision.json'):
             note.extend([str(path.relative_to(run.output)),path.read_text()])
         (run.output/'report.md').write_text('\n\n'.join(note),encoding='utf-8',newline='\n')
+    if a.stage=='report':
+        from taimma.experiments.memo0711_report import write_memo_report
+        print(write_memo_report(run.output,cfg,ROOT/'results'/(run.output.name+'_tables')))
     if a.publish_dir:
         dest=(ROOT/a.publish_dir).resolve()
         for srcroot in [run.output]+[Path(x) for x in cfg['input_roots'].values()]:
             if dest==srcroot or srcroot in dest.parents or dest in srcroot.parents:raise ValueError('Publish must be separate from all source/runtime folders')
-        published={}
+        published={};omitted_large={}
         for src in run.output.rglob('*'):
             if src.is_file() and src.suffix in ['.json','.csv','.md','.log'] and src.stat().st_size<10_000_000 and not src.name.endswith('.lock'):
                 target=dest/src.relative_to(run.output);target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,target);published[src.relative_to(run.output).as_posix()]=sha(src)
+            elif src.is_file() and src.suffix in ['.json','.csv','.md','.log'] and src.stat().st_size>=10_000_000:
+                omitted_large[src.relative_to(run.output).as_posix()]=dict(bytes=src.stat().st_size,sha256=sha(src),source=str(src),reason='Copy original to shared storage; excluded from lightweight Git bundle')
         write_json(dest/'published_manifest.json',published)
+        write_json(dest/'large_artifacts_manifest.json',omitted_large)
     print('Completed requested stage. No K4/random V2 fallback jobs were launched.')
 
 if __name__=='__main__':main()
