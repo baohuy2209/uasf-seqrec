@@ -1,0 +1,38 @@
+{
+  "framing": "F2",
+  "best_baseline": "early_plus_meta",
+  "comparison": {
+    "method_a": "UASF",
+    "method_b": "early_plus_meta",
+    "metric_name": "NDCG@10",
+    "mean_a": 0.065832,
+    "mean_b": 0.077549,
+    "mean_diff": -0.011717546678624234,
+    "ci_lower": -0.013047396428077913,
+    "ci_upper": -0.01039058478538526,
+    "p_value": 0.0,
+    "is_significant": true
+  },
+  "validation_means": {
+    "all_fixed": 0.06931918011715878,
+    "global_subset": 0.06931918011715878,
+    "group_subset": 0.06944641458503857,
+    "global_gate": 0.0680158001730264,
+    "unsupervised": 0.06839234525682909,
+    "softmax_null": 0.06456980147159444,
+    "independent_ID": 0.060314400530442284,
+    "early_no_sd": 0.07005965230575771,
+    "id_plus_meta": 0.06916138603515982,
+    "early_plus_meta": 0.07754930091263867,
+    "uasf": 0.06583175423401445
+  },
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "test_used": false,
+  "rule": "mean UASF exceeds best locked baseline and paired-user CI lower > 0"
+}

@@ -1,0 +1,43 @@
+{
+  "spec": {
+    "kind": "late",
+    "seed": 43,
+    "sources": [
+      "category",
+      "title"
+    ],
+    "embedding_dim": 64,
+    "max_seq_len": 50,
+    "dropout": 0.2,
+    "source_dropout": 0.2,
+    "all_off_probability": 0.0,
+    "source_dropout_mode": "batch",
+    "freeze_id": true,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0
+  },
+  "data_signature": {
+    "raw_reviews_sha256": "24143dfc6a718fa6e40c7615ff55d29420a613028a5e6e77088cd07ab07948db",
+    "metadata_manifest_sha256": "9a4404113b45b08e723443b7b565bb0d4fbd1cb863b0a89efd07cb36c0db1356",
+    "metadata_files": {
+      "availability_mask.csv": "12be0b3ddd7315b7bc1999e0d42f11204cfea789130f3a7548d6979f90d8207f",
+      "brand_vocab.json": "aa7da0967ee95ae0aa9368941f21633e13df587ae09531365e9807ad51494498",
+      "category_vocab.json": "b8d226cc3641baca4447eba1dd7c2666ae7327da1e9f22443cfaedde38bdc8cb",
+      "cohort_metadata.csv": "3bd79601b3018d4e819f800fd7c6dabbb4d36e08e3146efd333a55a4094cbe32",
+      "coverage.json": "ff93947cdc45c06aa76a467a29f6b480331de129dd882454ffe499af5309bec9",
+      "item_map.csv": "f5a37353f6763065974f625025f5817c23c1a6805a3209e5071f7343530e7876",
+      "metadata.csv": "1c1c5b05a9738196879faf9ff74b1f2055439510d05c9007e85ef5da4ebce009",
+      "statistics.json": "d8e1d4c780d2fcdb58d3267943f8a15c6e9be18488023ef796088e2b52fb699b",
+      "title_embeddings.npy": "e5f906e0663ff94369987906a137796903446d17c0a3882e9fc865ebad090452"
+    },
+    "catalog_sha256": "f91c5c53496ce6eac76054ad78ac15f3b4345f9edd214b4d3c4151e94d47d055",
+    "train_base_sha256": "59a43f953166afe597322a46c83014f1333ad59ae90610855105eff048f569f0",
+    "train_meta_sha256": "e616cdf1de594155ac5abc244c48bd3f275e19d168cbd8920dc8ed32faaf1503",
+    "val_sha256": "7a6315411d7e067287bc1046605c67496c0eca9ba0c78de82d87e51dc6a165e8",
+    "test_sha256": "dc945c2e0fd73001b55fca4eb2074d5142616d912e6e24f736ac2a8a0300a8a8",
+    "train_meta_eligible": 35343,
+    "train_meta_oov": 255,
+    "train_meta_total": 35598
+  },
+  "fingerprint": "37dfac5bdaeccca59ef7eeac5e0cc90d929902b6e0a504602ebed2373b0d6e6b"
+}

@@ -1,0 +1,46 @@
+{
+  "spec": {
+    "kind": "late",
+    "seed": 44,
+    "sources": [
+      "title"
+    ],
+    "embedding_dim": 64,
+    "max_seq_len": 50,
+    "dropout": 0.2,
+    "source_dropout": 0.2,
+    "all_off_probability": 0.0,
+    "source_dropout_mode": "batch",
+    "freeze_id": true,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0
+  },
+  "control": null,
+  "fingerprint": "8e2e302f7f38e791b19de9659180fcd138a8b62bdf4f76218bb71027fdc7730a",
+  "checkpoint": "attempt_001/checkpoint.pt",
+  "val_ndcg_10": 0.05854158697460632,
+  "test_ndcg_10": 0.04717188188023779,
+  "best_epoch": 1,
+  "epochs": 21,
+  "stop_reason": "early_stopping",
+  "train_contexts": 109050,
+  "artifacts": {
+    "attempt_001/source_snapshot.zip": "67985e308e96a80cafabb4c2f2ddf1d09df3cb83dfa2b4d20ec97aa84b6b2a5e",
+    "attempt_001/working_tree.diff": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attempt_001/run.log": "021c5e4712f698586beec7ae8814811d925aa6ab5a3b04ee01d03d224641b9db",
+    "attempt_001/artifact_index.json": "dcaefc4d33a47b96bbbaf6d1302cdb316329767397510813184031ebcf1a98ec",
+    "attempt_001/history.json": "ba620063bfebbb78b67c9413c172d9b20514929e72ba35ce3230d7df6dae57bc",
+    "attempt_001/config.json": "457f563870124d722505846176f1a36d76abb49e03f5991509ebf03976834eae",
+    "attempt_001/per_user_test.csv": "ca37f7cfabe31a7e625c78df8e4251c9fe8f920ab337b7c2d93f301fbc3a10a7",
+    "attempt_001/per_user_val.csv": "35ea1b758431a139a1ba385ff93153acdd8e88db56ef6ee58b047b14df680865",
+    "attempt_001/epochs.csv": "96f6965151728482c6248988e6410ff523abe5e15d24b62e9debc134b7c939a1",
+    "attempt_001/run_manifest.json": "f3ebba857d2089a0a617127b4fc62fecc73010e2e2c8387815b811eca465dfef",
+    "attempt_001/decision_log_snapshot.md": "8d6850c2b76259901008f22da2a7f9476f648383ab62d16ca46431d3aabb993e",
+    "attempt_001/checkpoint.pt": "c47073deb24b329022da0d70405a6ae7cd81236e0954dfdb5f70472267d0ee5f",
+    "attempt_001/metrics.json": "4cf893049c7d8dc81b18f820672612c6173191fdbcda1f0be0134b0dbe9ca848",
+    "attempt_001/per_user.csv": "ca37f7cfabe31a7e625c78df8e4251c9fe8f920ab337b7c2d93f301fbc3a10a7",
+    "attempt_001/source_snapshot.json": "e1c3b9d86dd7def7d05bdc721e12819156c20d44c741c37aafe01081891258ff",
+    "attempt_001/run_state.json": "2da5e77ef6b2b45c840ea0fabc4f41208a02864e369a94a9fddb3327b545b5c1"
+  },
+  "status": "COMPLETED"
+}

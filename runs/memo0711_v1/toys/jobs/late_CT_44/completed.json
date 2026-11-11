@@ -1,0 +1,45 @@
+{
+  "spec": {
+    "kind": "late",
+    "seed": 44,
+    "sources": [
+      "category",
+      "title"
+    ],
+    "embedding_dim": 64,
+    "max_seq_len": 50,
+    "dropout": 0.2,
+    "source_dropout": 0.2,
+    "all_off_probability": 0.0,
+    "source_dropout_mode": "batch",
+    "freeze_id": true,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0
+  },
+  "control": null,
+  "fingerprint": "3668854c298b9628b24ccdbe8445904e15b56901d505ad5256d49f4cf8207503",
+  "checkpoint": "attempt_001/checkpoint.pt",
+  "val_ndcg_10": 0.0563830390754057,
+  "best_epoch": 1,
+  "epochs": 21,
+  "stop_reason": "early_stopping",
+  "test_status": "DIAGNOSTIC_B_EVALUATED",
+  "status": "COMPLETED",
+  "artifacts": {
+    "attempt_001/source_snapshot.zip": "ce488e80b760a67848776eba49d6576c6a68ad916d79c6aaa5f2967906b3e9b8",
+    "attempt_001/working_tree.diff": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attempt_001/run.log": "968188a3deaf8e6e5ae3d736adce8f2947b33720e6a8f10de1b86cc4c55bbf2f",
+    "attempt_001/artifact_index.json": "95bdae83801d7b9aa4d3ad29bc8f738277695aa4460db4251cd4111ab0ab9f21",
+    "attempt_001/history.json": "5c4a65993c235cf42217c36d63e01104542324db83c3bec47aa548b5322471ee",
+    "attempt_001/config.json": "c2728ea203507f8d98b4f23be26c3a4136b6dddb67660fe1ca98feab42d7aab2",
+    "attempt_001/per_user_val.csv": "d90b96ec537f6b76d115e231ff8f886267c1aa9aa8c6ca76d5dd41e557f07878",
+    "attempt_001/epochs.csv": "f573e6e5818c9a3dc9c8e9e39534e6341bd57a9a1c29df634d890ad6986ae922",
+    "attempt_001/run_manifest.json": "eb8c160365b86900be406cc20701ea35bdb0cd843bdc8c70ab23d90438a1b668",
+    "attempt_001/decision_log_snapshot.md": "9f1c40eabaf06d78308d0313ef0a259936a32dccfef80a81156d587a4d821169",
+    "attempt_001/checkpoint.pt": "63b7774be576205c6f99400b80c97f344a9cc8890639f1478deccfc53412b290",
+    "attempt_001/source_snapshot.json": "1e7aeb6dbcbf1c5c85487300c9f25094e39cde8c25235665823baeb3e4d88f18",
+    "attempt_001/run_state.json": "dd8a5f60d9e03c780dafd0f60949918a16078218ce0dcff3323c240f73c72dc4",
+    "attempt_001/per_user_test.csv": "f8c07883c7c1286b81e4677e764d2ef663b0d08cc6058ffefd545c3906815a4e"
+  },
+  "test_ndcg_10": 0.04506403280821708
+}

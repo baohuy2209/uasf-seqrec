@@ -1,0 +1,7 @@
+{
+  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/toys/jobs/early_CBT_44",
+  "original_completed_sha256": "1d7b7b9af1e8b9b79e8468ba5e536945728cf2a926867b65ccf6d613bb17a1bd",
+  "original_fingerprint": "efefae6a027f59ac22a146bccd22adbaa71d5bc9ad66f05c5033b0e4ee8dce9c",
+  "train_context_sha256": "59bb268341002dd4383451c1f1e5d2b197baf4fa41130d9c1d23a628fbd7f744",
+  "scientific_inputs_checked": true
+}

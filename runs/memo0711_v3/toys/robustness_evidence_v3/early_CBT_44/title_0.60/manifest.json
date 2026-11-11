@@ -1,0 +1,60 @@
+{
+  "signature": {
+    "evaluation_version": 3,
+    "model": "7440a1bb7be6243b307137bc9694eed6e9b243c336480af2d1448788cec795ed",
+    "job": "early_CBT_44",
+    "seed": 44,
+    "source": "title",
+    "missing_rate": 0.6,
+    "contexts_sha256": "121190f69dc12f0cc9c3a75e14549843b3ef5056da9c14c7f21f7563bd2671b1",
+    "data": {
+      "raw_reviews_sha256": "97db79e5d84f226605d77920d0a41013b387c44ec58fcbfcdff22e13508cbc54",
+      "metadata_manifest_sha256": "e0eb2c53a71d3d0ba2734552570f4baebe4dcd4ae8dfefe322c7701959abdfc9",
+      "metadata_files": {
+        "availability_mask.csv": "d28aa1c9f8ae094202818593bec18eda666c914c18cef0cf48edaa9d5a2479c7",
+        "brand_vocab.json": "1afecfe037aee086726c46a868ca1f7362e7052cc2528089f6ccaa63c761f22e",
+        "category_vocab.json": "d28fccb850849887bb1e8480aa61e864b87d72328db6f8c2824d7a6534ec2a0e",
+        "cohort_metadata.csv": "88a7c0040704dc509d2a4e25f34967f078b1b927f48561387ce51c578a57aa01",
+        "coverage.json": "2df443c78c9c90a1c9b764636dc8ba2b1407480e98eb910b42181c740a752be7",
+        "item_map.csv": "3a9624f8b1fd00377cc1d245f41bc0501c58b0d1f0e889b520240b6497e188f6",
+        "metadata.csv": "88a1bd1653e3202a907f900bf63158d8c1094e860096a0f4ffb07eb9e0ead4a5",
+        "statistics.json": "c0e8d885bb11cdf4df9ef10146abaf58c2b7f434e842e14349a4a03b18b923f4",
+        "title_embeddings.npy": "2652bc31c55b8aaa094a4eda5b44070aa0c023f1e0f55a4bd0850143b9c11a33"
+      },
+      "catalog_sha256": "cf18bb0def7211050953e5e07666c564848387062b134627a5e9c9d3e5a4dddb",
+      "train_base_sha256": "59bb268341002dd4383451c1f1e5d2b197baf4fa41130d9c1d23a628fbd7f744",
+      "train_meta_sha256": "47777f0cac1b64a17fa848d1e09b09bae02d3f7c3f985969432dc6563c194763",
+      "val_sha256": "75097aec456a219e55feb66a99638e8e4453f25e95f571132c8ea33803b79fda",
+      "test_sha256": "121190f69dc12f0cc9c3a75e14549843b3ef5056da9c14c7f21f7563bd2671b1",
+      "train_meta_eligible": 19228,
+      "train_meta_oov": 184,
+      "train_meta_total": 19412
+    },
+    "mask_sha256": "4dab04f539f676834b11f50f95ed4feb7d7c0cdf2c94b0b1b4df61a2829e2db5",
+    "mask_file_sha256": "8001279731780ec10d883abfc05025552bbbb9647b3892902d6340cd61b8e654",
+    "batch_size": 256
+  },
+  "counts": {
+    "catalog_items": 11766,
+    "eligible_items": 11710,
+    "removed_items": 7026,
+    "remaining_items": 4684,
+    "original_catalog_coverage": 0.9952405235424103,
+    "effective_catalog_coverage": 0.3980962094169641,
+    "effective_eligible_coverage": 0.4,
+    "history_tokens": 144717,
+    "original_available_history_tokens": 144057,
+    "effective_available_history_tokens": 58277,
+    "masked_history_tokens": 85780,
+    "contexts_with_masked_history": 19148,
+    "candidate_masked_items": 7026,
+    "candidate_masked_positions": 136388712,
+    "contexts": 19412
+  },
+  "ndcg_10": 0.04558719868314883,
+  "files": {
+    "robustness_evidence_v3/masks/title_44_0.60.csv": "8001279731780ec10d883abfc05025552bbbb9647b3892902d6340cd61b8e654",
+    "robustness_evidence_v3/early_CBT_44/title_0.60/per_user_test.csv": "d8588a9b6087c9bec5fa48fb90efa9d4bba5b5d8c49f1c24338f21e39535f207",
+    "robustness_evidence_v3/early_CBT_44/title_0.60/probe.json": "b579f0ac220fbfaad13e2b22bd4e48d7bbc2cc98359298612d8a932bb09738f5"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "signature": {
+    "model": "5da7225e4ba28190c81b7da9eafd798e53501e222fafb49b07b522818f8345d1",
+    "contexts": "d1b8b3cba14e998c5b328e27faf1b6bc972a23346bc0525387ab18694d78d993",
+    "label": "missing_brand_0.20",
+    "mask": "ab88d97d93e1c4a1f65a3cd837ffded9f4d14568effd0ffd05424742952c97f7"
+  },
+  "sha256": "5d7652f314782358f7131710ff6282118f888f9db6b27891c12e53e97017fa1f"
+}

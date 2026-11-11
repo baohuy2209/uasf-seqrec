@@ -1,0 +1,79 @@
+{
+  "artifacts": [
+    {
+      "path": "checkpoint.pt",
+      "bytes": 4052022,
+      "sha256": "c184eeb3981d63b704d1b12211b9b5ea670dfe1107730add500e25b14db93705"
+    },
+    {
+      "path": "config.json",
+      "bytes": 2190,
+      "sha256": "c8b500d8b355b143ce235eae3ff2ca2bbcfdad0f9c4c44b4a692dd4bc1fb2e64"
+    },
+    {
+      "path": "decision_log_snapshot.md",
+      "bytes": 5598,
+      "sha256": "8d6850c2b76259901008f22da2a7f9476f648383ab62d16ca46431d3aabb993e"
+    },
+    {
+      "path": "epochs.csv",
+      "bytes": 14380,
+      "sha256": "e9c9eddb5cd4103a940aa16c0f0404b61c19ed7ff7beb801bc0af9ff009bcb73"
+    },
+    {
+      "path": "history.json",
+      "bytes": 18732,
+      "sha256": "2cae557a1f55802c53bf3a29ed42e59a065c022d9b4049042aca4acbe1c45262"
+    },
+    {
+      "path": "metrics.json",
+      "bytes": 850,
+      "sha256": "ea2cffc1f8fffdb9ae8802517419b776513b523c7fa494bca38d7f20704ca5a3"
+    },
+    {
+      "path": "per_user.csv",
+      "bytes": 743637,
+      "sha256": "dcedc53cb581816af62bbad768d2ee4fa4f6621779f8cf981c3248e4d694a511"
+    },
+    {
+      "path": "per_user_test.csv",
+      "bytes": 743637,
+      "sha256": "dcedc53cb581816af62bbad768d2ee4fa4f6621779f8cf981c3248e4d694a511"
+    },
+    {
+      "path": "per_user_val.csv",
+      "bytes": 750148,
+      "sha256": "974e5eacfde498d564fcb2589114f0dc44721015e38d334147be8639dcf3e320"
+    },
+    {
+      "path": "run.log",
+      "bytes": 2863,
+      "sha256": "65ec8f436a64c2cc6d0c9bbf80161268cd091ce68a97e047b89228dfd789f830"
+    },
+    {
+      "path": "run_manifest.json",
+      "bytes": 1480,
+      "sha256": "5bae2f4b8b65f32920581998fb2917490eff8ea58971e92cb2539a7932cc608b"
+    },
+    {
+      "path": "run_state.json",
+      "bytes": 180,
+      "sha256": "1c68a2b0ef89f27e81e4e285f3b3c4a45f02ad2b5e913e4fcff2dbe2d53452b9"
+    },
+    {
+      "path": "source_snapshot.json",
+      "bytes": 6032,
+      "sha256": "30a471898fdae987d8b71da591b9dbbbb910f29303730f71b04ed778ff15c28c"
+    },
+    {
+      "path": "source_snapshot.zip",
+      "bytes": 155367,
+      "sha256": "051ef49a810965b4c174b452ad1e91c5af92f2804839db779a7d0415e9916e28"
+    },
+    {
+      "path": "working_tree.diff",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

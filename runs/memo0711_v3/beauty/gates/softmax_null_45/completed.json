@@ -1,0 +1,11 @@
+{
+  "signature": "729d18848267405314738203e16e828c005658e32274be389243453418fdf506",
+  "attempt": "attempt_001",
+  "mode": "softmax_null",
+  "seed": 45,
+  "best_epoch": 16,
+  "artifacts": {
+    "attempt_001/gate_epochs.csv": "3d530406b5acbf577dc9dccb342485650d1ec85de792e64ecc0e83cbfd6d5036",
+    "attempt_001/gate.pt": "bb2f9314573d9a2b1f705a77f5b73b0c94db36eb5ff1edceb5438c73087726bd"
+  }
+}

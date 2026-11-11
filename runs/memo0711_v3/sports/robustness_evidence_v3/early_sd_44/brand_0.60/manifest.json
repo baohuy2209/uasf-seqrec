@@ -1,0 +1,60 @@
+{
+  "signature": {
+    "evaluation_version": 3,
+    "model": "d3f7155ff87bafe84dd535b8298d2d570226b8e957a89dabc620a2658aa53c57",
+    "job": "early_sd_44",
+    "seed": 44,
+    "source": "brand",
+    "missing_rate": 0.6,
+    "contexts_sha256": "dc945c2e0fd73001b55fca4eb2074d5142616d912e6e24f736ac2a8a0300a8a8",
+    "data": {
+      "raw_reviews_sha256": "24143dfc6a718fa6e40c7615ff55d29420a613028a5e6e77088cd07ab07948db",
+      "metadata_manifest_sha256": "9a4404113b45b08e723443b7b565bb0d4fbd1cb863b0a89efd07cb36c0db1356",
+      "metadata_files": {
+        "availability_mask.csv": "12be0b3ddd7315b7bc1999e0d42f11204cfea789130f3a7548d6979f90d8207f",
+        "brand_vocab.json": "aa7da0967ee95ae0aa9368941f21633e13df587ae09531365e9807ad51494498",
+        "category_vocab.json": "b8d226cc3641baca4447eba1dd7c2666ae7327da1e9f22443cfaedde38bdc8cb",
+        "cohort_metadata.csv": "3bd79601b3018d4e819f800fd7c6dabbb4d36e08e3146efd333a55a4094cbe32",
+        "coverage.json": "ff93947cdc45c06aa76a467a29f6b480331de129dd882454ffe499af5309bec9",
+        "item_map.csv": "f5a37353f6763065974f625025f5817c23c1a6805a3209e5071f7343530e7876",
+        "metadata.csv": "1c1c5b05a9738196879faf9ff74b1f2055439510d05c9007e85ef5da4ebce009",
+        "statistics.json": "d8e1d4c780d2fcdb58d3267943f8a15c6e9be18488023ef796088e2b52fb699b",
+        "title_embeddings.npy": "e5f906e0663ff94369987906a137796903446d17c0a3882e9fc865ebad090452"
+      },
+      "catalog_sha256": "f91c5c53496ce6eac76054ad78ac15f3b4345f9edd214b4d3c4151e94d47d055",
+      "train_base_sha256": "59a43f953166afe597322a46c83014f1333ad59ae90610855105eff048f569f0",
+      "train_meta_sha256": "e616cdf1de594155ac5abc244c48bd3f275e19d168cbd8920dc8ed32faaf1503",
+      "val_sha256": "7a6315411d7e067287bc1046605c67496c0eca9ba0c78de82d87e51dc6a165e8",
+      "test_sha256": "dc945c2e0fd73001b55fca4eb2074d5142616d912e6e24f736ac2a8a0300a8a8",
+      "train_meta_eligible": 35343,
+      "train_meta_oov": 255,
+      "train_meta_total": 35598
+    },
+    "mask_sha256": "24b55d5fea0cb48aace187b6cf3cf9316f920661dc3b7e8a85194677663ad923",
+    "mask_file_sha256": "606cd25886e6180cfbe4582f9d88683170ed6bff697e1b0d2131cbc1116e1ad6",
+    "batch_size": 256
+  },
+  "counts": {
+    "catalog_items": 18132,
+    "eligible_items": 12151,
+    "removed_items": 7291,
+    "remaining_items": 4860,
+    "original_catalog_coverage": 0.6701411868519744,
+    "effective_catalog_coverage": 0.2680344142951688,
+    "effective_eligible_coverage": 0.3999670808986915,
+    "history_tokens": 258378,
+    "original_available_history_tokens": 190396,
+    "effective_available_history_tokens": 75077,
+    "masked_history_tokens": 115319,
+    "contexts_with_masked_history": 33407,
+    "candidate_masked_items": 7291,
+    "candidate_masked_positions": 259545018,
+    "contexts": 35598
+  },
+  "ndcg_10": 0.024079365289670186,
+  "files": {
+    "robustness_evidence_v3/masks/brand_44_0.60.csv": "606cd25886e6180cfbe4582f9d88683170ed6bff697e1b0d2131cbc1116e1ad6",
+    "robustness_evidence_v3/early_sd_44/brand_0.60/per_user_test.csv": "d5c580049d03725e20cbb676ab3d66d2164568d7100ab85aaf917df485cdd381",
+    "robustness_evidence_v3/early_sd_44/brand_0.60/probe.json": "b9bfdf2ffa2486ad0bcc03af5d53bc996990649c40c17a7aca15391051a1c073"
+  }
+}

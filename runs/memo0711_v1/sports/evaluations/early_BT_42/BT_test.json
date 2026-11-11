@@ -1,0 +1,9 @@
+{
+  "signature": {
+    "model": "0a86fb6356f7281a60cb5bb852ca69a91bf3fd3122a8dad8af9c639575f3fcbb",
+    "contexts": "dc945c2e0fd73001b55fca4eb2074d5142616d912e6e24f736ac2a8a0300a8a8",
+    "label": "BT",
+    "mask": null
+  },
+  "sha256": "c640adc8a948dbc427a4b90c3721119a32336013c8ca56040492082624080685"
+}

@@ -41,8 +41,64 @@ results/utility_table5_20261107/beauty/diagnostic_early_sd/*.csv
 **/diagnostic_early_sd/*.csv
 
 # Runtime for the supervisor 07 November protocol
-/runs/memo0711*/
 .specify/ 
 specs
 AGENTS.md
 
+runs/memo0711_v1/**/*.csv
+
+# BEGIN AUTO LARGE FILES
+/data/raw/Beauty/Beauty_5.json
+/data/raw/Sports\ and\ Outdoors/Sports_and_Outdoors_5.json
+/data/raw/Sports\ and\ Outdoors/ratings_Sports_and_Outdoors.csv
+/data/raw/Toys\ and\ Games/Toys_and_Games_5.json
+/data/raw/meta_Sports_and_Outdoors.json.gz
+/data/raw/meta_Toys_and_Games.json.gz
+/results/utility_table5_20261107/beauty/diagnostic_early_sd/utility_CE.csv
+/results/utility_table5_20261107/beauty/diagnostic_early_sd/utility_LOG_RANK.csv
+/results/utility_table5_20261107/beauty/diagnostic_early_sd/utility_both_labels.csv
+/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_test.npy
+/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_train_meta.npy
+/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_validation.npy
+/runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_test.npy
+/runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_train_meta.npy
+/runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_validation.npy
+/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_test.npy
+/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_train_meta.npy
+/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_validation.npy
+/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_CE.csv
+/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_LOG_RANK.csv
+/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_both_labels.csv
+/runs/memo0711_v1/beauty/no_sd_s2/utility_CE.csv
+/runs/memo0711_v1/beauty/no_sd_s2/utility_LOG_RANK.csv
+/runs/memo0711_v1/beauty/no_sd_s2/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_42/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_43/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_44/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_45/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_46/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_sd_42/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_sd_43/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_sd_44/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_sd_45/utility_both_labels.csv
+/runs/memo0711_v1/beauty/per_seed_s2/early_sd_46/utility_both_labels.csv
+/runs/memo0711_v1/beauty/selected_s2/utility_CE.csv
+/runs/memo0711_v1/beauty/selected_s2/utility_LOG_RANK.csv
+/runs/memo0711_v1/beauty/selected_s2/utility_both_labels.csv
+/runs/memo0711_v3/beauty/no_sd_s2/utility_CE.csv
+/runs/memo0711_v3/beauty/no_sd_s2/utility_LOG_RANK.csv
+/runs/memo0711_v3/beauty/no_sd_s2/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_42/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_43/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_44/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_45/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_46/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_sd_42/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_sd_43/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_sd_44/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_sd_45/utility_both_labels.csv
+/runs/memo0711_v3/beauty/per_seed_s2/early_sd_46/utility_both_labels.csv
+/runs/memo0711_v3/beauty/selected_s2/utility_CE.csv
+/runs/memo0711_v3/beauty/selected_s2/utility_LOG_RANK.csv
+/runs/memo0711_v3/beauty/selected_s2/utility_both_labels.csv
+# END AUTO LARGE FILES

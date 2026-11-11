@@ -1,0 +1,27 @@
+{
+  "mean_delta_ce": {
+    "brand": 0.7575854770430505,
+    "category": 0.45113055916074263,
+    "title": -0.008182746684513718
+  },
+  "mean_delta_rank": {
+    "brand": 1.2064019265287205,
+    "category": 0.5177050228180868,
+    "title": 0.367462498458463
+  },
+  "validation_ndcg_full_minus_without": {
+    "brand": 0.044197414657340776,
+    "category": 0.024804769273323445,
+    "title": 0.016839494023250214
+  },
+  "label_choice": "LOG_RANK",
+  "rule_locked_before_computation": true,
+  "references": [
+    "early_CBT_46"
+  ],
+  "feature_reference": "early_CBT_46",
+  "test_used": false,
+  "availability_aware": false,
+  "validation_total_contexts": 22363,
+  "validation_oov_contexts": 178
+}

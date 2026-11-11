@@ -1,0 +1,49 @@
+{
+  "artifacts": [
+    {
+      "path": "checkpoint.pt",
+      "bytes": 5309289,
+      "sha256": "5cb6d3cdad23b97298099c6372baa70994e5b3731aba612e0c397df742dd9683"
+    },
+    {
+      "path": "decision_log_snapshot.md",
+      "bytes": 6532,
+      "sha256": "9f1c40eabaf06d78308d0313ef0a259936a32dccfef80a81156d587a4d821169"
+    },
+    {
+      "path": "epochs.csv",
+      "bytes": 11300,
+      "sha256": "667a4895e5031015edc78c691335ae708d6449dfef23f47c3a2cb2e7120a870f"
+    },
+    {
+      "path": "history.json",
+      "bytes": 14862,
+      "sha256": "2ea7e222967ba765760cc2ea73bf3af7e4d8647cddcc5463567b5346140d1956"
+    },
+    {
+      "path": "run.log",
+      "bytes": 2226,
+      "sha256": "629277a7a5f9470a80dfa3a3147ee143c4bdcbe11106546803f17b34f04a9672"
+    },
+    {
+      "path": "run_state.json",
+      "bytes": 181,
+      "sha256": "80bb6df460848865b72dd0da9f907af2c8b7425550a7409959b3e6939958adef"
+    },
+    {
+      "path": "source_snapshot.json",
+      "bytes": 7575,
+      "sha256": "96e29d8d1bd8cc53f437737f6238613f1721da3a68ac9066666dd8bb85c7e8a5"
+    },
+    {
+      "path": "source_snapshot.zip",
+      "bytes": 204523,
+      "sha256": "df45a1c90e2ee2425bf9c2d375cec644577e13be3d102a1729128be64a09f008"
+    },
+    {
+      "path": "working_tree.diff",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "run_id": "early_BT_43",
+  "timestamp": "2026-11-06T20:36:35.850086",
+  "git_commit": "e96465991dbbdc3371b27abd05667d932e3c3845",
+  "git_dirty": false,
+  "platform": "Linux-6.8.0-147-generic-x86_64-with-glibc2.43",
+  "processor": "",
+  "python_version": "3.12.16",
+  "torch_version": "2.13.0+cu130",
+  "cuda_available": true,
+  "device": "cuda",
+  "library_versions": {
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "scikit-learn": "1.9.0",
+    "pandas": "3.0.5"
+  },
+  "metrics": {
+    "run_id": "early_BT_43",
+    "best_epoch": 34,
+    "total_epochs": 54,
+    "train_time_sec": 386.6,
+    "validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.069494,
+      "Recall@10": 0.116845,
+      "NDCG@20": 0.079915,
+      "Recall@20": 0.158208
+    },
+    "test": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.055846,
+      "Recall@10": 0.096856,
+      "NDCG@20": 0.064857,
+      "Recall@20": 0.132585
+    },
+    "selection": {
+      "metric": "validation/NDCG@10",
+      "mode": "max",
+      "scope": "trained_epochs_only",
+      "first_training_epoch": 1,
+      "selected_epoch": 34,
+      "selected_value": 0.06949364014558042,
+      "initial_validation": {
+        "num_evaluated_users": 22363,
+        "NDCG@10": 0.02082712700376824,
+        "Recall@10": 0.0402003309037249,
+        "NDCG@20": 0.024894638015642883,
+        "Recall@20": 0.056253633233465994
+      }
+    }
+  },
+  "rank_format": "csv",
+  "source_snapshot_path": "source_snapshot.zip"
+}

@@ -1,0 +1,211 @@
+{
+  "dataset": "beauty",
+  "num_items": 11998,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "sources": [
+    "category",
+    "brand",
+    "title"
+  ],
+  "policy": {
+    "shuffled": "fixed_mask_permutation_option_b",
+    "random_categorical": "marginal_sampling_with_replacement",
+    "random_dense": "gaussian_unit_normalized_d384"
+  },
+  "shuffled": {
+    "category_seed_42": {
+      "file": "perm_category_seed_42.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_category_seed_42.csv",
+      "source": "category",
+      "seed": 42,
+      "total_items": 11998,
+      "permuted_available_items": 11998,
+      "fixed_missing_items": 0,
+      "sha256": "f4ade9562fb48c1ab661d4c00e971632e79d33ac933d36031ba535ebaa4eb90b"
+    },
+    "brand_seed_42": {
+      "file": "perm_brand_seed_42.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_brand_seed_42.csv",
+      "source": "brand",
+      "seed": 42,
+      "total_items": 11998,
+      "permuted_available_items": 9905,
+      "fixed_missing_items": 2093,
+      "sha256": "0fac46fa15045e3e23e8e1d2728d9b3b601ae9d9ed0b8da2780590e13bb817d1"
+    },
+    "title_seed_42": {
+      "file": "perm_title_seed_42.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_title_seed_42.csv",
+      "source": "title",
+      "seed": 42,
+      "total_items": 11998,
+      "permuted_available_items": 11991,
+      "fixed_missing_items": 7,
+      "sha256": "9a4088c6176cb9b5ac5dbdcdc416d7d8a0ee704b80d6411bcf0e27ddfdb9d4c6"
+    },
+    "category_seed_43": {
+      "file": "perm_category_seed_43.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_category_seed_43.csv",
+      "source": "category",
+      "seed": 43,
+      "total_items": 11998,
+      "permuted_available_items": 11998,
+      "fixed_missing_items": 0,
+      "sha256": "73d9f1683f4bc09de01b16ea801ca9ae0d5bd1b01aa861381199cc06d267167b"
+    },
+    "brand_seed_43": {
+      "file": "perm_brand_seed_43.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_brand_seed_43.csv",
+      "source": "brand",
+      "seed": 43,
+      "total_items": 11998,
+      "permuted_available_items": 9905,
+      "fixed_missing_items": 2093,
+      "sha256": "da85135a4748cc528adca27b4d01c39cf72cb24060d900481af4be6dd00b78aa"
+    },
+    "title_seed_43": {
+      "file": "perm_title_seed_43.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_title_seed_43.csv",
+      "source": "title",
+      "seed": 43,
+      "total_items": 11998,
+      "permuted_available_items": 11991,
+      "fixed_missing_items": 7,
+      "sha256": "99526c6c5727e758cf708660d9a22be47dc5b2915593e1d46f13595b3e33bcb5"
+    },
+    "category_seed_44": {
+      "file": "perm_category_seed_44.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_category_seed_44.csv",
+      "source": "category",
+      "seed": 44,
+      "total_items": 11998,
+      "permuted_available_items": 11998,
+      "fixed_missing_items": 0,
+      "sha256": "3e3850af90606fc4c16e5a352ddc181b54d38da56ae5a86f72b78f54857b8b1c"
+    },
+    "brand_seed_44": {
+      "file": "perm_brand_seed_44.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_brand_seed_44.csv",
+      "source": "brand",
+      "seed": 44,
+      "total_items": 11998,
+      "permuted_available_items": 9905,
+      "fixed_missing_items": 2093,
+      "sha256": "2f3133a7fdf99a28a0b841f34c8abaaf4117b1838b4438d88c7dc1841b4ab73f"
+    },
+    "title_seed_44": {
+      "file": "perm_title_seed_44.csv",
+      "path": "/home/ubuntu/projects/uasf-seqrec/runs/checkpoint2_full_20261106/beauty/training_contrasts/shuffled/perm_title_seed_44.csv",
+      "source": "title",
+      "seed": 44,
+      "total_items": 11998,
+      "permuted_available_items": 11991,
+      "fixed_missing_items": 7,
+      "sha256": "7c3c702fd3354f1be589cd4b224fb4e586a29762953f0d4f90073e2021948e3e"
+    }
+  },
+  "random": {
+    "category_seed_42": {
+      "file": "random_category_seed_42.csv",
+      "source": "category",
+      "seed": 42,
+      "sampling": "marginal_with_replacement",
+      "total_items": 11998,
+      "available_items": 11998,
+      "missing_items": 0,
+      "sha256": "8e4f1700bd3d7961d52524f4c86c6eb5a0adde70b931c0fbda59076e68944d7a"
+    },
+    "brand_seed_42": {
+      "file": "random_brand_seed_42.csv",
+      "source": "brand",
+      "seed": 42,
+      "sampling": "marginal_with_replacement",
+      "total_items": 11998,
+      "available_items": 9905,
+      "missing_items": 2093,
+      "sha256": "2e620aa407848b19cada0f4359ced2a0537816755dc89ef8090ea42cc1db7c34"
+    },
+    "title_seed_42": {
+      "file": "random_title_seed_42.npy",
+      "source": "title",
+      "seed": 42,
+      "sampling": "gaussian_unit_normalized",
+      "dim": 384,
+      "total_items": 11998,
+      "available_items": 11991,
+      "missing_items": 7,
+      "sha256": "c8228b39db60d12f7ebd3c2141747a1c7eb49c9ac99b48c66f5e003433dcf11c"
+    },
+    "category_seed_43": {
+      "file": "random_category_seed_43.csv",
+      "source": "category",
+      "seed": 43,
+      "sampling": "marginal_with_replacement",
+      "total_items": 11998,
+      "available_items": 11998,
+      "missing_items": 0,
+      "sha256": "597fb2b14263bc6ddafdf19e72091a6dd45c1faef619f41b0610d958a5f9650e"
+    },
+    "brand_seed_43": {
+      "file": "random_brand_seed_43.csv",
+      "source": "brand",
+      "seed": 43,
+      "sampling": "marginal_with_replacement",
+      "total_items": 11998,
+      "available_items": 9905,
+      "missing_items": 2093,
+      "sha256": "d43a4a4df8c1ba57282f0b03205fc91ee51e6c08c7720de7a325925809ee224c"
+    },
+    "title_seed_43": {
+      "file": "random_title_seed_43.npy",
+      "source": "title",
+      "seed": 43,
+      "sampling": "gaussian_unit_normalized",
+      "dim": 384,
+      "total_items": 11998,
+      "available_items": 11991,
+      "missing_items": 7,
+      "sha256": "9390b8a5857fe120d71279fbad41e8119c9101cd62c1afee9be8e54a8f4c09bc"
+    },
+    "category_seed_44": {
+      "file": "random_category_seed_44.csv",
+      "source": "category",
+      "seed": 44,
+      "sampling": "marginal_with_replacement",
+      "total_items": 11998,
+      "available_items": 11998,
+      "missing_items": 0,
+      "sha256": "ad5cc6520b8b4e0e0449dee752e37c7bd2ea645316848a316009ad18f5d0a458"
+    },
+    "brand_seed_44": {
+      "file": "random_brand_seed_44.csv",
+      "source": "brand",
+      "seed": 44,
+      "sampling": "marginal_with_replacement",
+      "total_items": 11998,
+      "available_items": 9905,
+      "missing_items": 2093,
+      "sha256": "c03d64c77b5f1a789da7a8224fb68fe99fad94476134ecbf020930f5de2b90d7"
+    },
+    "title_seed_44": {
+      "file": "random_title_seed_44.npy",
+      "source": "title",
+      "seed": 44,
+      "sampling": "gaussian_unit_normalized",
+      "dim": 384,
+      "total_items": 11998,
+      "available_items": 11991,
+      "missing_items": 7,
+      "sha256": "6e044280ae1941f84d8d9ecd7df8308cdf35d55c856fe8a67eed26d617323dd6"
+    }
+  },
+  "input_sha256": {
+    "metadata.csv": "3665decdbd7f2e3c8842071eaa88234be71da0b2e549ca9dab812aac147abc1c",
+    "availability_mask.csv": "6befe6d94a649929557d85e05c6bbbaf3ed21e87ae118e6a1afe823cb4c115f6",
+    "title_embeddings.npy": "2d18adde0f4ac205a4edee4a6cadbcb9d6b5280090041a83150400fa0dd8cea0"
+  }
+}

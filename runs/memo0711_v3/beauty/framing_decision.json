@@ -1,0 +1,77 @@
+{
+  "framing": "F2",
+  "framing_family": [
+    "all_fixed",
+    "global_subset",
+    "group_subset",
+    "global_gate",
+    "unsupervised",
+    "softmax_null",
+    "independent_ID",
+    "early_no_sd",
+    "id_plus_meta",
+    "early_plus_meta"
+  ],
+  "best_baseline": "early_plus_meta",
+  "comparison": {
+    "method_a": "UASF",
+    "method_b": "early_plus_meta",
+    "metric_name": "NDCG@10",
+    "mean_a": 0.065832,
+    "mean_b": 0.077549,
+    "mean_diff": -0.011717546678624234,
+    "ci_lower": -0.013047396428077913,
+    "ci_upper": -0.01039058478538526,
+    "p_value": 0.0,
+    "is_significant": true
+  },
+  "secondary_six_selectors": {
+    "framing": "F2",
+    "framing_family": [
+      "all_fixed",
+      "global_subset",
+      "group_subset",
+      "global_gate",
+      "unsupervised",
+      "softmax_null"
+    ],
+    "best_baseline": "group_subset",
+    "comparison": {
+      "method_a": "UASF",
+      "method_b": "group_subset",
+      "metric_name": "NDCG@10",
+      "mean_a": 0.065832,
+      "mean_b": 0.069446,
+      "mean_diff": -0.0036146603510241286,
+      "ci_lower": -0.0044298245669249494,
+      "ci_upper": -0.0028202890574118558,
+      "p_value": 0.0,
+      "is_significant": true
+    },
+    "sensitivity_only": true,
+    "used_for_primary_decision": false
+  },
+  "framing_policy": "memo0711_v1_locked_ten_v3",
+  "validation_means": {
+    "all_fixed": 0.06931918011715878,
+    "global_subset": 0.06931918011715878,
+    "group_subset": 0.06944641458503857,
+    "global_gate": 0.0680158001730264,
+    "unsupervised": 0.06839234525682909,
+    "softmax_null": 0.06456980147159444,
+    "independent_ID": 0.060314400530442284,
+    "early_no_sd": 0.07005965230575771,
+    "id_plus_meta": 0.06916138603515982,
+    "early_plus_meta": 0.07754930091263867,
+    "uasf": 0.06583175423401445
+  },
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "test_used": false,
+  "rule": "mean UASF exceeds best predeclared locked baseline and paired-user CI lower > 0"
+}

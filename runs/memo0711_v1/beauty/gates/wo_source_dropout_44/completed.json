@@ -1,0 +1,11 @@
+{
+  "signature": "3c057449734110417436a98e48387c540f15f7073512aa72f5a8f9353af0c8a9",
+  "attempt": "attempt_001",
+  "mode": "wo_source_dropout",
+  "seed": 44,
+  "best_epoch": 47,
+  "artifacts": {
+    "attempt_001/gate_epochs.csv": "51d8d23f6fd7caf61eded2e43e2fdea7e07b0565c24eedeebfcea22739b02437",
+    "attempt_001/gate.pt": "764b212d39e4475e935c48998616970535013ecf7cfff2dbf24d4c097557780a"
+  }
+}

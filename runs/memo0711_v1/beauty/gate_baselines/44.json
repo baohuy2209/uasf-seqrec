@@ -1,0 +1,16 @@
+{
+  "global_subset": "CBT",
+  "groups": {
+    "0": "CBT",
+    "1": "CBT",
+    "2": "ID",
+    "3": "CB",
+    "4": "CB",
+    "5": "CBT",
+    "6": "CBT",
+    "7": "BT",
+    "8": "CBT",
+    "9": "CBT"
+  },
+  "test_used": false
+}

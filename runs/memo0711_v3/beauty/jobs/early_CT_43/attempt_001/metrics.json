@@ -1,0 +1,35 @@
+{
+  "run_id": "early_CT_43",
+  "best_epoch": 20,
+  "total_epochs": 40,
+  "train_time_sec": 300.46,
+  "validation": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.061496,
+    "Recall@10": 0.104235,
+    "NDCG@20": 0.070868,
+    "Recall@20": 0.141484
+  },
+  "test": {
+    "num_evaluated_users": 22363,
+    "NDCG@10": 0.048898,
+    "Recall@10": 0.082279,
+    "NDCG@20": 0.057052,
+    "Recall@20": 0.114609
+  },
+  "selection": {
+    "metric": "validation/NDCG@10",
+    "mode": "max",
+    "scope": "trained_epochs_only",
+    "first_training_epoch": 1,
+    "selected_epoch": 20,
+    "selected_value": 0.06149565552463503,
+    "initial_validation": {
+      "num_evaluated_users": 22363,
+      "NDCG@10": 0.0025308203180794916,
+      "Recall@10": 0.0053660063497741805,
+      "NDCG@20": 0.003735855243932937,
+      "Recall@20": 0.010240128784152395
+    }
+  }
+}

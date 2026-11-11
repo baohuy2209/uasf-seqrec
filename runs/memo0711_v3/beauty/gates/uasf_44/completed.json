@@ -1,0 +1,11 @@
+{
+  "signature": "0c81ab3ecc39c42959fdba60a5e4a1afd63883a9411dcd0dfe28bff1e557bc4e",
+  "attempt": "attempt_001",
+  "mode": "uasf",
+  "seed": 44,
+  "best_epoch": 6,
+  "artifacts": {
+    "attempt_001/gate_epochs.csv": "9acb7e4805e3517d535a9755b53a17f7dbcf4a0081e0ab9c4b299b64f883b286",
+    "attempt_001/gate.pt": "36633cf35f054566997d01b5981d69dc5f5bb595632debf258b8fea0b8965b79"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "global_subset": "CBT",
+  "groups": {
+    "0": "CBT",
+    "1": "CBT",
+    "2": "ID",
+    "3": "CB",
+    "4": "CB",
+    "5": "CBT",
+    "6": "CBT",
+    "7": "BT",
+    "8": "CBT",
+    "9": "CBT"
+  },
+  "test_used": false,
+  "selection_rule": "argmax mean validation NDCG@10; ties follow LABELS order",
+  "subset_order": [
+    "ID",
+    "C",
+    "B",
+    "T",
+    "CB",
+    "CT",
+    "BT",
+    "CBT"
+  ]
+}

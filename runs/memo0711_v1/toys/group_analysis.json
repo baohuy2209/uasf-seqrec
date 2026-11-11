@@ -1,0 +1,140 @@
+[
+  {
+    "mechanism": "early",
+    "seed": 42,
+    "global_subset": "CBT",
+    "global_test": 0.05590574296990975,
+    "id_test": 0.05027181792783018,
+    "group_val_selected_test": 0.055866609421671105,
+    "group_test_oracle": 0.056542461390717946,
+    "choices_from_validation": {
+      "0": "CBT",
+      "1": "CBT",
+      "2": "CBT",
+      "3": "CBT",
+      "4": "T",
+      "5": "T",
+      "6": "T",
+      "7": "CBT",
+      "8": "CBT",
+      "9": "T"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "early",
+    "seed": 43,
+    "global_subset": "CBT",
+    "global_test": 0.056883615213889,
+    "id_test": 0.04911742991237202,
+    "group_val_selected_test": 0.055424443019737195,
+    "group_test_oracle": 0.05790911937608632,
+    "choices_from_validation": {
+      "0": "T",
+      "1": "CBT",
+      "2": "CBT",
+      "3": "CBT",
+      "4": "CT",
+      "5": "T",
+      "6": "T",
+      "7": "CBT",
+      "8": "CB",
+      "9": "CB"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "early",
+    "seed": 44,
+    "global_subset": "CBT",
+    "global_test": 0.05623319478985652,
+    "id_test": 0.049074216099438316,
+    "group_val_selected_test": 0.05546010307550411,
+    "group_test_oracle": 0.05743729398178693,
+    "choices_from_validation": {
+      "0": "T",
+      "1": "BT",
+      "2": "T",
+      "3": "CBT",
+      "4": "CT",
+      "5": "T",
+      "6": "CBT",
+      "7": "CBT",
+      "8": "CBT",
+      "9": "CBT"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late",
+    "seed": 42,
+    "global_subset": "ID",
+    "global_test": 0.05027181792783018,
+    "id_test": 0.05027181792783018,
+    "group_val_selected_test": 0.05027181792783018,
+    "group_test_oracle": 0.05029956766107766,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "ID",
+      "6": "ID",
+      "7": "ID",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late",
+    "seed": 43,
+    "global_subset": "ID",
+    "global_test": 0.04911742991237202,
+    "id_test": 0.04911742991237202,
+    "group_val_selected_test": 0.04911742991237202,
+    "group_test_oracle": 0.04918720276640876,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "ID",
+      "6": "ID",
+      "7": "ID",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  },
+  {
+    "mechanism": "late",
+    "seed": 44,
+    "global_subset": "ID",
+    "global_test": 0.049074216099438316,
+    "id_test": 0.049074216099438316,
+    "group_val_selected_test": 0.049074216099438316,
+    "group_test_oracle": 0.04910619767464179,
+    "choices_from_validation": {
+      "0": "ID",
+      "1": "ID",
+      "2": "ID",
+      "3": "ID",
+      "4": "ID",
+      "5": "ID",
+      "6": "ID",
+      "7": "ID",
+      "8": "ID",
+      "9": "ID"
+    },
+    "unseen_validation_groups_fallback_global": [],
+    "oracle_is_descriptive_test_selection": true
+  }
+]

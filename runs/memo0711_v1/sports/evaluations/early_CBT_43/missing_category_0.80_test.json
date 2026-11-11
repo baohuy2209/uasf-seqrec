@@ -1,0 +1,9 @@
+{
+  "signature": {
+    "model": "23bb6a9f9b60ae2778513bbb27f17590e9ee2ee5de53719f35a17588492e3e6d",
+    "contexts": "dc945c2e0fd73001b55fca4eb2074d5142616d912e6e24f736ac2a8a0300a8a8",
+    "label": "missing_category_0.80",
+    "mask": "5bfb6f738893c07ab1a56ea0ffe8777fbce3d971278bbcd87ccce854e787ace7"
+  },
+  "sha256": "f0493a1822ab241fb98f1dd02a11c42a21f6e2b7ae3ba7f7efa016c26066f6d0"
+}
