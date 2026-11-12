@@ -1,0 +1,7 @@
+dataset,contrast,difference,ci_lower,ci_upper,users,seeds,resamples,scope
+beauty,early_CBT minus ID,0.007314230524938615,0.005723099503159995,0.00879357624610476,22363,"[42, 43, 44]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+beauty,late_CBT minus ID,-0.002681153615887182,-0.0033827164550728358,-0.001945915435590884,22363,"[42, 43, 44]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+sports,early_CBT minus ID,0.00304777335922246,0.0020738399702447097,0.004026437978984005,35598,"[42, 43, 44]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+sports,late_CBT minus ID,-0.002152559107007541,-0.0026889724330225995,-0.0016373386597564928,35598,"[42, 43, 44]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+toys,early_CBT minus ID,0.006853029678004927,0.005192514916802031,0.008500575009660482,19412,"[42, 43, 44]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+toys,late_CBT minus ID,-0.004780237538505038,-0.0056393305768553835,-0.0038210241386907274,19412,"[42, 43, 44]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
