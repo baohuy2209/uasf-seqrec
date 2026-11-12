@@ -517,7 +517,7 @@ class Memo0711(StudyCompletion):
                 if self.model_hash(key,job)!=item['model_sha256'] or sha(self.job_path(key,job)/'completed.json')!=item['completed_sha256']:raise ValueError('Group model lineage changed')
         return value
 
-    def validate_ready(self):
+    def validate_ready(self, e1_inspector=None):
         """Verify measured coverage before creating the immutable Test release lock."""
         if list(self.output.glob('*/memo_execution.lock')) or list(self.output.glob('*/jobs/*/execution.lock')) or list(self.output.glob('*/gates/*/execution.lock')):
             raise RuntimeError('An experiment lock is active; inspect before freezing')
@@ -542,7 +542,8 @@ class Memo0711(StudyCompletion):
             self.validate_group_lineage(key)
             if key=='beauty' or beauty['framing']=='F1':
                 from .memo0711_e1_evidence import inspect_e1_evidence
-                if inspect_e1_evidence(self.output/key)['status']!='PASS':
+                inspector = inspect_e1_evidence if e1_inspector is None else e1_inspector
+                if inspector(self.output/key)['status']!='PASS':
                     raise ValueError('Missing or invalid E1 OOF evidence: '+key)
                 status=json.loads((self.output/key/'selected_s2/status.json').read_text(encoding='utf-8'))
                 if beauty['framing']=='F1' and not status.get('s3_eligible'):

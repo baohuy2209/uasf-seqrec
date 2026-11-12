@@ -12,6 +12,7 @@ def main() -> int:
     parser.add_argument('--freeze-tag')
     parser.add_argument('--early-release-reason',default='')
     parser.add_argument('--execute-inference',action='store_true')
+    parser.add_argument('--verbose',action='store_true',help='Print full checkpoint inventory during preflight')
     args=parser.parse_args()
     if args.stage=='plan':
         print(json.dumps(dict(training=False,run_root=args.run_root,stages=['cpu','preflight','freeze','release-test','alpha'],
@@ -35,7 +36,13 @@ def main() -> int:
                 result['git_readiness']=reviewed_git(ROOT,root)
                 result['full_readiness']=make_run(ROOT,root).validate_ready()
             except Exception as exc:result.update(status='INCOMPLETE',readiness_error=str(exc))
-        print(json.dumps(result,indent=2,ensure_ascii=True));return 0 if result['status']=='PASS' else 2
+        shown=result if args.verbose else dict(stage='preflight',status=result['status'],
+            discovered_checkpoints=result['discovered_total'],verified_checkpoint_files=len(result['checkpoints']),
+            missing_or_mismatched_checkpoints=len(result['failures']),first_failures=result['failures'][:5],
+            gate_signatures=result['gate_signature_audit']['status'],source_compatibility=result['source_compatibility']['status'],
+            readiness_error=result.get('readiness_error'),training=False,inference=False,
+            next_step='Ready for freeze' if result['status']=='PASS' else 'STOP: later chained stages did not run')
+        print(json.dumps(shown,indent=2,ensure_ascii=True));return 0 if result['status']=='PASS' else 2
     if args.stage in ['release-test','alpha'] and not args.execute_inference:parser.error('Pass --execute-inference; training has no CLI flag')
     if args.stage=='freeze' and not args.freeze_tag:parser.error('Pass an existing reviewed --freeze-tag')
     run=make_run(ROOT,root,args.execute_inference)

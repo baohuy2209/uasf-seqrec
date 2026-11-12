@@ -193,6 +193,9 @@ def make_run(repo: Path, root: Path, execute: bool=False) -> Any:
     config=read(root/'beauty/protocol.lock.json')['config']
     class FinalRun(Memo0711):
         def run_job(self,*args,**kwargs):raise RuntimeError('Finalization never trains')
+        def validate_ready(self):
+            from .memo0711_final_e1 import inspect_e1_roundtrip
+            return super().validate_ready(e1_inspector=inspect_e1_roundtrip)
         def guard(self,training=False,inference=False):
             if training:raise RuntimeError('Finalization never trains')
             if inference:

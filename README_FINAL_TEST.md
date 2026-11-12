@@ -11,6 +11,8 @@ This runner finishes the existing study without training. It keeps the original 
 
 Framing remains F2 irrespective of Test rankings. The new runner never calls a fitter; its run class rejects training. Gate Test evaluation loads saved feature columns/scaler directly from `gate.pt`, avoiding unnecessary Train-meta inference. All-off routing remains the separate same-seed Train-base ID model.
 
+The finalization readiness inspector reads archived OOF CSV floats with `float_precision="round_trip"`. This preserves numerical ties for Spearman correlation. The original E1 exporter, report, CSV and manifest bytes remain unchanged; metric tolerance stays at `1e-10`, and all original hash/label/fold/metric checks still apply. A preflight error is not a completed Test evaluation: the chained command stops before freeze/release when readiness fails.
+
 ## Server paths — preflight first
 
 Run from the checkout containing your completed v3. For the existing server setup:
@@ -24,6 +26,8 @@ python scripts/finalize_memo0711.py --stage preflight --run-root runs/memo0711_v
 ```
 
 `preflight` is CPU/read-only: no optimizer, no model forward, no GPU evaluation. It enumerates every completed S1 and gate checkpoint in the run and verifies its exact manifest-relative path and SHA256; 45 are the direct Test dependencies and the other archived models are checked too. When those exist, it also runs the original full `validate_ready` checks. The Windows copy without `.pt` will correctly report `INCOMPLETE`; it is not a request to retrain.
+
+The terminal prints a short status summary; use `--verbose` to print all checkpoint paths and hashes. An `INCOMPLETE` preflight exits with code 2, so a shell chain joined by `&&` stops before subsequent stages.
 
 The code reads `runs/memo0711_v3/beauty/protocol.lock.json` to preserve the original scientific config/signatures. It loads checkpoints only under `--run-root`, using `completed.json` (`checkpoint` or `attempt/gate.pt`). It does not depend on stale absolute `input_roots` from another worktree, search for a vaguely similar checkpoint, change protocol locks, or copy weights from a different experiment. If v3 is elsewhere, change `--run-root` to that actual dedicated directory under the checkout's `runs/`.
 
