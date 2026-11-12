@@ -1,0 +1,236 @@
+{
+  "family": [
+    "all_fixed",
+    "global_subset",
+    "group_subset",
+    "global_gate",
+    "unsupervised",
+    "softmax_null",
+    "independent_ID",
+    "early_no_sd",
+    "id_plus_meta",
+    "early_plus_meta"
+  ],
+  "holm": {
+    "results": [
+      {
+        "method_a": "UASF",
+        "method_b": "all_fixed",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.055508,
+        "mean_diff": -0.003247,
+        "ci_lower": -0.004008,
+        "ci_upper": -0.002499,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "global_subset",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.055508,
+        "mean_diff": -0.003247,
+        "ci_lower": -0.004008,
+        "ci_upper": -0.002499,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "group_subset",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.054745,
+        "mean_diff": -0.002484,
+        "ci_lower": -0.003244,
+        "ci_upper": -0.001725,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "global_gate",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.053817,
+        "mean_diff": -0.001555,
+        "ci_lower": -0.002099,
+        "ci_upper": -0.001049,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "unsupervised",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.054164,
+        "mean_diff": -0.001902,
+        "ci_lower": -0.002403,
+        "ci_upper": -0.001435,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "softmax_null",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.051238,
+        "mean_diff": 0.001023,
+        "ci_lower": 0.000671,
+        "ci_upper": 0.001369,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "independent_ID",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.048013,
+        "mean_diff": 0.004249,
+        "ci_lower": 0.002974,
+        "ci_upper": 0.005462,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "early_no_sd",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.055137,
+        "mean_diff": -0.002875,
+        "ci_lower": -0.0038,
+        "ci_upper": -0.001996,
+        "p_value": 0.0,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "id_plus_meta",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.054838,
+        "mean_diff": -0.002577,
+        "ci_lower": -0.003926,
+        "ci_upper": -0.00124,
+        "p_value": 0.001,
+        "is_significant": true
+      },
+      {
+        "method_a": "UASF",
+        "method_b": "early_plus_meta",
+        "metric_name": "NDCG@10",
+        "mean_a": 0.052261,
+        "mean_b": 0.061401,
+        "mean_diff": -0.00914,
+        "ci_lower": -0.010322,
+        "ci_upper": -0.008095,
+        "p_value": 0.0,
+        "is_significant": true
+      }
+    ],
+    "p_values_adjusted": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.001,
+      0.0
+    ],
+    "significant_after_correction": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "tost": {
+    "all_fixed": {
+      "equivalent": false,
+      "lower": -0.0005550819611067436,
+      "upper": 0.0005550819611067436,
+      "p": 1.0,
+      "relative_margin": 0.01
+    },
+    "global_subset": {
+      "equivalent": false,
+      "lower": -0.0005550819611067436,
+      "upper": 0.0005550819611067436,
+      "p": 1.0,
+      "relative_margin": 0.01
+    },
+    "group_subset": {
+      "equivalent": false,
+      "lower": -0.000547450053162672,
+      "upper": 0.000547450053162672,
+      "p": 1.0,
+      "relative_margin": 0.01
+    },
+    "global_gate": {
+      "equivalent": false,
+      "lower": -0.0005381662382468112,
+      "upper": 0.0005381662382468112,
+      "p": 0.999923,
+      "relative_margin": 0.01
+    },
+    "unsupervised": {
+      "equivalent": false,
+      "lower": -0.0005416380316831666,
+      "upper": 0.0005416380316831666,
+      "p": 1.0,
+      "relative_margin": 0.01
+    },
+    "softmax_null": {
+      "equivalent": false,
+      "lower": -0.0005123821990182239,
+      "upper": 0.0005123821990182239,
+      "p": 0.997905,
+      "relative_margin": 0.01
+    },
+    "independent_ID": {
+      "equivalent": false,
+      "lower": -0.0004801271724945041,
+      "upper": 0.0004801271724945041,
+      "p": 1.0,
+      "relative_margin": 0.01
+    },
+    "early_no_sd": {
+      "equivalent": false,
+      "lower": -0.0005513653375753961,
+      "upper": 0.0005513653375753961,
+      "p": 0.999998,
+      "relative_margin": 0.01
+    },
+    "id_plus_meta": {
+      "equivalent": false,
+      "lower": -0.000548381919633675,
+      "upper": 0.000548381919633675,
+      "p": 0.998177,
+      "relative_margin": 0.01
+    },
+    "early_plus_meta": {
+      "equivalent": false,
+      "lower": -0.0006140126471108658,
+      "upper": 0.0006140126471108658,
+      "p": 1.0,
+      "relative_margin": 0.01
+    }
+  },
+  "p_value_note": "A recorded zero means zero exceedances in finite bootstrap draws, not an exact zero probability",
+  "framing": "F2_UNCHANGED; Test never reruns framing selection"
+}

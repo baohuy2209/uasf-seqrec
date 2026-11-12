@@ -1,0 +1,9 @@
+{
+  "signature": {
+    "model": "569948165c9d8421f4058479fb28d7f91c5d2600829640e7e6d9e7e21e6d8815",
+    "contexts": "d1b8b3cba14e998c5b328e27faf1b6bc972a23346bc0525387ab18694d78d993",
+    "label": "CBT",
+    "mask": null
+  },
+  "sha256": "e3955331d51b70bf425b86a797a0c0cd43f0c441ec7dcb33ca26bbdc055b1f11"
+}

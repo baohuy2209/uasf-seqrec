@@ -1,0 +1,26 @@
+{
+  "freeze_sha256": "65dab84353f3ca1101ed5cf72b800e22d2d5dbffa680792bb0b810d75aae9ca4",
+  "methods": [
+    "all_fixed",
+    "global_subset",
+    "group_subset",
+    "global_gate",
+    "unsupervised",
+    "softmax_null",
+    "independent_ID",
+    "early_no_sd",
+    "id_plus_meta",
+    "early_plus_meta",
+    "uasf"
+  ],
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "split": "test",
+  "framing": "F2_UNCHANGED",
+  "selection": "locked validation choices only"
+}

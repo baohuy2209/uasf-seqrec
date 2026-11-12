@@ -1,0 +1,11 @@
+baseline,difference,ci_lower,ci_upper,users,seeds,resamples,scope
+all_fixed,-0.003246707729915963,-0.004008021749590638,-0.002499059536757085,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+global_subset,-0.003246707729915963,-0.004008021749590638,-0.002499059536757085,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+group_subset,-0.002483516935508795,-0.0032440566887965232,-0.0017247853937827902,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+global_gate,-0.0015551354439227278,-0.002098749871854563,-0.0010486922361792764,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+unsupervised,-0.0019023147875582476,-0.0024025131231515274,-0.0014353964366002221,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+softmax_null,0.0010232684789360119,0.000670815098206354,0.0013685775663988898,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+independent_ID,0.004248771131307989,0.0029736921709794134,0.005461874266260458,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+early_no_sd,-0.0028750453767812066,-0.0037999821418054462,-0.0019963183532244674,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+id_plus_meta,-0.002576703582609091,-0.003925923708342154,-0.0012404626454566457,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"
+early_plus_meta,-0.009139776330328187,-0.010322102484075304,-0.008095491647335803,22363,"[42, 43, 44, 45, 46]",1000,"unadjusted paired-user percentile CI, conditional on fitted models"

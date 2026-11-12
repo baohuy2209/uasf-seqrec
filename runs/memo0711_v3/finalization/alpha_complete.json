@@ -1,0 +1,12 @@
+{
+  "posthoc": true,
+  "split": "validation",
+  "training": false,
+  "backbone_forward": false,
+  "used_for_selection": false,
+  "freeze_sha256": "65dab84353f3ca1101ed5cf72b800e22d2d5dbffa680792bb0b810d75aae9ca4",
+  "outputs_sha256": {
+    "finalization/validation_alpha_per_user.csv": "4b651c8a0759b21330d215e1d8e908cb7e950a268ea3e52390225d9e9a9e358a",
+    "finalization/validation_alpha_summary.csv": "cd7550b12c780523fd4a6c129adafcb620ed77a308b29c56ee11186ece08e996"
+  }
+}

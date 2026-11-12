@@ -1,0 +1,9 @@
+{
+  "signature": {
+    "model": "58fbca2e81c32422c63b3d47c2668581c40a4a8327fb3470ad37473bd7bf436a",
+    "contexts": "d1b8b3cba14e998c5b328e27faf1b6bc972a23346bc0525387ab18694d78d993",
+    "label": "C",
+    "mask": null
+  },
+  "sha256": "baacdc34e999657f47a00a33a746c2b9098e8ec4126e154607572f4da2eb6191"
+}
