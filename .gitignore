@@ -43,3 +43,4 @@ htmlcov/
 !.env.example
 .DS_Store
 Thumbs.db
+tests
