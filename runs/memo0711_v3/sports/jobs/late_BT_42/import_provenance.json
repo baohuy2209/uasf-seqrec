@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/sports/jobs/late_BT_42",
-  "original_completed_sha256": "abe992154d8abe273966f75cc995a9c6ff0ac64910a226ce5bb296aae2dd504c",
-  "original_fingerprint": "8295743c1640e6706b7f6b0e5f264263fe18756f9643d12c22efecc08656c68d",
-  "train_context_sha256": "59a43f953166afe597322a46c83014f1333ad59ae90610855105eff048f569f0",
-  "scientific_inputs_checked": true
-}

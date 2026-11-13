@@ -177,17 +177,33 @@ class ExperimentLogger:
                     write_artifact_index(path)
 
     @staticmethod
-    def _snapshot_source(folder):
+    def _snapshot_source(folder: Path) -> None:
         import zipfile
         import hashlib
         root = Path(__file__).resolve().parents[3]
         files = sorted([p for name in ('src', 'scripts', 'configs') for p in (root / name).rglob('*')
                         if p.is_file() and p.suffix in ('.py', '.yaml') and '__pycache__' not in p.parts])
         hashes = {}
-        # Exact working changes accompany every run even when other local files are uncommitted.
-        diff = subprocess.run(['git','diff','--binary','HEAD','--','src','scripts','configs',
-                               'pyproject.toml','requirements.txt','.gitignore','.gitattributes'],
-                              cwd=root,capture_output=True,check=True).stdout
+        # Source archives lack .git; retain exact source bytes and disclose unavailable Git provenance.
+        try:
+            probe = subprocess.run(['git', 'rev-parse', '--show-toplevel'],
+                                   cwd=root, capture_output=True)
+        except FileNotFoundError:
+            git_snapshot = dict(available=False, reason='git_executable_unavailable')
+        else:
+            if probe.returncode == 0:
+                top = Path(probe.stdout.decode('utf-8').strip()).resolve()
+                git_snapshot = dict(available=top == root, reason='checkout' if top == root else 'source_archive')
+            elif b'not a git repository' in probe.stderr.lower():
+                git_snapshot = dict(available=False, reason='source_archive')
+            else:
+                probe.check_returncode()
+        diff = b''
+        if git_snapshot['available']:
+            diff = subprocess.run(['git','diff','--binary','HEAD','--','src','scripts','configs',
+                                   'pyproject.toml','requirements.txt','.gitignore','.gitattributes'],
+                                  cwd=root,capture_output=True,check=True).stdout
+        write_json(folder/'git_snapshot.json', git_snapshot)
         (folder/'working_tree.diff').write_bytes(diff)
         with zipfile.ZipFile(folder / 'source_snapshot.zip', 'x', compression=zipfile.ZIP_DEFLATED) as z:
             for file in files:

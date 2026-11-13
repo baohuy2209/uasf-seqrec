@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this research software, please cite this repository."
+type: software
+title: "Useful or Redundant? A Controlled Study of Item Metadata in Sequential Recommendation — Research Code"
+version: 1.0.0
+license: MIT
+repository-code: "https://github.com/baohuy2209/uasf-seqrec"
+url: "https://github.com/baohuy2209/uasf-seqrec"
+authors:
+  - family-names: Nguyen
+    given-names: Bao-Huy
+  - family-names: Nguyen
+    given-names: Quang-Minh Van
+  - family-names: Nguyen
+    given-names: Truong-Giang Ngoc
+  - family-names: Nguyen
+    given-names: Phuc
+    orcid: "https://orcid.org/0000-0002-6577-0159"
+keywords:
+  - sequential recommendation
+  - item metadata
+  - side-information fusion
+  - utility supervision
+  - reproducibility

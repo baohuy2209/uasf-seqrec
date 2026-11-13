@@ -1,13 +1,21 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "uasf-seqrec"
-version = "0.1.0"
-description = "User-Adaptive Side-Information Fusion for Sequential Recommendation"
+version = "1.0.0"
+description = "Controlled study of item metadata and utility-supervised fusion in sequential recommendation"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Bao-Huy Nguyen"},
+    {name = "Quang-Minh Van Nguyen"},
+    {name = "Truong-Giang Ngoc Nguyen"},
+    {name = "Phuc Nguyen"},
+]
 dependencies = [
     "numpy",
     "pandas",
@@ -32,6 +40,10 @@ dev = [
     "pytest",
     "pyarrow",
 ]
+
+[project.urls]
+Repository = "https://github.com/baohuy2209/uasf-seqrec"
+Issues = "https://github.com/baohuy2209/uasf-seqrec/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

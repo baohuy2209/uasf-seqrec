@@ -1,5 +1,0 @@
-{
-  "training": false,
-  "inference": false,
-  "top10_brand_composition": "Requires top-K item IDs; not inferable from target ranks"
-}

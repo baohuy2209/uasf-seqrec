@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/beauty/jobs/early_CT_42",
-  "original_completed_sha256": "841027031568ac644f53a30e57f4de219b0ec140cbc7bad096710516571957ce",
-  "original_fingerprint": "c1c64d4d6a7a281e762b103c730f17f9f085ea67e745b4106cbac074fbaf2f7a",
-  "train_context_sha256": "11648485a7a70cbfb7684dbbaf5766bec1bad013323992656d9858d016ff9c75",
-  "scientific_inputs_checked": true
-}

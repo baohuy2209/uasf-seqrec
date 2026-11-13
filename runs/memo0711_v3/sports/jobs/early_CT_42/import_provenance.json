@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/sports/jobs/early_CT_42",
-  "original_completed_sha256": "660df12c47837df5adf82136cbb3d4fc578871ad7dddcc07c036b7a4567ea1cc",
-  "original_fingerprint": "a56b1931d771cde81aa6b37390313392f594a905f7fc24674049d096c79fa21b",
-  "train_context_sha256": "59a43f953166afe597322a46c83014f1333ad59ae90610855105eff048f569f0",
-  "scientific_inputs_checked": true
-}

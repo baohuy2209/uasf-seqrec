@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/beauty/jobs/title_shuffled_42",
-  "original_completed_sha256": "54ab54847f442a048607546edae1d45d8a6d6a833c2f5553e3b001fe798f708e",
-  "original_fingerprint": "68227ff5099abbef56df012b4a7e95f965d6f784c5dd2857f0ed695cf644142e",
-  "train_context_sha256": "11648485a7a70cbfb7684dbbaf5766bec1bad013323992656d9858d016ff9c75",
-  "scientific_inputs_checked": true
-}

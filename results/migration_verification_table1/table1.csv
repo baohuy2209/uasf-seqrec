@@ -1,4 +1,0 @@
-dataset,users,original_items,catalog_train_base_items,interactions,sparsity,mean_sequence_length,metadata_status,category_vocab_train_base,brand_vocab_train_base,reference_users_items_match,coverage_category,coverage_brand,coverage_title
-Beauty_2014,22363,12101,11998,198502,0.9992664772935825,8.876358270357287,missing_file,,,True,,,
-Sports_and_Outdoors_2014,35598,18357,18132,296337,0.9995465195454304,8.324540704533963,missing_file,,,True,,,
-Toys_and_Games_2014,19412,11924,11766,167597,0.9992759409428199,8.633680197815783,missing_file,,,True,,,

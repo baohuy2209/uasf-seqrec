@@ -1,11 +1,21 @@
-# Auto detect text files and perform LF normalization
+# Source and documentation use LF on every platform.
 * text=auto eol=lf
 
-# Preserve generated artifact bytes and literal whitespace inside quoted titles.
-artifacts/metadata/** -text whitespace=-blank-at-eol
+# Publication evidence must retain the bytes bound to its checksums.
+results/paper/** -text
 
-# Retain the previous normalization policy for tracked historical evidence.
-# Changing these paths to -text would falsely mark existing CRLF bundles dirty.
-# New run folders are ignored; ZIP archives preserve their exact bytes.
+# Keep local historical artifact policies; do not normalize frozen files in place.
+artifacts/metadata/** -text whitespace=-blank-at-eol
 runs/** text=auto !eol
 reports/** text=auto !eol
+
+# Source archives omit local execution data and agent state.
+data export-ignore
+runs export-ignore
+reports export-ignore
+artifacts/metadata export-ignore
+.agents export-ignore
+.specify export-ignore
+specs export-ignore
+AGENTS.md export-ignore
+skills-lock.json export-ignore

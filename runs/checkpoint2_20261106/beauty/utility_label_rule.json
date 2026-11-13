@@ -1,7 +1,0 @@
-{
-  "rule": "CE if all three nonzero signs match validation; else LOG_RANK if all match; else UNRESOLVED",
-  "locked_before_computation": true,
-  "test_used": false,
-  "zero_sign": "inconclusive",
-  "feature_reference_seed": 42
-}

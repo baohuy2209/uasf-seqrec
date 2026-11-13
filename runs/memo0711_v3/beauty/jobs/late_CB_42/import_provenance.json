@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/beauty/jobs/late_CB_42",
-  "original_completed_sha256": "8329edccf387015e6ed42dad928348c6c32ee7e76a4491232a88e05a893aa907",
-  "original_fingerprint": "3c0112997fe7099d0f16e70060901b8c8c25defdb021e5226cf3451780bf3a83",
-  "train_context_sha256": "11648485a7a70cbfb7684dbbaf5766bec1bad013323992656d9858d016ff9c75",
-  "scientific_inputs_checked": true
-}

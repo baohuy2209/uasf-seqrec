@@ -1,7 +1,0 @@
-{
-  "backbone": "early_sd",
-  "supervisor_memo": "2026-11-07",
-  "fallback": "independent_ID_Train-base_same_seed",
-  "all_off_95pct_rule": "SUPERSEDED_BY_SEPARATE_ID",
-  "test_used": false
-}

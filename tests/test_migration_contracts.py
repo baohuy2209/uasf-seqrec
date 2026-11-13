@@ -73,15 +73,21 @@ def test_dataset_configs_aligned():
         assert cfg["splits_dir"] == splits_dir
 
 
-def test_real_dataset_review_files_exist_and_resolve():
-    """Verify that Amazon2014Ingestor resolves real review files for all three categories."""
+def test_dataset_review_files_resolve_from_fixture(tmp_path):
+    """A public source checkout must test path resolution without private datasets."""
+    import gzip
+
+    raw = tmp_path / 'raw'
+    raw.mkdir()
     categories = ["Beauty", "Sports_and_Outdoors", "Toys_and_Games"]
     for cat in categories:
-        ingestor = Amazon2014Ingestor(raw_data_dir="data/raw", dataset_key=cat)
+        expected = raw / f'reviews_{cat}_5.json.gz'
+        with gzip.open(expected, 'wt', encoding='utf-8') as stream:
+            stream.write('{"reviewerID":"fixture-user","asin":"fixture-item","unixReviewTime":1}\n')
+        ingestor = Amazon2014Ingestor(raw_data_dir=str(raw), dataset_key=cat)
         reviews_path, meta_path = ingestor.resolve_paths()
-        assert Path(reviews_path).is_file(), f"Failed to locate review file for {cat}"
-        if meta_path is not None:
-            assert Path(meta_path).is_file(), f"Invalid metadata path for {cat}"
+        assert Path(reviews_path).resolve() == expected.resolve()
+        assert meta_path is None
 
 
 def test_missing_raw_directory_fails_fast_without_fallback():

@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/toys/jobs/late_B_42",
-  "original_completed_sha256": "b31975c03b282bed96ede610c6a1979bd0db2f70f030a54eb2604187b8b9d62f",
-  "original_fingerprint": "a8927e50155dda44cc4bf82fb2fe8b3f2791e26fbbf207e1337d149b0a0a5f38",
-  "train_context_sha256": "59bb268341002dd4383451c1f1e5d2b197baf4fa41130d9c1d23a628fbd7f744",
-  "scientific_inputs_checked": true
-}

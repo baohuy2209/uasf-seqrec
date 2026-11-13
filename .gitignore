@@ -1,104 +1,45 @@
-# Local Python environments and caches
-.venv/
-.venv-wsl/
-.venv-cuda/
+# Local environments and Python/build caches
+.venv*/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+/build/
+/dist/
+/release_dist/
+/.tmp/
 
-# Datasets and generated experiment outputs
+# Original data, embeddings, checkpoints, and historical execution records stay local.
 /data/
-.tmp/
-
-# Large arrays and model scores (>100MB)
+/runs/
+/reports/
+/artifacts/*
+!/artifacts/README.md
+/results/*
+!/results/README.md
+!/results/paper/
+*.pt
 *.npy
 *.npz
-!artifacts/**/*.npy
+*.log
+*.bak
 
-# Editable-install and package build metadata
-*.egg-info/
-build/
-dist/
-docs/
-.agents
-skills-lock.json
-*.pt
+# Publish only the maintained project documentation.
+/docs/*
+!/docs/decision_log.md
+!/docs/REPRODUCIBILITY.md
+!/docs/history/
 
-
-# Keep the scientific decision log versioned without adding other local docs.
-!docs/
-docs/*
-!docs/decision_log.md
-
-
-runs/completion_20261107/beauty/diagnostic_early_sd/*.csv
-
-# Runtime execution lock
-/runs/completion_*/completion_execution.lock
-
-
-results/utility_table5_20261107/beauty/diagnostic_early_sd/*.csv
-**/diagnostic_early_sd/*.csv
-
-# Runtime for the supervisor 07 November protocol
-.specify/ 
-specs
-AGENTS.md
-
-runs/memo0711_v1/**/*.csv
-
-# BEGIN AUTO LARGE FILES
-/data/raw/Beauty/Beauty_5.json
-/data/raw/Sports\ and\ Outdoors/Sports_and_Outdoors_5.json
-/data/raw/Sports\ and\ Outdoors/ratings_Sports_and_Outdoors.csv
-/data/raw/Toys\ and\ Games/Toys_and_Games_5.json
-/data/raw/meta_Sports_and_Outdoors.json.gz
-/data/raw/meta_Toys_and_Games.json.gz
-/results/utility_table5_20261107/beauty/diagnostic_early_sd/utility_CE.csv
-/results/utility_table5_20261107/beauty/diagnostic_early_sd/utility_LOG_RANK.csv
-/results/utility_table5_20261107/beauty/diagnostic_early_sd/utility_both_labels.csv
-/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_test.npy
-/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_train_meta.npy
-/runs/checkpoint1_version1/runs/id_seed42_20261103_100456_353666_5a7813c0/s_ID_validation.npy
-/runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_test.npy
-/runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_train_meta.npy
-/runs/checkpoint1_version1/runs/id_seed43_20261103_103331_671482_16cb7604/s_ID_validation.npy
-/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_test.npy
-/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_train_meta.npy
-/runs/checkpoint1_version1/runs/id_seed44_20261103_110416_096425_a2f4df41/s_ID_validation.npy
-/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_CE.csv
-/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_LOG_RANK.csv
-/runs/completion_utility_table5_20261107/beauty/diagnostic_early_sd/utility_both_labels.csv
-/runs/memo0711_v1/beauty/no_sd_s2/utility_CE.csv
-/runs/memo0711_v1/beauty/no_sd_s2/utility_LOG_RANK.csv
-/runs/memo0711_v1/beauty/no_sd_s2/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_42/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_43/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_44/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_45/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_CBT_46/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_sd_42/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_sd_43/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_sd_44/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_sd_45/utility_both_labels.csv
-/runs/memo0711_v1/beauty/per_seed_s2/early_sd_46/utility_both_labels.csv
-/runs/memo0711_v1/beauty/selected_s2/utility_CE.csv
-/runs/memo0711_v1/beauty/selected_s2/utility_LOG_RANK.csv
-/runs/memo0711_v1/beauty/selected_s2/utility_both_labels.csv
-/runs/memo0711_v3/beauty/no_sd_s2/utility_CE.csv
-/runs/memo0711_v3/beauty/no_sd_s2/utility_LOG_RANK.csv
-/runs/memo0711_v3/beauty/no_sd_s2/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_42/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_43/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_44/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_45/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_CBT_46/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_sd_42/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_sd_43/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_sd_44/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_sd_45/utility_both_labels.csv
-/runs/memo0711_v3/beauty/per_seed_s2/early_sd_46/utility_both_labels.csv
-/runs/memo0711_v3/beauty/selected_s2/utility_CE.csv
-/runs/memo0711_v3/beauty/selected_s2/utility_LOG_RANK.csv
-/runs/memo0711_v3/beauty/selected_s2/utility_both_labels.csv
-# END AUTO LARGE FILES
+# Agent/editor state and credentials
+/.agents/
+/.specify/
+/specs/
+/AGENTS.md
+/skills-lock.json
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

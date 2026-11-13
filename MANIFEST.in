@@ -1,0 +1,21 @@
+include README.md LICENSE CITATION.cff THIRD_PARTY_NOTICES.md CHANGELOG.md requirements.txt
+include README_*.md CHECKPOINT2.md
+recursive-include configs *.yaml
+recursive-include scripts *.py
+recursive-include tests *.py
+recursive-include analysis *.py
+include docs/decision_log.md docs/REPRODUCIBILITY.md
+recursive-include docs/history *.md
+exclude docs/note.md docs/migration_notes_20261028.md
+recursive-include results/paper *.csv *.json
+include results/README.md artifacts/README.md
+prune data
+prune runs
+prune reports
+prune artifacts/metadata
+prune .agents
+prune .specify
+prune .tmp
+prune .venv
+prune build
+global-exclude *.py[cod] *.pt *.npy *.npz *.lock

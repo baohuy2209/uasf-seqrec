@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/beauty/jobs/id_plus_meta_42",
-  "original_completed_sha256": "7ec763beb72258cae787181c0dab6c70e7bb35ab7757b761c7aa80b4cc2bf02c",
-  "original_fingerprint": "05faffb7e486d8b455bbe2f8b6cc5ffca3c14c946258af424578aa64249721d5",
-  "train_context_sha256": "b780a1d13bb74c6fa8a295830f0b5fc8677eca86fe9fffce76a6cc5132778b54",
-  "scientific_inputs_checked": true
-}

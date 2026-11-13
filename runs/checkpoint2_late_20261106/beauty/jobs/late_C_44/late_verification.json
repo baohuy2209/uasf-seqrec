@@ -1,9 +1,0 @@
-{
-  "status": "VERIFIED",
-  "frozen_id_unchanged": true,
-  "id_checkpoint_sha256": "4cb0d3cb645674e70525f1f2ba0bbfbd3227c1e5833c87bed9840f310e88073f",
-  "late_checkpoint_sha256": "0b585ec11d8874048e7cae490012f98111408086ba0986fae2622cca07f447ed",
-  "initial_val_ndcg_10": 0.06127076908469396,
-  "selected_epoch": 10,
-  "selection_scope": "trained_epochs_only"
-}

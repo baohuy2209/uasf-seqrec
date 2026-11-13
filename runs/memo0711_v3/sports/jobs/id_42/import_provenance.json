@@ -1,7 +1,0 @@
-{
-  "source": "/home/ubuntu/projects/uasf-seqrec/runs/memo0711_v1/sports/jobs/id_42",
-  "original_completed_sha256": "4b09aa82ff744825e9dd5f261bd1d11489e88dde1f527d27267b3b6e923b1987",
-  "original_fingerprint": "ff8221304ea25e83b9ab80eac8f43a1f19e8035b700d3d032d74024298c2e66b",
-  "train_context_sha256": "59a43f953166afe597322a46c83014f1333ad59ae90610855105eff048f569f0",
-  "scientific_inputs_checked": true
-}
